@@ -33,7 +33,7 @@ except ImportError:
 
 def make_env(env_id, seed, rank, initial_policy, log_dir, add_timestep, allow_early_resets, vis):
     def _thunk():
-        env = ROWRandomTargetEnv(seed, rank, initial_policy=initial_policy, headless=not vis)
+        env = ReachOverWallEnv(seed, rank, initial_policy=initial_policy, headless=not vis)
         if log_dir is not None:
             env = bench.Monitor(env, os.path.join(log_dir, str(rank)),
                                     allow_early_resets=allow_early_resets)
@@ -203,6 +203,15 @@ class VecNormalize(VecNormalize_):
 
     def eval(self):
         self.training = False
+
+
+def get_vec_normalize(venv):
+    if isinstance(venv, VecNormalize):
+        return venv
+    elif hasattr(venv, 'venv'):
+        return get_vec_normalize(venv.venv)
+
+    return None
 
 
 # Derived from

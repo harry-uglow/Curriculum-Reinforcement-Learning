@@ -4,9 +4,8 @@ import os
 import numpy as np
 import torch
 
-from a2c_ppo_acktr.envs import VecPyTorch, make_vec_envs
-from a2c_ppo_acktr.residual.ROW_utils import setup_ROW_Env
-from a2c_ppo_acktr.utils import get_render_func, get_vec_normalize
+from a2c_ppo_acktr.envs import VecPyTorch, make_vec_envs, get_vec_normalize
+from a2c_ppo_acktr.utils import get_render_func
 
 
 # workaround to unpickle olf model files
