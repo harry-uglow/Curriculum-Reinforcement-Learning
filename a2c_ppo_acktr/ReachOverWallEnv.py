@@ -26,7 +26,7 @@ class ReachOverWallEnv(VrepEnv):
     target_velocities = np.array([0., 0., 0., 0., 0., 0., 0.])
     timestep = 0
 
-    def __init__(self, seed, rank, initial_policy, ep_len=128, headless=True):
+    def __init__(self, seed, rank, initial_policy, ep_len=160, headless=True):
         super().__init__(rank, headless)
 
         self.target_pos = np.array([0.3, -0.5, 0.1])  # TODO: Obtain
@@ -168,22 +168,20 @@ class ROWEnvInitialiser(ReachOverWallEnv):
         velocities = distances * 20  # Distances should be covered in 0.05s
         return path, velocities
 
-    # def get_initial_data(self, num_samples=5, scale=0.01):
-    #     path, velocities = self.get_demo_path()
-    #     poses = np.array([np.random.multivariate_normal(pose, scale * np.identity(num_joints),
-    #                                                     num_samples) for pose in path])
-    #     poses = np.reshape(poses, (len(path) * num_samples, num_joints))
-    #
-    #     self.poses = poses
-    #
-    #     return path, velocities
+    def get_initial_data(self, num_samples=5, scale=0.005):
+        path, velocities = self.get_demo_path()
+        poses = np.array([np.random.multivariate_normal(pose, scale * np.identity(num_joints),
+                                                        num_samples) for pose in path])
+        poses = np.reshape(poses, (len(path) * num_samples, num_joints))
+
+        return path, velocities
 
     def get_demo_path(self):
         path, velocities_WP = self.solve_ik()
         path_to_WP = path[:-1]
         self.call_lua_function('set_joint_angles', ints=self.init_config_tree, floats=path[-1])
         path_to_trg, velocities_trg = self.solve_ik()
-        return normalise_angles(np.append(path_to_WP, path_to_trg[:-1], axis=0)), \
+        return np.append(path_to_WP, path_to_trg[:-1], axis=0), \ # TODO: Normalise angles
                np.append(velocities_WP, velocities_trg, axis=0)
 
 

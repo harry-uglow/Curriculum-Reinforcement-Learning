@@ -24,7 +24,7 @@ def normalise_angles(angles):
 
 
 def train_initial_policy(env):
-    x, y = env.get_demo_path()
+    x, y = env.get_initial_data()
 
     p = env.np_random.permutation(len(x))
     env.initial_policy.train_net(x[p], y[p])
