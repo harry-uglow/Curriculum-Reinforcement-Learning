@@ -1,3 +1,5 @@
+import math
+
 import torch
 
 import numpy as np
@@ -30,8 +32,12 @@ def train_initial_policy(env):
     env.initial_policy.train_net(x[p], y[p])
 
     null_action = np.array([0.] * len(y[0]))
-    # Use DAgger for 8 episodes
-    for i in range(50):
+
+    min_final_loss = math.inf
+    episodes_with_no_improvement = 0
+
+    # Use DAgger until stabilised
+    while episodes_with_no_improvement < 2:
         print("Training initial policy - DAgger iteration " + str(i))
         env.reset()
         done = False
@@ -44,6 +50,12 @@ def train_initial_policy(env):
                 y = np.append(y, new_y, axis=0)
 
         p = env.np_random.permutation(len(x))
-        env.initial_policy.train_net(x[p], y[p])
+        final_loss = env.initial_policy.train_net(x[p], y[p])
+
+        if final_loss < min_final_loss:
+            episodes_with_no_improvement = 0
+            min_final_loss = final_loss
+        else:
+            episodes_with_no_improvement += 1
 
     return env.initial_policy

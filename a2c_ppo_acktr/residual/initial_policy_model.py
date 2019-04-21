@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 import torch
 
@@ -34,18 +36,23 @@ class InitialPolicy(nn.Module):
         return dist.mode()
 
     # Data should be normalised
-    def train_net(self, train_x, train_y, lr=0.01):
+    def train_net(self, x, y, lr=0.05):
         optimizer = optim.SGD(self.parameters(), lr=lr)
         criterion = nn.MSELoss()
 
-        train_x = torch.Tensor(train_x)
-        train_y = torch.Tensor(train_y)
+        num_test_examples = len(x) // 10
 
-        num_epochs = max(len(train_x) // 100, 10)
+        train_x = torch.Tensor(x[num_test_examples:])
+        train_y = torch.Tensor(y[num_test_examples:])
+        test_x = torch.Tensor(x[:num_test_examples])
+        test_y = torch.Tensor(y[:num_test_examples])
+
+        min_test_loss = math.inf
+        updates_with_no_improvement = 0
 
         # run the main training loop
         epochs = 0
-        while epochs < num_epochs:
+        while epochs < 100:
             epochs += 1
             actual_y = self(train_x)
             loss = criterion(actual_y, train_y)
@@ -53,3 +60,12 @@ class InitialPolicy(nn.Module):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+
+            test_loss = criterion(self(test_x), test_y).item()
+            if test_loss < min_test_loss:
+                updates_with_no_improvement = 0
+                min_test_loss = test_loss
+            else:
+                updates_with_no_improvement += 1
+
+        return min_test_loss
