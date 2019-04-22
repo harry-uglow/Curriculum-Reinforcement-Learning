@@ -8,9 +8,9 @@ import numpy as np
 import torch
 
 from a2c_ppo_acktr import algo
-from a2c_ppo_acktr.ReachOverWallEnv import setup_ROW_Env
+from a2c_ppo_acktr.envs.ReachOverWallEnv import setup_ROW_Env
 from a2c_ppo_acktr.arguments import get_args
-from a2c_ppo_acktr.envs import make_vec_envs, get_vec_normalize
+from a2c_ppo_acktr.envs.envs import make_vec_envs, get_vec_normalize
 from a2c_ppo_acktr.model import Policy
 from a2c_ppo_acktr.storage import RolloutStorage
 from a2c_ppo_acktr.utils import update_linear_schedule

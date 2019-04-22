@@ -6,14 +6,12 @@ import torch
 from gym.spaces.box import Box
 
 from baselines import bench
-from baselines.common.atari_wrappers import make_atari, wrap_deepmind
 from baselines.common.vec_env import VecEnvWrapper
 from baselines.common.vec_env.subproc_vec_env import SubprocVecEnv
 from baselines.common.vec_env.dummy_vec_env import DummyVecEnv
 from baselines.common.vec_env.vec_normalize import VecNormalize as VecNormalize_
 
-from a2c_ppo_acktr.ReachOverWallEnv import ReachOverWallEnv, ROWRandomTargetEnv
-from a2c_ppo_acktr.SawyerReacherEnv import SawyerReacherEnv
+from a2c_ppo_acktr.envs.ReachOverWallEnv import ReachOverWallEnv
 
 try:
     import dm_control2gym
@@ -33,7 +31,7 @@ except ImportError:
 
 def make_env(env_id, seed, rank, initial_policy, log_dir, add_timestep, allow_early_resets, vis):
     def _thunk():
-        env = ReachOverWallEnv(seed, rank, initial_policy=initial_policy, headless=not vis)
+        env = ReachOverWallEnv(seed, rank, initial_policy, not vis)
         if log_dir is not None:
             env = bench.Monitor(env, os.path.join(log_dir, str(rank)),
                                     allow_early_resets=allow_early_resets)

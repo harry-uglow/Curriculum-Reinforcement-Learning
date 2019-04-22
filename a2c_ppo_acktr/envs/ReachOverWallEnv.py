@@ -4,65 +4,44 @@ import torch
 import numpy as np
 from gym import spaces
 import vrep
-from a2c_ppo_acktr.residual.ROW_utils import normalise_coords, normalise_angles, xl, xu, yu, yl, \
-    train_initial_policy
+from a2c_ppo_acktr.envs.SawyerEnv import SawyerEnv, normalise_coords, normalise_angles
+from a2c_ppo_acktr.residual.ROW_utils import train_initial_policy
 from a2c_ppo_acktr.residual.initial_policy_model import InitialPolicy
 
-from a2c_ppo_acktr.vrep_utils import check_for_errors, VrepEnv
+from a2c_ppo_acktr.envs.VrepEnv import check_for_errors
 
 np.set_printoptions(precision=2, linewidth=200)  # DEBUG
-
 dir_path = os.getcwd()
-scene_path = dir_path + '/reach_over_wall.ttt'
 
-num_joints = 7
+cube_lower = np.array([0.15, (-0.35), 0.025])
+cube_upper = np.array([0.45, (-0.65), 1])
 
 
-class ReachOverWallEnv(VrepEnv):
+class ReachOverWallEnv(SawyerEnv):
 
+    scene_path = dir_path + '/reach_over_wall.ttt'
     observation_space = spaces.Box(np.array([0] * 11), np.array([1] * 11), dtype=np.float32)
-    action_space = spaces.Box(np.array([-1] * num_joints), np.array([1] * num_joints),
-                              dtype=np.float32)
-    target_velocities = np.array([0., 0., 0., 0., 0., 0., 0.])
     timestep = 0
 
-    def __init__(self, seed, rank, initial_policy, ep_len=64, headless=True):
-        super().__init__(rank, headless)
+    def __init__(self, seed, rank, initial_policy, headless, ep_len=64):
+        super().__init__(seed, rank, self.scene_path, headless)
 
         self.target_pos = np.array([0.3, -0.5, 0.1])  # TODO: Obtain
         self.waypoint_pos = np.array([0, -0.5, 0.45])  # TODO: Obtain
-        self.target_norm = normalise_coords(self.target_pos)
-        self.np_random = np.random.RandomState()
-        self.np_random.seed(seed + rank)
+        self.target_norm = normalise_coords(self.target_pos, cube_lower, cube_upper)
         self.ep_len = ep_len
         self.initial_policy = initial_policy
-
-        return_code = vrep.simxSynchronous(self.cid, enable=True)
-        check_for_errors(return_code)
-
-        return_code = vrep.simxLoadScene(self.cid, scene_path, 0, vrep.simx_opmode_blocking)
-        check_for_errors(return_code)
-
-        # Get the initial configuration of the robot (needed to later reset the robot's pose)
-        self.init_config_tree, _, _, _ = self.call_lua_function('get_configuration_tree')
-        _, self.init_joint_angles, _, _ = self.call_lua_function('get_joint_angles')
-        self.joint_angles = self.init_joint_angles
-
-        self.joint_handles = np.array([None] * num_joints)
-        for i in range(num_joints):
-            return_code, handle = vrep.simxGetObjectHandle(self.cid, 'Sawyer_joint' + str(i + 1),
-                                                           vrep.simx_opmode_blocking)
-            check_for_errors(return_code)
-            self.joint_handles[i] = handle
 
         return_code, self.end_handle = vrep.simxGetObjectHandle(self.cid,
                 "Waypoint_tip", vrep.simx_opmode_blocking)
         check_for_errors(return_code)
         self.end_pose = self.get_end_pose()
-        _, self.target_handle = vrep.simxGetObjectHandle(self.cid,
+        return_code, self.target_handle = vrep.simxGetObjectHandle(self.cid,
                 "Cube", vrep.simx_opmode_blocking)
-        _, self.wall_handle = vrep.simxGetObjectHandle(self.cid,
+        check_for_errors(return_code)
+        return_code, self.wall_handle = vrep.simxGetObjectHandle(self.cid,
                 "Wall", vrep.simx_opmode_blocking)
+        check_for_errors(return_code)
         self.init_wall_pos = vrep.simxGetObjectPosition(self.cid, self.wall_handle,
                 -1, vrep.simx_opmode_blocking)[1]
         self.wall_distance = normalise_coords(self.init_wall_pos[0], lower=0, upper=1)
@@ -70,26 +49,18 @@ class ReachOverWallEnv(VrepEnv):
                 self.wall_handle, -1, vrep.simx_opmode_blocking)[1]
         self.wall_orientation = self.init_wall_rot
 
-        # Start the simulation (the "Play" button in V-Rep should now be in a "Pressed" state)
-        return_code = vrep.simxStartSimulation(self.cid, vrep.simx_opmode_blocking)
-        check_for_errors(return_code)
-
     def reset(self):
-        self.call_lua_function('set_joint_angles', ints=self.init_config_tree,
-                               floats=self.init_joint_angles)
+        super(ReachOverWallEnv, self).reset()
         vrep.simxSetObjectPosition(self.cid, self.wall_handle, -1, self.init_wall_pos,
                                    vrep.simx_opmode_blocking)
         vrep.simxSetObjectOrientation(self.cid, self.wall_handle, -1, self.init_wall_rot,
                                       vrep.simx_opmode_blocking)
-
-        self.target_velocities = np.array([0., 0., 0., 0., 0., 0., 0.])
-        self.joint_angles = self.init_joint_angles
         self.timestep = 0
 
         return self._get_obs()
 
     def step(self, a):
-        ip_input = torch.Tensor(normalise_angles(self.joint_angles)).reshape((1, num_joints))
+        ip_input = torch.Tensor(normalise_angles(self.joint_angles)).reshape((1, self.num_joints))
         with torch.no_grad():
             ip_action = self.initial_policy(ip_input).detach().numpy().flatten()
         self.target_velocities = ip_action + a  # Residual RL
@@ -113,20 +84,10 @@ class ReachOverWallEnv(VrepEnv):
                                       reward_obstacle=reward_obstacle)
 
     def _get_obs(self):
-        _, curr_joint_angles, _, _ = self.call_lua_function('get_joint_angles')
-        self.joint_angles = np.array(curr_joint_angles)
-        norm_joints = normalise_angles(self.joint_angles)
+        joint_obs = super(ReachOverWallEnv, self)._get_obs()
         self.end_pose = self.get_end_pose()
 
-        return np.concatenate((norm_joints, self.target_norm, [self.wall_distance]))
-
-    def update_sim(self):
-        for handle, velocity in zip(self.joint_handles, self.target_velocities):
-            return_code = vrep.simxSetJointTargetVelocity(self.cid,
-                int(handle), velocity, vrep.simx_opmode_oneshot)
-            check_for_errors(return_code)
-        vrep.simxSynchronousTrigger(self.cid)
-        vrep.simxGetPingTime(self.cid)
+        return np.concatenate((joint_obs, self.target_norm, [self.wall_distance]))
 
     def get_end_pose(self):
         pose = vrep.simxGetObjectPosition(self.cid, self.end_handle, -1,
@@ -137,9 +98,9 @@ class ReachOverWallEnv(VrepEnv):
 class ROWRandomTargetEnv(ReachOverWallEnv):
 
     def reset(self):
-        self.target_pos[0] = self.np_random.uniform(xl, xu)
-        self.target_pos[1] = self.np_random.uniform(yl, yu)
-        self.target_norm = normalise_coords(self.target_pos)
+        self.target_pos[0] = self.np_random.uniform(cube_lower[0], cube_upper[0])
+        self.target_pos[1] = self.np_random.uniform(cube_lower[1], cube_upper[1])
+        self.target_norm = normalise_coords(self.target_pos, cube_lower, cube_upper)
         vrep.simxSetObjectPosition(self.cid, self.target_handle, -1, self.target_pos,
                                    vrep.simx_opmode_blocking)
         return super(ROWRandomTargetEnv, self).reset()
@@ -148,8 +109,8 @@ class ROWRandomTargetEnv(ReachOverWallEnv):
 class ROWEnvInitialiser(ReachOverWallEnv):
 
     def __init__(self, seed, rank):
-        ip = InitialPolicy(num_joints, num_joints)
-        super().__init__(seed, rank, ip, ep_len=128, headless=True)
+        ip = InitialPolicy(self.num_joints, self.num_joints)
+        super().__init__(seed, rank, ip, True, ep_len=128)
 
     def solve_ik(self):
         end = self.get_end_pose()
@@ -161,23 +122,19 @@ class ROWEnvInitialiser(ReachOverWallEnv):
             else ['IK_GroupT', 'tip_target']
 
         _, path, _, _ = self.call_lua_function('solve_ik', strings=strings)
-        num_path_points = len(path) // num_joints
-        path = np.reshape(path, (num_path_points, num_joints))
+        num_path_points = len(path) // self.num_joints
+        path = np.reshape(path, (num_path_points, self.num_joints))
         distances = np.array([path[i + 1] - path[i]
                               for i in range(0, len(path) - 1)])
         velocities = distances * 20  # Distances should be covered in 0.05s
         return path, velocities
 
-    def get_initial_data(self, num_samples=32, scale=0.01):
+    def get_initial_data(self, num_samples=10, scale=0.01):
         demo_path, demo_velocities = self.get_demo_path()
-        id = scale * np.identity(num_joints)
+        id = scale * np.identity(self.num_joints)
         poses = np.array([self.np_random.multivariate_normal(pose, id, num_samples)
                           for pose in demo_path])
-        more_poses = self.np_random.multivariate_normal(demo_path[0], id, num_samples)
-        poses = np.append(poses, [more_poses], axis=0)
-        more_poses = self.np_random.multivariate_normal(demo_path[-1], id * 2, 2 * num_samples)
-        poses = np.append(poses, np.reshape(more_poses, (2, num_samples, 7)), axis=0)
-        poses = np.reshape(poses, ((len(demo_path) + 3) * num_samples, num_joints))
+        poses = np.reshape(poses, (len(demo_path) * num_samples, self.num_joints))
         pose_list = [demo_path[:-1]]
         velocity_list = [demo_velocities]
 
@@ -185,8 +142,8 @@ class ROWEnvInitialiser(ReachOverWallEnv):
             self.call_lua_function('set_joint_angles', ints=self.init_config_tree, floats=pose)
             path, velocities = self.solve_ik()
             if len(velocities) > 0:
-                pose_list += [path[:-1]]
-                velocity_list += [velocities]
+                pose_list += [[path[0]]]
+                velocity_list += [[velocities[0]]]
         all_poses = np.concatenate(pose_list, axis=0)
         all_velocities = np.concatenate(velocity_list, axis=0)
 

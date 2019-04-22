@@ -60,20 +60,18 @@ class VrepEnv(Env):
             port_num += 16
         remote_api_string = '-gREMOTEAPISERVERSERVICE_' + str(port_num) + '_FALSE_TRUE'
         args = [vrep_path, '-h' if headless else '', remote_api_string]
-        atexit.register(self.close)
         self.process = Popen(args, preexec_fn=os.setsid)
         time.sleep(6)
 
         self.cid = vrep.simxStart(host, port_num, True, True, 5000, 5)
+        atexit.register(self.close)
 
     # Function to call a Lua function in V-Rep
     # Read more here: http://www.coppeliarobotics.com/helpFiles/en/remoteApiExtension.htm
     def call_lua_function(self, lua_function, ints=[], floats=[], strings=[],
-                          bytes=bytearray(),
-                          opmode=vrep.simx_opmode_blocking):
+                          bytes=bytearray(), opmode=vrep.simx_opmode_blocking):
         return_code, out_ints, out_floats, out_strings, out_buffer = vrep.simxCallScriptFunction(
-            self.cid, 'remote_api', vrep.sim_scripttype_customizationscript,
-            lua_function, ints,
+            self.cid, 'remote_api', vrep.sim_scripttype_customizationscript, lua_function, ints,
             floats, strings, bytes, opmode)
         check_for_errors(return_code)
         return out_ints, out_floats, out_strings, out_buffer

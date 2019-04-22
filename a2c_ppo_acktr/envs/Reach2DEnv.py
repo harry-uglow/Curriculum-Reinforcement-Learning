@@ -4,7 +4,7 @@ import pygame
 from gym import spaces, Env
 
 
-class Arm2DEnv(Env):
+class Reach2DEnv(Env):
     def render(self, mode='human'):
         # Check for mouse events
         for event in pygame.event.get():
