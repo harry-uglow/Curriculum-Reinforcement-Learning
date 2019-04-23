@@ -161,4 +161,5 @@ class ROWEnvInitialiser(ReachOverWallEnv):
 def setup_ROW_Env(seed, rank):
     env = ROWEnvInitialiser(seed, rank)
     ip = train_initial_policy(env)
+    env.close()
     return ip

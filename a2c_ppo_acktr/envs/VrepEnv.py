@@ -81,6 +81,7 @@ class VrepEnv(Env):
         print("Closing VREP")
         vrep.simxStopSimulation(self.cid, vrep.simx_opmode_blocking)
         vrep.simxFinish(self.cid)
+        atexit.unregister(self.close)
         try:
             pgrp = os.getpgid(self.process.pid)
             os.killpg(pgrp, signal.SIGKILL)
