@@ -24,7 +24,7 @@ class ReachOverWallEnv(SawyerEnv):
     timestep = 0
 
     def __init__(self, seed, rank, initial_policy, headless, ep_len=64):
-        super().__init__(seed, rank, self.scene_path, False)
+        super().__init__(seed, rank, self.scene_path, headless)
 
         self.target_pos = np.array([0.3, -0.5, 0.1])  # TODO: Obtain
         self.waypoint_pos = np.array([0, -0.5, 0.45])  # TODO: Obtain
@@ -154,7 +154,7 @@ class ROWEnvInitialiser(ReachOverWallEnv):
 
 
 def setup_ROW_Env(seed, rank):
-    env = ROWEnvInitialiser(seed, 14)
+    env = ROWEnvInitialiser(seed, rank)
     ip = train_initial_policy(env)
     env.close()
     return ip
