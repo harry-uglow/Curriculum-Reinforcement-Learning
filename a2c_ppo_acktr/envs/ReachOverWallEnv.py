@@ -63,7 +63,7 @@ class ReachOverWallEnv(SawyerEnv):
         ip_input = torch.Tensor(normalise_angles(self.joint_angles)).reshape((1, self.num_joints))
         with torch.no_grad():
             ip_action = self.initial_policy(ip_input).detach().numpy().flatten()
-        self.target_velocities = ip_action   # Residual RL
+        self.target_velocities = ip_action + a  # Residual RL
         vec = self.end_pose - self.target_pos
         reward_dist = - np.linalg.norm(vec)
 
