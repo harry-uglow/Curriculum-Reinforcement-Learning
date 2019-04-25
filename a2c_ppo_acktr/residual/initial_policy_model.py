@@ -48,7 +48,6 @@ class InitialPolicy(nn.Module):
         test_y = torch.Tensor(y[:num_test_examples])
 
         min_test_loss = math.inf
-        updates_with_no_improvement = 0
 
         # run the main training loop
         epochs = 0
@@ -63,9 +62,6 @@ class InitialPolicy(nn.Module):
 
             test_loss = criterion(self(test_x), test_y).item()
             if test_loss < min_test_loss:
-                updates_with_no_improvement = 0
                 min_test_loss = test_loss
-            else:
-                updates_with_no_improvement += 1
 
         return min_test_loss

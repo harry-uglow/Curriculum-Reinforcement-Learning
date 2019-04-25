@@ -17,14 +17,14 @@ cube_lower = np.array([0.15, (-0.35), 0.025])
 cube_upper = np.array([0.45, (-0.65), 1])
 
 
-class ReachOverWallEnv(SawyerEnv):
+class DishRackEnv(SawyerEnv):
 
-    scene_path = dir_path + '/reach_over_wall.ttt'
+    scene_path = dir_path + '/dish_rack.ttt'
     observation_space = spaces.Box(np.array([0] * 11), np.array([1] * 11), dtype=np.float32)
     timestep = 0
 
     def __init__(self, seed, rank, initial_policy, headless, ep_len=64):
-        super().__init__(seed, rank, self.scene_path, False)
+        super().__init__(seed, rank, self.scene_path, headless)
 
         self.target_pos = np.array([0.3, -0.5, 0.1])  # TODO: Obtain
         self.waypoint_pos = np.array([0, -0.5, 0.45])  # TODO: Obtain
@@ -50,7 +50,7 @@ class ReachOverWallEnv(SawyerEnv):
         self.wall_orientation = self.init_wall_rot
 
     def reset(self):
-        super(ReachOverWallEnv, self).reset()
+        super(DishRackEnv, self).reset()
         vrep.simxSetObjectPosition(self.cid, self.wall_handle, -1, self.init_wall_pos,
                                    vrep.simx_opmode_blocking)
         vrep.simxSetObjectOrientation(self.cid, self.wall_handle, -1, self.init_wall_rot,
@@ -63,7 +63,7 @@ class ReachOverWallEnv(SawyerEnv):
         ip_input = torch.Tensor(normalise_angles(self.joint_angles)).reshape((1, self.num_joints))
         with torch.no_grad():
             ip_action = self.initial_policy(ip_input).detach().numpy().flatten()
-        self.target_velocities = ip_action   # Residual RL
+        self.target_velocities = ip_action + a  # Residual RL
         vec = self.end_pose - self.target_pos
         reward_dist = - np.linalg.norm(vec)
 
@@ -84,7 +84,7 @@ class ReachOverWallEnv(SawyerEnv):
                                       reward_obstacle=reward_obstacle)
 
     def _get_obs(self):
-        joint_obs = super(ReachOverWallEnv, self)._get_obs()
+        joint_obs = super(DishRackEnv, self)._get_obs()
         self.end_pose = self.get_end_pose()
 
         return np.concatenate((joint_obs, self.target_norm, [self.wall_distance]))
@@ -95,7 +95,7 @@ class ReachOverWallEnv(SawyerEnv):
         return np.array(pose)
 
 
-class ROWRandomTargetEnv(ReachOverWallEnv):
+class ROWRandomTargetEnv(DishRackEnv):
 
     def reset(self):
         self.target_pos[0] = self.np_random.uniform(cube_lower[0], cube_upper[0])
@@ -106,11 +106,11 @@ class ROWRandomTargetEnv(ReachOverWallEnv):
         return super(ROWRandomTargetEnv, self).reset()
 
 
-class ROWEnvInitialiser(ReachOverWallEnv):
+class ROWEnvInitialiser(DishRackEnv):
 
     def __init__(self, seed, rank):
         ip = InitialPolicy(self.num_joints, self.num_joints)
-        super().__init__(seed, rank, ip, True)
+        super().__init__(seed, rank, ip, True, ep_len=128)
 
     def solve_ik(self):
         end = self.get_end_pose()
@@ -129,17 +129,22 @@ class ROWEnvInitialiser(ReachOverWallEnv):
         velocities = distances * 20  # Distances should be covered in 0.05s
         return path, velocities
 
-    def get_initial_data(self, num_samples=100, scale=0.01):
+    def get_initial_data(self, num_samples=10, scale=0.01):
+        demo_path, demo_velocities = self.get_demo_path()
         id = scale * np.identity(self.num_joints)
-        initial_poses = self.np_random.multivariate_normal(self.init_joint_angles, id, num_samples)
-        paths_list = []
-        velocity_list = []
-        for pose in initial_poses:
+        poses = np.array([self.np_random.multivariate_normal(pose, id, num_samples)
+                          for pose in demo_path])
+        poses = np.reshape(poses, (len(demo_path) * num_samples, self.num_joints))
+        pose_list = [demo_path[:-1]]
+        velocity_list = [demo_velocities]
+
+        for pose in poses:
             self.call_lua_function('set_joint_angles', ints=self.init_config_tree, floats=pose)
-            path, velocities = self.get_demo_path()
-            paths_list += [path]
-            velocity_list += [velocities]
-        all_poses = np.concatenate(paths_list, axis=0)
+            path, velocities = self.solve_ik()
+            if len(velocities) > 0:
+                pose_list += [[path[0]]]
+                velocity_list += [[velocities[0]]]
+        all_poses = np.concatenate(pose_list, axis=0)
         all_velocities = np.concatenate(velocity_list, axis=0)
 
         return normalise_angles(all_poses), all_velocities
@@ -149,12 +154,12 @@ class ROWEnvInitialiser(ReachOverWallEnv):
         path_to_WP = path[:-1]
         self.call_lua_function('set_joint_angles', ints=self.init_config_tree, floats=path[-1])
         path_to_trg, velocities_trg = self.solve_ik()
-        return np.append(path_to_WP, path_to_trg[:-1], axis=0), \
+        return np.append(path_to_WP, path_to_trg, axis=0), \
                np.append(velocities_WP, velocities_trg, axis=0)
 
 
 def setup_ROW_Env(seed, rank):
-    env = ROWEnvInitialiser(seed, 14)
+    env = ROWEnvInitialiser(seed, rank)
     ip = train_initial_policy(env)
     env.close()
     return ip
