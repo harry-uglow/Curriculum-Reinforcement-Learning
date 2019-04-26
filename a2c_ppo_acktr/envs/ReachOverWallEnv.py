@@ -18,7 +18,7 @@ cube_upper = np.array([0.45, (-0.65), 0.5])
 
 class ReachOverWallEnv(SawyerEnv):
 
-    scene_path = dir_path + '/reach_over_wall.ttt'
+    scene_path = dir_path + '/reach_no_wall.ttt'
     observation_space = spaces.Box(np.array([0] * 11), np.array([1] * 11), dtype=np.float32)
     timestep = 0
 
