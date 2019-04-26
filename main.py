@@ -54,10 +54,13 @@ def main():
     torch.set_num_threads(1)
     device = torch.device("cuda:0" if args.cuda else "cpu")
 
-    # ip = setup_ROW_Env(args.seed, args.num_processes)
-
     envs = make_vec_envs(args.env_name, args.seed, args.num_processes, args.gamma, args.log_dir,
                          args.add_timestep, device, False)
+
+    if args.initial_policy is not None:
+        initial_policy, _ = torch.load(os.path.join(args.load_dir, args.initial_policy + ".pt"))
+        ip_rhs = torch.zeros(1, initial_policy.recurrent_hidden_state_size)
+    ip_masks = torch.zeros(1, 1)
 
     actor_critic = Policy(envs.observation_space.shape, envs.action_space,
         base_kwargs={'recurrent': args.recurrent_policy})
@@ -109,6 +112,10 @@ def main():
                         rollouts.obs[step],
                         rollouts.recurrent_hidden_states[step],
                         rollouts.masks[step])
+                if args.initial_policy is not None:
+                    _, ip_action, _, ip_rhs = initial_policy.act(
+                            obs, ip_rhs, ip_masks, deterministic=True)
+                    action += ip_action
 
             # Obser reward and next obs
             obs, reward, done, infos = envs.step(action)
@@ -121,6 +128,7 @@ def main():
             # If done then clean the history of observations.
             masks = torch.FloatTensor([[0.0] if done_ else [1.0]
                                        for done_ in done])
+            ip_masks.fill_(0.0 if done else 1.0)
             rollouts.insert(obs, recurrent_hidden_states, action, action_log_prob, value, reward, masks)
 
         with torch.no_grad():
