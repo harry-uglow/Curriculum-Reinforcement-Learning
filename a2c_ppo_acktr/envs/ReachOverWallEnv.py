@@ -3,9 +3,7 @@ import os
 import numpy as np
 from gym import spaces
 import vrep
-from a2c_ppo_acktr.envs.SawyerEnv import SawyerEnv, normalise_coords, normalise_angles
-from a2c_ppo_acktr.residual.ROW_utils import train_initial_policy
-from a2c_ppo_acktr.residual.initial_policy_model import InitialPolicy
+from a2c_ppo_acktr.envs.SawyerEnv import SawyerEnv, normalise_coords
 
 from a2c_ppo_acktr.envs.VrepEnv import check_for_errors
 
@@ -18,7 +16,7 @@ cube_upper = np.array([0.45, (-0.65), 0.5])
 
 class ReachOverWallEnv(SawyerEnv):
 
-    scene_path = dir_path + '/reach_no_wall.ttt'
+    scene_path = dir_path + '/reach_over_wall.ttt'
     observation_space = spaces.Box(np.array([0] * 11), np.array([1] * 11), dtype=np.float32)
     timestep = 0
 
@@ -102,55 +100,6 @@ class ROWRandomTargetEnv(ReachOverWallEnv):
         return super(ROWRandomTargetEnv, self).reset()
 
 
-class ROWEnvInitialiser(ReachOverWallEnv):
+class ReachNoWallEnv(ReachOverWallEnv):
 
-    def __init__(self, seed, rank):
-        ip = InitialPolicy(self.num_joints, self.num_joints)
-        super().__init__(seed, rank, ip, True)
-
-    def solve_ik(self):
-        end = self.get_end_pose()
-        end_x = end[0]
-        end_z = end[2]
-
-        strings = ['IK_GroupW', 'tip_waypoint'] \
-            if end_x < 0 and end_z < 0.45 - end_x \
-            else ['IK_GroupT', 'tip_target']
-
-        _, path, _, _ = self.call_lua_function('solve_ik', strings=strings)
-        num_path_points = len(path) // self.num_joints
-        path = np.reshape(path, (num_path_points, self.num_joints))
-        distances = np.array([path[i + 1] - path[i]
-                              for i in range(0, len(path) - 1)])
-        velocities = distances * 20  # Distances should be covered in 0.05s
-        return path, velocities
-
-    def get_initial_data(self, num_samples=100, scale=0.01):
-        id = scale * np.identity(self.num_joints)
-        initial_poses = self.np_random.multivariate_normal(self.init_joint_angles, id, num_samples)
-        paths_list = []
-        velocity_list = []
-        for pose in initial_poses:
-            self.call_lua_function('set_joint_angles', ints=self.init_config_tree, floats=pose)
-            path, velocities = self.get_demo_path()
-            paths_list += [path]
-            velocity_list += [velocities]
-        all_poses = np.concatenate(paths_list, axis=0)
-        all_velocities = np.concatenate(velocity_list, axis=0)
-
-        return normalise_angles(all_poses), all_velocities
-
-    def get_demo_path(self):
-        path, velocities_WP = self.solve_ik()
-        path_to_WP = path[:-1]
-        self.call_lua_function('set_joint_angles', ints=self.init_config_tree, floats=path[-1])
-        path_to_trg, velocities_trg = self.solve_ik()
-        return np.append(path_to_WP, path_to_trg[:-1], axis=0), \
-               np.append(velocities_WP, velocities_trg, axis=0)
-
-
-def setup_ROW_Env(seed, rank):
-    env = ROWEnvInitialiser(seed, rank)
-    ip = train_initial_policy(env)
-    env.close()
-    return ip
+    scene_path = dir_path + '/reach_no_wall.ttt'
