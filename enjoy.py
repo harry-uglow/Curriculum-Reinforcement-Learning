@@ -29,12 +29,10 @@ args = parser.parse_args()
 args.det = not args.non_det
 
 # We need to use the same statistics for normalization as used in training
-actor_critic, ip, ob_rms = \
+actor_critic, ob_rms = \
             torch.load(os.path.join(args.load_dir, args.env_name + ".pt"))
 
-# ip = setup_ROW_Env(args.seed, 16)
-
-env = make_vec_envs(args.env_name, args.seed + 1000, 1, ip,
+env = make_vec_envs(args.env_name, args.seed + 1000, 1,
                             None, None, args.add_timestep, device='cpu',
                             allow_early_resets=False, vis=True)
 

@@ -58,7 +58,9 @@ class SawyerEnv(VrepEnv):
         self.target_velocities = np.array([0., 0., 0., 0., 0., 0., 0.])
 
     def _get_obs(self):
-        _, curr_joint_angles, _, _ = self.call_lua_function('get_joint_angles')
+        curr_joint_angles = []
+        while len(curr_joint_angles) != self.num_joints:
+            _, curr_joint_angles, _, _ = self.call_lua_function('get_joint_angles')
         self.joint_angles = np.array(curr_joint_angles)
         norm_joints = normalise_angles(self.joint_angles)
 

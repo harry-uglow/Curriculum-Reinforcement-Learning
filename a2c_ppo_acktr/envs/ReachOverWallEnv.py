@@ -1,5 +1,4 @@
 import os
-import torch
 
 import numpy as np
 from gym import spaces
@@ -14,7 +13,7 @@ np.set_printoptions(precision=2, linewidth=200)  # DEBUG
 dir_path = os.getcwd()
 
 cube_lower = np.array([0.15, (-0.35), 0.025])
-cube_upper = np.array([0.45, (-0.65), 1])
+cube_upper = np.array([0.45, (-0.65), 0.5])
 
 
 class ReachOverWallEnv(SawyerEnv):
@@ -23,14 +22,10 @@ class ReachOverWallEnv(SawyerEnv):
     observation_space = spaces.Box(np.array([0] * 11), np.array([1] * 11), dtype=np.float32)
     timestep = 0
 
-    def __init__(self, seed, rank, initial_policy, headless, ep_len=64):
+    def __init__(self, seed, rank, headless, ep_len=64):
         super().__init__(seed, rank, self.scene_path, headless)
 
-        self.target_pos = np.array([0.3, -0.5, 0.1])  # TODO: Obtain
-        self.waypoint_pos = np.array([0, -0.5, 0.45])  # TODO: Obtain
-        self.target_norm = normalise_coords(self.target_pos, cube_lower, cube_upper)
         self.ep_len = ep_len
-        self.initial_policy = initial_policy
 
         return_code, self.end_handle = vrep.simxGetObjectHandle(self.cid,
                 "Waypoint_tip", vrep.simx_opmode_blocking)
@@ -39,6 +34,10 @@ class ReachOverWallEnv(SawyerEnv):
         return_code, self.target_handle = vrep.simxGetObjectHandle(self.cid,
                 "Cube", vrep.simx_opmode_blocking)
         check_for_errors(return_code)
+        return_code, self.target_pos = vrep.simxGetObjectPosition(self.cid, self.target_handle,
+                -1, vrep.simx_opmode_blocking)
+        check_for_errors(return_code)
+        self.target_norm = normalise_coords(self.target_pos, cube_lower, cube_upper)
         return_code, self.wall_handle = vrep.simxGetObjectHandle(self.cid,
                 "Wall", vrep.simx_opmode_blocking)
         check_for_errors(return_code)
@@ -60,12 +59,8 @@ class ReachOverWallEnv(SawyerEnv):
         return self._get_obs()
 
     def step(self, a):
-        ip_input = torch.Tensor(normalise_angles(self.joint_angles)).reshape((1, self.num_joints))
-        with torch.no_grad():
-            ip_action = self.initial_policy(ip_input).detach().numpy().flatten()
-        self.target_velocities = ip_action + a  # Residual RL
+        self.target_velocities = a  # Residual RL
         vec = self.end_pose - self.target_pos
-        reward_dist = - np.linalg.norm(vec)
 
         self.timestep += 1
         self.update_sim()
@@ -75,9 +70,10 @@ class ReachOverWallEnv(SawyerEnv):
         ob = self._get_obs()
         done = (self.timestep == self.ep_len)
 
+        reward_dist = - np.linalg.norm(vec)
         reward_ctrl = - np.square(self.target_velocities).mean()
         reward_obstacle = - np.abs(self.wall_orientation).sum()
-        reward = 0.01 * (reward_dist + reward_ctrl + 0.5 * reward_obstacle)
+        reward = 0.01 * (reward_dist + reward_ctrl + 0.2 * reward_obstacle)
 
         return ob, reward, done, dict(reward_dist=reward_dist,
                                       reward_ctrl=reward_ctrl,
@@ -118,7 +114,7 @@ class ROWEnvInitialiser(ReachOverWallEnv):
         end_z = end[2]
 
         strings = ['IK_GroupW', 'tip_waypoint'] \
-            if end_x < -0.005 and end_z < 0.445 - end_x \
+            if end_x < 0 and end_z < 0.45 - end_x \
             else ['IK_GroupT', 'tip_target']
 
         _, path, _, _ = self.call_lua_function('solve_ik', strings=strings)

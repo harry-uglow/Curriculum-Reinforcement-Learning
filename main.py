@@ -54,10 +54,10 @@ def main():
     torch.set_num_threads(1)
     device = torch.device("cuda:0" if args.cuda else "cpu")
 
-    ip = setup_ROW_Env(args.seed, args.num_processes)
+    # ip = setup_ROW_Env(args.seed, args.num_processes)
 
-    envs = make_vec_envs(args.env_name, args.seed, args.num_processes, ip,
-                        args.gamma, args.log_dir, args.add_timestep, device, False)
+    envs = make_vec_envs(args.env_name, args.seed, args.num_processes, args.gamma, args.log_dir,
+                         args.add_timestep, device, False)
 
     actor_critic = Policy(envs.observation_space.shape, envs.action_space,
         base_kwargs={'recurrent': args.recurrent_policy})
@@ -146,11 +146,8 @@ def main():
             save_model = actor_critic
             if args.cuda:
                 save_model = copy.deepcopy(actor_critic).cpu()
-            save_ip = ip
-            if args.cuda:
-                save_ip = copy.deepcopy(ip).cpu()
 
-            save_model = [save_model, save_ip, getattr(get_vec_normalize(envs), 'ob_rms', None)]
+            save_model = [save_model, getattr(get_vec_normalize(envs), 'ob_rms', None)]
 
             torch.save(save_model, os.path.join(save_path, args.env_name + ".pt"))
 
@@ -174,8 +171,8 @@ def main():
                 and len(episode_rewards) > 1
                 and j % args.eval_interval == 0):
             eval_envs = make_vec_envs(
-                args.env_name, args.seed + args.num_processes, 1,
-                ip, args.gamma, eval_log_dir, args.add_timestep, device, True, vis=True)
+                args.env_name, args.seed + args.num_processes, 1, args.gamma, eval_log_dir,
+                args.add_timestep, device, True, vis=True)
 
             vec_norm = get_vec_normalize(eval_envs)
             if vec_norm is not None:
