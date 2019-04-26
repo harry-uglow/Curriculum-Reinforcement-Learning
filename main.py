@@ -110,14 +110,16 @@ def main():
                         rollouts.recurrent_hidden_states[step],
                         rollouts.masks[step])
                 if args.initial_policy is not None:
-                    _, ip_action, _, ip_rhs = initial_policy.act(
+                    _, ip_action, _, _ = initial_policy.act(
                             rollouts.obs[step],
                             rollouts.recurrent_hidden_states[step],
                             rollouts.masks[step], deterministic=True)
-                    action += ip_action
+                    whole_action = action + ip_action
+                else:
+                    whole_action = action
 
             # Obser reward and next obs
-            obs, reward, done, infos = envs.step(action)
+            obs, reward, done, infos = envs.step(whole_action)
 
             for info in infos:
                 if 'episode' in info.keys():
