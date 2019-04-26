@@ -8,7 +8,6 @@ import numpy as np
 import torch
 
 from a2c_ppo_acktr import algo
-from a2c_ppo_acktr.envs.ReachOverWallEnv import setup_ROW_Env
 from a2c_ppo_acktr.arguments import get_args
 from a2c_ppo_acktr.envs.envs import make_vec_envs, get_vec_normalize
 from a2c_ppo_acktr.model import Policy
@@ -59,8 +58,6 @@ def main():
 
     if args.initial_policy is not None:
         initial_policy, _ = torch.load(os.path.join(args.load_dir, args.initial_policy + ".pt"))
-        ip_rhs = torch.zeros(1, initial_policy.recurrent_hidden_state_size)
-    ip_masks = torch.zeros(1, 1)
 
     actor_critic = Policy(envs.observation_space.shape, envs.action_space,
         base_kwargs={'recurrent': args.recurrent_policy})
@@ -114,7 +111,9 @@ def main():
                         rollouts.masks[step])
                 if args.initial_policy is not None:
                     _, ip_action, _, ip_rhs = initial_policy.act(
-                            obs, ip_rhs, ip_masks, deterministic=True)
+                            rollouts.obs[step],
+                            rollouts.recurrent_hidden_states[step],
+                            rollouts.masks[step], deterministic=True)
                     action += ip_action
 
             # Obser reward and next obs
@@ -128,7 +127,6 @@ def main():
             # If done then clean the history of observations.
             masks = torch.FloatTensor([[0.0] if done_ else [1.0]
                                        for done_ in done])
-            ip_masks.fill_(0.0 if done else 1.0)
             rollouts.insert(obs, recurrent_hidden_states, action, action_log_prob, value, reward, masks)
 
         with torch.no_grad():
