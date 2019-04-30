@@ -34,8 +34,11 @@ args.det = not args.non_det
 actor_critic, ob_rms = \
             torch.load(os.path.join(args.load_dir, args.env_name + ".pt"))
 
+(ip, ip_ob_rms) = torch.load(os.path.join(args.load_dir, args.initial_policy + ".pt")) if \
+                     args.initial_policy else (None, None)
+
 env = make_vec_envs(args.env_name, args.seed + 1000, 1, None, None, args.add_timestep, device='cpu',
-                    allow_early_resets=False, vis=True, initial_policy=actor_critic, ob_rms=ob_rms)
+                    allow_early_resets=False, vis=True, initial_policy=ip, ob_rms=ip_ob_rms)
 
 # Get a render function
 render_func = get_render_func(env)

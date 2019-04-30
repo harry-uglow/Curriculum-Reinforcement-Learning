@@ -38,5 +38,9 @@ class ResidualVecEnvWrapper(VecEnvWrapper):
 
     def reset(self, **kwargs):
         obs = self.venv.reset(**kwargs)
+        for ob in obs:
+            ob[7] = 0.5000000397364298
+            ob[8] = 0.5
+            ob[9] = 0.15789473997919184
         self.last_obs = self.normalize_obs(obs)
         return obs
