@@ -11,7 +11,8 @@ from baselines.common.vec_env.subproc_vec_env import SubprocVecEnv
 from baselines.common.vec_env.dummy_vec_env import DummyVecEnv
 from baselines.common.vec_env.vec_normalize import VecNormalize as VecNormalize_
 
-from a2c_ppo_acktr.envs.ReachOverWallEnv import ReachOverWallEnv, ROWRandomTargetEnv
+from a2c_ppo_acktr.envs.ReachOverWallEnv import ReachOverWallEnv, ROWRandomTargetEnv, ReachNoWallEnv
+from a2c_ppo_acktr.envs.ResidualVecEnvWrapper import ResidualVecEnvWrapper
 
 try:
     import dm_control2gym
@@ -31,7 +32,7 @@ except ImportError:
 
 def make_env(env_id, seed, rank, log_dir, add_timestep, allow_early_resets, vis):
     def _thunk():
-        env = ROWRandomTargetEnv(seed, rank, not vis)
+        env = ReachOverWallEnv(seed, rank, not vis)
         if log_dir is not None:
             env = bench.Monitor(env, os.path.join(log_dir, str(rank)),
                                     allow_early_resets=allow_early_resets)
@@ -83,7 +84,8 @@ def make_env(env_id, seed, rank, log_dir, add_timestep, allow_early_resets, vis)
 
 
 def make_vec_envs(env_name, seed, num_processes, gamma, log_dir, add_timestep,
-                  device, allow_early_resets, num_frame_stack=None, vis=False):
+                  device, allow_early_resets, num_frame_stack=None, vis=False,
+                  initial_policy=None, ob_rms=None):
     envs = [make_env(env_name, seed, i, log_dir,
                      add_timestep, allow_early_resets, vis)
             for i in range(num_processes)]
@@ -92,6 +94,9 @@ def make_vec_envs(env_name, seed, num_processes, gamma, log_dir, add_timestep,
         envs = SubprocVecEnv(envs)
     else:
         envs = DummyVecEnv(envs)
+
+    if initial_policy:
+        envs = ResidualVecEnvWrapper(envs, initial_policy, ob_rms, device)
 
     if len(envs.observation_space.shape) == 1:
         if gamma is None:

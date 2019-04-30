@@ -53,11 +53,11 @@ def main():
     torch.set_num_threads(1)
     device = torch.device("cuda:0" if args.cuda else "cpu")
 
-    envs = make_vec_envs(args.env_name, args.seed, args.num_processes, args.gamma, args.log_dir,
-                         args.add_timestep, device, False)
+    (ip, ob_rms) = torch.load(os.path.join(args.load_dir, args.initial_policy + ".pt")) if \
+                     args.initial_policy else (None, None)
 
-    if args.initial_policy is not None:
-        initial_policy, _ = torch.load(os.path.join(args.load_dir, args.initial_policy + ".pt"))
+    envs = make_vec_envs(args.env_name, args.seed, args.num_processes, args.gamma, args.log_dir,
+                         args.add_timestep, device, False, initial_policy=ip, ob_rms=ob_rms)
 
     actor_critic = Policy(envs.observation_space.shape, envs.action_space,
         base_kwargs={'recurrent': args.recurrent_policy})
@@ -109,17 +109,9 @@ def main():
                         rollouts.obs[step],
                         rollouts.recurrent_hidden_states[step],
                         rollouts.masks[step])
-                if args.initial_policy is not None:
-                    _, ip_action, _, _ = initial_policy.act(
-                            rollouts.obs[step],
-                            rollouts.recurrent_hidden_states[step],
-                            rollouts.masks[step], deterministic=True)
-                    whole_action = action + ip_action
-                else:
-                    whole_action = action
 
             # Obser reward and next obs
-            obs, reward, done, infos = envs.step(whole_action)
+            obs, reward, done, infos = envs.step(action)
 
             for info in infos:
                 if 'episode' in info.keys():

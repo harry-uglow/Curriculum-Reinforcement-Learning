@@ -1,3 +1,4 @@
+import atexit
 import os
 import platform
 import signal
@@ -63,6 +64,7 @@ class VrepEnv(Env):
         time.sleep(6)
 
         self.cid = vrep.simxStart(host, port_num, True, True, 5000, 5)
+        atexit.register(self.close)
 
     # Function to call a Lua function in V-Rep
     # Read more here: http://www.coppeliarobotics.com/helpFiles/en/remoteApiExtension.htm
@@ -79,6 +81,7 @@ class VrepEnv(Env):
         print("Closing VREP")
         vrep.simxStopSimulation(self.cid, vrep.simx_opmode_blocking)
         vrep.simxFinish(self.cid)
+        atexit.unregister(self.close)
         try:
             pgrp = os.getpgid(self.process.pid)
             os.killpg(pgrp, signal.SIGKILL)

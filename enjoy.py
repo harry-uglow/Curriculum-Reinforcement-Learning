@@ -24,6 +24,8 @@ parser.add_argument('--add-timestep', action='store_true', default=False,
                     help='add timestep to observations')
 parser.add_argument('--non-det', action='store_true', default=False,
                     help='whether to use a non-deterministic policy')
+parser.add_argument('--initial-policy', default=None,
+                        help='initial policy to use, located in trained_models/ppo/{name}.pt')
 args = parser.parse_args()
 
 args.det = not args.non_det
@@ -32,9 +34,8 @@ args.det = not args.non_det
 actor_critic, ob_rms = \
             torch.load(os.path.join(args.load_dir, args.env_name + ".pt"))
 
-env = make_vec_envs(args.env_name, args.seed + 1000, 1,
-                            None, None, args.add_timestep, device='cpu',
-                            allow_early_resets=False, vis=True)
+env = make_vec_envs(args.env_name, args.seed + 1000, 1, None, None, args.add_timestep, device='cpu',
+                    allow_early_resets=False, vis=True, initial_policy=actor_critic, ob_rms=ob_rms)
 
 # Get a render function
 render_func = get_render_func(env)
