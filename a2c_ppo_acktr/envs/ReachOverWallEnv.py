@@ -100,6 +100,27 @@ class ROWRandomTargetEnv(ReachOverWallEnv):
         return super(ROWRandomTargetEnv, self).reset()
 
 
-class ReachNoWallEnv(ReachOverWallEnv):
+class ReachNoWallEnv(ROWRandomTargetEnv):
 
+    observation_space = spaces.Box(np.array([0] * 10), np.array([1] * 10), dtype=np.float32)
     scene_path = dir_path + '/reach_no_wall.ttt'
+
+    def step(self, a):
+        self.target_velocities = a
+        vec = self.end_pose - self.target_pos
+
+        self.timestep += 1
+        self.update_sim()
+
+        ob = self._get_obs()
+        done = (self.timestep == self.ep_len)
+
+        reward_dist = - np.linalg.norm(vec)
+        reward_ctrl = - np.square(self.target_velocities).mean()
+        reward = 0.01 * (reward_dist + reward_ctrl)
+
+        return ob, reward, done, dict(reward_dist=reward_dist, reward_ctrl=reward_ctrl)
+
+    def _get_obs(self):
+        full_obs = super(ReachNoWallEnv, self)._get_obs()
+        return full_obs[:-1]
