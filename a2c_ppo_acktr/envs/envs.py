@@ -11,6 +11,7 @@ from baselines.common.vec_env.subproc_vec_env import SubprocVecEnv
 from baselines.common.vec_env.dummy_vec_env import DummyVecEnv
 from baselines.common.vec_env.vec_normalize import VecNormalize as VecNormalize_
 
+from a2c_ppo_acktr.envs.DishRackEnv import DishRackEnv
 from a2c_ppo_acktr.envs.ReachOverWallEnv import ReachOverWallEnv, ROWRandomTargetEnv, ReachNoWallEnv
 from a2c_ppo_acktr.envs.ResidualVecEnvWrapper import ResidualVecEnvWrapper
 
@@ -32,7 +33,7 @@ except ImportError:
 
 def make_env(env_id, seed, rank, log_dir, add_timestep, allow_early_resets, vis):
     def _thunk():
-        env = ROWRandomTargetEnv(seed, rank, not vis)
+        env = DishRackEnv(seed, rank, not vis)
         if log_dir is not None:
             env = bench.Monitor(env, os.path.join(log_dir, str(rank)),
                                     allow_early_resets=allow_early_resets)
