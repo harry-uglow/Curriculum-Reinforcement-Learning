@@ -39,16 +39,15 @@ class ReachOverWallEnv(SawyerEnv):
         return_code, self.wall_handle = vrep.simxGetObjectHandle(self.cid,
                 "Wall", vrep.simx_opmode_blocking)
         check_for_errors(return_code)
-        self.init_wall_pos = vrep.simxGetObjectPosition(self.cid, self.wall_handle,
-                -1, vrep.simx_opmode_blocking)[1]
-        self.wall_distance = normalise_coords(self.init_wall_pos[0], lower=0, upper=1)
+        self.wall_pos = vrep.simxGetObjectPosition(self.cid, self.wall_handle,
+                                                   -1, vrep.simx_opmode_blocking)[1]
         self.init_wall_rot = vrep.simxGetObjectOrientation(self.cid,
                 self.wall_handle, -1, vrep.simx_opmode_blocking)[1]
         self.wall_orientation = self.init_wall_rot
 
     def reset(self):
         super(ReachOverWallEnv, self).reset()
-        vrep.simxSetObjectPosition(self.cid, self.wall_handle, -1, self.init_wall_pos,
+        vrep.simxSetObjectPosition(self.cid, self.wall_handle, -1, self.wall_pos,
                                    vrep.simx_opmode_blocking)
         vrep.simxSetObjectOrientation(self.cid, self.wall_handle, -1, self.init_wall_rot,
                                       vrep.simx_opmode_blocking)
@@ -81,7 +80,7 @@ class ReachOverWallEnv(SawyerEnv):
         joint_obs = super(ReachOverWallEnv, self)._get_obs()
         self.end_pose = self.get_end_pose()
 
-        return np.concatenate((joint_obs, self.target_norm, [self.wall_distance]))
+        return np.concatenate((joint_obs, self.target_norm, [self.wall_pos[0]]))
 
     def get_end_pose(self):
         pose = vrep.simxGetObjectPosition(self.cid, self.end_handle, -1,
@@ -94,6 +93,7 @@ class ROWRandomTargetEnv(ReachOverWallEnv):
     def reset(self):
         self.target_pos[0] = self.np_random.uniform(cube_lower[0], cube_upper[0])
         self.target_pos[1] = self.np_random.uniform(cube_lower[1], cube_upper[1])
+        self.wall_pos[0] = self.np_random.uniform(-0.05, 0.05)
         self.target_norm = normalise_coords(self.target_pos, cube_lower, cube_upper)
         vrep.simxSetObjectPosition(self.cid, self.target_handle, -1, self.target_pos,
                                    vrep.simx_opmode_blocking)

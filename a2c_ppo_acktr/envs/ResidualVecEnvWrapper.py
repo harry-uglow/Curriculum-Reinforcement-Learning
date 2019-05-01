@@ -8,6 +8,7 @@ class ResidualVecEnvWrapper(VecEnvWrapper):
         super(ResidualVecEnvWrapper, self).__init__(venv)
         self.ip = initial_policy
         self.ob_rms = ob_rms
+        self.ob_size = len(ob_rms.mean)
         self.device = device
         self.clipob = clipob
         self.epsilon = epsilon
@@ -16,6 +17,7 @@ class ResidualVecEnvWrapper(VecEnvWrapper):
         self.masks = torch.zeros(venv.num_envs, 1)
 
     def normalize_obs(self, obs):
+        obs = obs[:, :self.ob_size]
         if self.ob_rms:
             obs = np.clip((obs - self.ob_rms.mean) / np.sqrt(self.ob_rms.var + self.epsilon), -self.clipob, self.clipob)
         return torch.from_numpy(obs).float().to(self.device)
@@ -38,9 +40,5 @@ class ResidualVecEnvWrapper(VecEnvWrapper):
 
     def reset(self, **kwargs):
         obs = self.venv.reset(**kwargs)
-        for ob in obs:
-            ob[7] = 0.5000000397364298
-            ob[8] = 0.5
-            ob[9] = 0.15789473997919184
         self.last_obs = self.normalize_obs(obs)
         return obs
