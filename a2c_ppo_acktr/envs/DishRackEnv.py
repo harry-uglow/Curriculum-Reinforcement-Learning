@@ -57,9 +57,10 @@ class DishRackEnv(SawyerEnv):
         self.target_pos = self.get_target_pos()
 
     def reset(self):
+        super(DishRackEnv, self).reset()
         self.rack_pos[0] = self.np_random.uniform(rack_lower[0], rack_upper[0])
         self.rack_pos[1] = self.np_random.uniform(rack_lower[1], rack_upper[1])
-        vrep.simxSetObjectPosition(self.cid, self.target_handle, -1, self.rack_pos,
+        vrep.simxSetObjectPosition(self.cid, self.rack_handle, -1, self.rack_pos,
                                    vrep.simx_opmode_blocking)
         self.timestep = 0
 
@@ -67,22 +68,22 @@ class DishRackEnv(SawyerEnv):
 
     def step(self, a):
         self.target_velocities = a
-        vec = self.get_plate_pos() - self.target_pos
-        reward_dist = - np.linalg.norm(vec)
-
+        dist = np.linalg.norm(self.get_plate_pos() - self.target_pos)
+        orientation_diff = np.abs(self.get_plate_orientation()).sum()
         self.timestep += 1
         self.update_sim()
 
         ob = self._get_obs()
         done = (self.timestep == self.ep_len)
 
-        reward_ctrl = - np.square(self.target_velocities).mean()
-        reward_obstacle = - np.abs(self.get_plate_orientation()).sum()
-        reward = 0.01 * (reward_dist + reward_ctrl + 0.5 * reward_obstacle)
+        reward_dist = - dist
+        reward_ctrl = - np.square(np.abs(self.target_velocities).mean())
+        reward_orientation = - orientation_diff / (2 * max(dist, 0.11))  # Radius = 0.11
+        reward = 0.01 * (reward_dist + 0.5 * reward_ctrl + 0.1 * reward_orientation)
 
         return ob, reward, done, dict(reward_dist=reward_dist,
                                       reward_ctrl=reward_ctrl,
-                                      reward_obstacle=reward_obstacle)
+                                      reward_obstacle=orientation_diff)
 
     def _get_obs(self):
         joint_obs = super(DishRackEnv, self)._get_obs()
@@ -103,4 +104,4 @@ class DishRackEnv(SawyerEnv):
     def get_plate_orientation(self):
         orientation = catch_errors(vrep.simxGetObjectOrientation(
             self.cid, self.plate_handle, self.target_handle, vrep.simx_opmode_blocking))
-        return np.array(orientation)
+        return np.array(orientation[:-1])
