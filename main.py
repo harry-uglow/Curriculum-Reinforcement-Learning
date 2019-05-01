@@ -142,7 +142,7 @@ def main():
             except OSError:
                 pass
 
-            # A really ugly way to save a model to CPU
+            # TODO: Save better and include initial policy
             save_model = actor_critic
             if args.cuda:
                 save_model = copy.deepcopy(actor_critic).cpu()

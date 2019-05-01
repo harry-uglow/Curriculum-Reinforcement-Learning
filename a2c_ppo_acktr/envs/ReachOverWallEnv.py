@@ -70,7 +70,7 @@ class ReachOverWallEnv(SawyerEnv):
         reward_dist = - np.linalg.norm(vec)
         reward_ctrl = - np.square(self.target_velocities).mean()
         reward_obstacle = - np.abs(self.wall_orientation).sum()
-        reward = 0.01 * (reward_dist + 0.1 * reward_ctrl + 0.2 * reward_obstacle)
+        reward = 0.01 * (reward_dist + 0.1 * reward_ctrl + 0.1 * reward_obstacle)
 
         return ob, reward, done, dict(reward_dist=reward_dist,
                                       reward_ctrl=reward_ctrl,

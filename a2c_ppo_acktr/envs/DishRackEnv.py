@@ -11,7 +11,7 @@ dir_path = os.getcwd()
 rack_lower = np.array([-0.05, (-0.45)])
 rack_upper = np.array([0.15, (-0.6)])
 
-
+# TODO: Make this the main one
 # Function to check for errors when calling a remote API function
 def catch_errors(code_values):
     code, values = code_values
