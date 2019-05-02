@@ -72,7 +72,7 @@ class DishRackEnv(SawyerEnv):
         self.target_velocities = a
         dist = np.linalg.norm(self.get_plate_pos() - self.target_pos)
         orientation_diff = np.abs(self.get_plate_orientation()).sum()
-        reward_collision = - int(catch_errors(vrep.simxReadCollision(
+        rew_collision = - int(catch_errors(vrep.simxReadCollision(
             self.cid, self.collision_handle, vrep.simx_opmode_blocking)))
 
         self.timestep += 1
@@ -81,15 +81,14 @@ class DishRackEnv(SawyerEnv):
         ob = self._get_obs()
         done = (self.timestep == self.ep_len)
 
-        reward_dist = - dist
-        reward_ctrl = - np.square(np.abs(self.target_velocities).mean())
-        reward_orientation = - orientation_diff / max(dist, 0.11)  # Radius = 0.11
-        reward = 0.01 * (reward_dist + 0.5 * reward_ctrl + 0.01 * reward_orientation +
-                         0.2 * reward_collision)
+        rew_dist = - dist
+        rew_ctrl = - np.square(np.abs(self.target_velocities).mean())
+        rew_orientation = - orientation_diff / max(dist, 0.11)  # Radius = 0.11
+        rew = 0.01 * (rew_dist + 1 * rew_ctrl + 0.05 * rew_orientation +
+                      0.05 * rew_collision)
 
-        return ob, reward, done, dict(reward_dist=reward_dist,
-                                      reward_ctrl=reward_ctrl,
-                                      reward_obstacle=orientation_diff)
+        return ob, rew, done, dict(rew_dist=rew_dist, rew_ctrl=rew_ctrl,
+                                   rew_orientation=rew_orientation, rew_collision=rew_collision)
 
     def _get_obs(self):
         joint_obs = super(DishRackEnv, self)._get_obs()
