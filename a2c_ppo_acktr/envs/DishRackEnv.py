@@ -21,7 +21,7 @@ class DishRackEnv(SawyerEnv):
     timestep = 0
 
     def __init__(self, seed, rank, headless, ep_len=64):
-        super().__init__(seed, rank, self.scene_path, False)
+        super().__init__(seed, rank, self.scene_path, headless)
 
         self.ep_len = ep_len
 
