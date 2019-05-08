@@ -24,21 +24,16 @@ parser.add_argument('--add-timestep', action='store_true', default=False,
                     help='add timestep to observations')
 parser.add_argument('--non-det', action='store_true', default=False,
                     help='whether to use a non-deterministic policy')
-parser.add_argument('--initial-policy', default=None,
-                        help='initial policy to use, located in trained_models/ppo/{name}.pt')
 args = parser.parse_args()
 
 args.det = not args.non_det
 
 # We need to use the same statistics for normalization as used in training
-actor_critic, ob_rms = \
+actor_critic, ob_rms, initial_policies = \
             torch.load(os.path.join(args.load_dir, args.env_name + ".pt"))
 
-(ip, ip_ob_rms) = torch.load(os.path.join(args.load_dir, args.initial_policy + ".pt")) if \
-                     args.initial_policy else (None, None)
-
-env = make_vec_envs(args.env_name, args.seed + 1000, 1, None, None, args.add_timestep, device='cpu',
-                    allow_early_resets=False, vis=True, initial_policy=ip, ob_rms=ip_ob_rms)
+env = make_vec_envs(args.env_name, args.seed + 1000, 1, None, None, args.add_timestep, 'cpu',
+                    False, initial_policies, vis=True)
 
 # Get a render function
 render_func = get_render_func(env)

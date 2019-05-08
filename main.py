@@ -53,11 +53,11 @@ def main():
     torch.set_num_threads(1)
     device = torch.device("cuda:0" if args.cuda else "cpu")
 
-    (ip, ob_rms) = torch.load(os.path.join(args.load_dir, args.initial_policy + ".pt")) if \
-                     args.initial_policy else (None, None)
+    initial_policies = torch.load(os.path.join(args.load_dir, args.initial_policy + ".pt")) if \
+        args.initial_policy else None
 
     envs = make_vec_envs(args.env_name, args.seed, args.num_processes, args.gamma, args.log_dir,
-                         args.add_timestep, device, False, initial_policy=ip, ob_rms=ob_rms)
+                         args.add_timestep, device, False, initial_policies)
 
     actor_critic = Policy(envs.observation_space.shape, envs.action_space,
         base_kwargs={'recurrent': args.recurrent_policy})
@@ -147,7 +147,8 @@ def main():
             if args.cuda:
                 save_model = copy.deepcopy(actor_critic).cpu()
 
-            save_model = [save_model, getattr(get_vec_normalize(envs), 'ob_rms', None)]
+            save_model = [save_model, getattr(get_vec_normalize(envs), 'ob_rms', None),
+                          initial_policies]
 
             torch.save(save_model, os.path.join(save_path, args.env_name + ".pt"))
 

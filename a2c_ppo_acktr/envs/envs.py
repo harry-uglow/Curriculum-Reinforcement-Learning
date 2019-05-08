@@ -84,11 +84,18 @@ def make_env(env_id, seed, rank, log_dir, add_timestep, allow_early_resets, vis)
     # return _thunk
 
 
-def make_vec_envs(env_name, seed, num_processes, gamma, log_dir, add_timestep,
-                  device, allow_early_resets, num_frame_stack=None, vis=False,
-                  initial_policy=None, ob_rms=None):
-    envs = [make_env(env_name, seed, i, log_dir,
-                     add_timestep, allow_early_resets, vis)
+def wrap_initial_policies(envs, device, initial_policies):
+    if initial_policies:
+        curr_ip, ob_rms, more_ips = initial_policies
+        envs = wrap_initial_policies(envs, device, more_ips)
+        return ResidualVecEnvWrapper(envs, curr_ip, ob_rms, device)
+    else:
+        return envs
+
+
+def make_vec_envs(env_name, seed, num_processes, gamma, log_dir, add_timestep, device,
+                  allow_early_resets, initial_policies, num_frame_stack=None, vis=False):
+    envs = [make_env(env_name, seed, i, log_dir, add_timestep, allow_early_resets, vis)
             for i in range(num_processes)]
 
     if len(envs) > 1:
@@ -96,8 +103,7 @@ def make_vec_envs(env_name, seed, num_processes, gamma, log_dir, add_timestep,
     else:
         envs = DummyVecEnv(envs)
 
-    if initial_policy:
-        envs = ResidualVecEnvWrapper(envs, initial_policy, ob_rms, device)
+    envs = wrap_initial_policies(envs, device, initial_policies)
 
     if len(envs.observation_space.shape) == 1:
         if gamma is None:
