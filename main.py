@@ -60,7 +60,8 @@ def main():
                          args.add_timestep, device, False, initial_policies)
 
     actor_critic = Policy(envs.observation_space.shape, envs.action_space,
-        base_kwargs={'recurrent': args.recurrent_policy})
+                          base_kwargs={'recurrent': args.recurrent_policy,
+                                       'zero_last_layer': initial_policies is not None})
     actor_critic.to(device)
 
     if args.algo == 'a2c':

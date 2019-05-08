@@ -209,7 +209,7 @@ class CNNBase(NNBase):
 
 
 class MLPBase(NNBase):
-    def __init__(self, num_inputs, recurrent=False, hidden_size=50):
+    def __init__(self, num_inputs, recurrent=False, hidden_size=64, zero_last_layer=False):
         super(MLPBase, self).__init__(recurrent, num_inputs, hidden_size)
 
         if recurrent:
@@ -220,14 +220,26 @@ class MLPBase(NNBase):
             lambda x: nn.init.constant_(x, 0),
             np.sqrt(2))
 
-        self.actor = nn.Sequential(
-            init_(nn.Linear(num_inputs, hidden_size)),
-            nn.Tanh(),
-            init_(nn.Linear(hidden_size, hidden_size)),
-            nn.Tanh(),
-            init_(nn.Linear(hidden_size, hidden_size)),
-            nn.Tanh()
-        )
+        if zero_last_layer:
+            init_zeros = lambda m: init(m, lambda x, gain=None: nn.init.constant_(x, 0),
+                                        lambda x: nn.init.constant_(x, 0), np.sqrt(2))
+            self.actor = nn.Sequential(
+                init_(nn.Linear(num_inputs, hidden_size)),
+                nn.Tanh(),
+                init_(nn.Linear(hidden_size, hidden_size)),
+                nn.Tanh(),
+                init_zeros(nn.Linear(hidden_size, hidden_size)),
+                nn.Tanh()
+            )
+        else:
+            self.actor = nn.Sequential(
+                init_(nn.Linear(num_inputs, hidden_size)),
+                nn.Tanh(),
+                init_(nn.Linear(hidden_size, hidden_size)),
+                nn.Tanh(),
+                init_(nn.Linear(hidden_size, hidden_size)),
+                nn.Tanh()
+            )
 
         self.critic = nn.Sequential(
             init_(nn.Linear(num_inputs, hidden_size)),
