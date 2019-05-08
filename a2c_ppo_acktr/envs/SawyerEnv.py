@@ -2,19 +2,7 @@ import numpy as np
 from gym import spaces
 import vrep
 
-from a2c_ppo_acktr.envs.VrepEnv import check_for_errors, VrepEnv
-
-
-# Normalise coordinates so all are in range [0, 1].
-def normalise_coords(coords, lower, upper):
-    return (coords - lower) / (upper - lower)
-
-
-# Normalise joint angles so -pi -> 0, 0 -> 0.5 and pi -> 1. (mod pi)
-def normalise_angles(angles):
-    js = angles / np.pi
-    rem = lambda x: x - x.astype(int)
-    return np.array([rem((j + (np.abs(j) // 2 + 1.5) * 2) / 2.) for j in js])
+from a2c_ppo_acktr.envs.VrepEnv import catch_errors, VrepEnv
 
 
 class SawyerEnv(VrepEnv):
@@ -22,54 +10,47 @@ class SawyerEnv(VrepEnv):
     action_space = spaces.Box(np.array([-1] * num_joints), np.array([1] * num_joints),
                               dtype=np.float32)
     target_velocities = np.array([0., 0., 0., 0., 0., 0., 0.])
+    scale = 0.01
+    identity = scale * np.identity(num_joints)
 
-    def __init__(self, seed, rank, scene_path, headless):
+    # TODO: Make random_initial_angles mandatory
+    def __init__(self, seed, rank, scene_path, headless, random_initial_angles=True):
         super().__init__(rank, headless)
 
         self.np_random = np.random.RandomState()
         self.np_random.seed(seed + rank)
 
-        return_code = vrep.simxSynchronous(self.cid, enable=True)
-        check_for_errors(return_code)
+        catch_errors(vrep.simxSynchronous(self.cid, enable=True))
 
-        return_code = vrep.simxLoadScene(self.cid, scene_path, 0, vrep.simx_opmode_blocking)
-        check_for_errors(return_code)
+        catch_errors(vrep.simxLoadScene(self.cid, scene_path, 0, vrep.simx_opmode_blocking))
 
         # Get the initial configuration of the robot (needed to later reset the robot's pose)
         self.init_config_tree, _, _, _ = self.call_lua_function('get_configuration_tree')
         _, self.init_joint_angles, _, _ = self.call_lua_function('get_joint_angles')
-        self.joint_angles = self.init_joint_angles
 
         self.joint_handles = np.array([None] * self.num_joints)
         for i in range(self.num_joints):
-            return_code, handle = vrep.simxGetObjectHandle(self.cid, 'Sawyer_joint' + str(i + 1),
-                                                           vrep.simx_opmode_blocking)
-            check_for_errors(return_code)
+            handle = catch_errors(vrep.simxGetObjectHandle(self.cid, 'Sawyer_joint' + str(i + 1),
+                                                           vrep.simx_opmode_blocking))
             self.joint_handles[i] = handle
 
         # Start the simulation (the "Play" button in V-Rep should now be in a "Pressed" state)
-        return_code = vrep.simxStartSimulation(self.cid, vrep.simx_opmode_blocking)
-        check_for_errors(return_code)
+        catch_errors(vrep.simxStartSimulation(self.cid, vrep.simx_opmode_blocking))
 
     def reset(self):
-        self.call_lua_function('set_joint_angles', ints=self.init_config_tree,
-                               floats=self.init_joint_angles)
-        self.joint_angles = self.init_joint_angles
+        initial_pose = self.np_random.multivariate_normal(self.init_joint_angles, self.identity)
+        self.call_lua_function('set_joint_angles', ints=self.init_config_tree, floats=initial_pose)
         self.target_velocities = np.array([0., 0., 0., 0., 0., 0., 0.])
 
     def _get_obs(self):
-        curr_joint_angles = []
-        while len(curr_joint_angles) != self.num_joints:
-            _, curr_joint_angles, _, _ = self.call_lua_function('get_joint_angles')
-        self.joint_angles = np.array(curr_joint_angles)
-        norm_joints = normalise_angles(self.joint_angles)
+        _, joint_angles, _, _ = self.call_lua_function('get_joint_angles')
+        assert len(joint_angles) == self.num_joints
 
-        return norm_joints
+        return joint_angles
 
     def update_sim(self):
         for handle, velocity in zip(self.joint_handles, self.target_velocities):
-            return_code = vrep.simxSetJointTargetVelocity(self.cid,
-                int(handle), velocity, vrep.simx_opmode_oneshot)
-            check_for_errors(return_code)
+            catch_errors(vrep.simxSetJointTargetVelocity(self.cid,
+                int(handle), velocity, vrep.simx_opmode_oneshot))
         vrep.simxSynchronousTrigger(self.cid)
         vrep.simxGetPingTime(self.cid)

@@ -30,6 +30,18 @@ def check_for_errors(code):
         raise RuntimeError('A connection to vrep has not been made yet. Have you called connect()?')
 
 
+# TODO: Make this the main one
+# Function to check for errors when calling a remote API function
+def catch_errors(input):
+    if isinstance(input, tuple):
+        code, values = input
+    else:
+        code = input
+        values = None
+    check_for_errors(code)
+    return values
+
+
 # Define the port number where communication will be made to the V-Rep server
 base_port_num = 19998
 # Define the host where this communication is taking place

@@ -3,7 +3,7 @@ import os
 import numpy as np
 from gym import spaces
 import vrep
-from a2c_ppo_acktr.envs.SawyerEnv import SawyerEnv, normalise_coords
+from a2c_ppo_acktr.envs.SawyerEnv import SawyerEnv
 
 from a2c_ppo_acktr.envs.VrepEnv import check_for_errors
 
@@ -35,7 +35,6 @@ class ReachOverWallEnv(SawyerEnv):
         return_code, self.target_pos = vrep.simxGetObjectPosition(self.cid, self.target_handle,
                 -1, vrep.simx_opmode_blocking)
         check_for_errors(return_code)
-        self.target_norm = normalise_coords(self.target_pos, cube_lower, cube_upper)
         return_code, self.wall_handle = vrep.simxGetObjectHandle(self.cid,
                 "Wall", vrep.simx_opmode_blocking)
         check_for_errors(return_code)
@@ -80,7 +79,7 @@ class ReachOverWallEnv(SawyerEnv):
         joint_obs = super(ReachOverWallEnv, self)._get_obs()
         self.end_pose = self.get_end_pose()
 
-        return np.concatenate((joint_obs, self.target_norm, [self.wall_pos[0]]))
+        return np.concatenate((joint_obs, self.target_pos, [self.wall_pos[0]]))
 
     def get_end_pose(self):
         pose = vrep.simxGetObjectPosition(self.cid, self.end_handle, -1,
@@ -94,7 +93,6 @@ class ROWRandomTargetEnv(ReachOverWallEnv):
         self.target_pos[0] = self.np_random.uniform(cube_lower[0], cube_upper[0])
         self.target_pos[1] = self.np_random.uniform(cube_lower[1], cube_upper[1])
         self.wall_pos[0] = self.np_random.uniform(-0.05, 0.05)
-        self.target_norm = normalise_coords(self.target_pos, cube_lower, cube_upper)
         vrep.simxSetObjectPosition(self.cid, self.target_handle, -1, self.target_pos,
                                    vrep.simx_opmode_blocking)
         return super(ROWRandomTargetEnv, self).reset()
