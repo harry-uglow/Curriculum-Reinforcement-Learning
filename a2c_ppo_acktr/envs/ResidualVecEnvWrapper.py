@@ -7,6 +7,7 @@ class ResidualVecEnvWrapper(VecEnvWrapper):
     def __init__(self, venv, initial_policy, ob_rms, device, clipob=10., epsilon=1e-8):
         super(ResidualVecEnvWrapper, self).__init__(venv)
         self.ip = initial_policy
+        self.ip.eval()
         self.ob_rms = ob_rms
         self.ob_size = len(ob_rms.mean) if ob_rms else None
         self.device = device

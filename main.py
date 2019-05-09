@@ -62,7 +62,7 @@ def main():
     base_kwargs = {'recurrent': args.recurrent_policy,
                    'zero_last_layer': initial_policies is not None}
     if initial_policies is not None:
-        base_kwargs['hidden_size'] = initial_policies[0].base._hidden_size
+        base_kwargs['hidden_size'] = initial_policies[0].base.output_size
     actor_critic = Policy(envs.observation_space.shape, envs.action_space, base_kwargs=base_kwargs)
     if initial_policies is not None:
         critic_state = initial_policies[0].base.critic.state_dict()
