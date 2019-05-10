@@ -36,7 +36,7 @@ def make_env(env_id, seed, rank, log_dir, add_timestep, allow_early_resets, vis)
         env = DishRackEnv(seed, rank, not vis)
         if log_dir is not None:
             env = bench.Monitor(env, os.path.join(log_dir, str(rank)),
-                                    allow_early_resets=allow_early_resets)
+                                allow_early_resets=allow_early_resets)
 
         return env
 
@@ -94,7 +94,8 @@ def wrap_initial_policies(envs, device, initial_policies):
 
 
 def make_vec_envs(env_name, seed, num_processes, gamma, log_dir, add_timestep, device,
-                  allow_early_resets, initial_policies, num_frame_stack=None, vis=False):
+                  allow_early_resets, initial_policies, num_frame_stack=None, vis=False,
+                  no_norm=False):
     envs = [make_env(env_name, seed, i, log_dir, add_timestep, allow_early_resets, vis)
             for i in range(num_processes)]
 
@@ -105,7 +106,7 @@ def make_vec_envs(env_name, seed, num_processes, gamma, log_dir, add_timestep, d
 
     envs = wrap_initial_policies(envs, device, initial_policies)
 
-    if len(envs.observation_space.shape) == 1:
+    if len(envs.observation_space.shape) == 1 and not no_norm:
         if gamma is None:
             envs = VecNormalize(envs, ret=False)
         else:

@@ -65,7 +65,7 @@ while True:
             obs, recurrent_hidden_states, masks, deterministic=args.det)
 
     # Obser reward and next obs
-    obs, reward, done, _ = env.step(action)
+    obs, _, done, _ = env.step(action)
 
     masks.fill_(0.0 if done else 1.0)
 

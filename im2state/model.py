@@ -12,9 +12,9 @@ class Flatten(nn.Module):
         return x.view(x.size(0), -1)
 
 
-class CNNBase(nn.Module):
+class CNN(nn.Module):
     def __init__(self, num_inputs, num_outputs):
-        super(CNNBase, self).__init__()
+        super(CNN, self).__init__()
         self._output_size = num_outputs
 
         init_ = lambda m: init(m,
@@ -31,7 +31,6 @@ class CNNBase(nn.Module):
             nn.ReLU(),
             Flatten(),
             init_(nn.Linear(32 * 7 * 7, num_outputs)),
-            nn.Tanh()
         )
 
         self.train()

@@ -34,7 +34,8 @@ def check_for_errors(code):
 # Function to check for errors when calling a remote API function
 def catch_errors(input):
     if isinstance(input, tuple):
-        code, values = input
+        code = input[0]
+        values = input[1] if len(input) == 2 else input[1:]
     else:
         code = input
         values = None
