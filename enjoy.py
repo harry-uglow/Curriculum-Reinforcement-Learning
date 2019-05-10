@@ -24,6 +24,9 @@ parser.add_argument('--add-timestep', action='store_true', default=False,
                     help='add timestep to observations')
 parser.add_argument('--non-det', action='store_true', default=False,
                     help='whether to use a non-deterministic policy')
+parser.add_argument('--image-layer', default=None,
+                    help='network taking images as input and giving state as output')
+parser.add_argument('--state-indices', nargs='+', type=int)
 args = parser.parse_args()
 
 args.det = not args.non_det
@@ -31,6 +34,10 @@ args.det = not args.non_det
 # We need to use the same statistics for normalization as used in training
 actor_critic, ob_rms, initial_policies = \
             torch.load(os.path.join(args.load_dir, args.env_name + ".pt"))
+
+im2state = torch.load(os.path.join(args.load_dir, args.image_layer + ".pt")) if \
+    args.image_layer is not None else None
+im2state.eval()
 
 env = make_vec_envs(args.env_name, args.seed + 1000, 1, None, None, args.add_timestep, 'cpu',
                     False, initial_policies, vis=True)
@@ -46,10 +53,12 @@ if vec_norm is not None:
 recurrent_hidden_states = torch.zeros(1, actor_critic.recurrent_hidden_state_size)
 masks = torch.zeros(1, 1)
 
+obs = env.reset()
+
 if render_func is not None:
     render_func('human')
+    image = render_func('rgb_array')
 
-obs = env.reset()
 
 if args.env_name.find('Bullet') > -1:
     import pybullet as p
@@ -60,7 +69,11 @@ if args.env_name.find('Bullet') > -1:
             torsoId = i
 
 while True:
+
     with torch.no_grad():
+        if im2state:
+            part_state = im2state(image)
+            obs[:, args.state_indices] = part_state
         value, action, _, recurrent_hidden_states = actor_critic.act(
             obs, recurrent_hidden_states, masks, deterministic=args.det)
 
@@ -78,3 +91,4 @@ while True:
 
     if render_func is not None:
         render_func('human')
+        image = render_func('rgb_array')
