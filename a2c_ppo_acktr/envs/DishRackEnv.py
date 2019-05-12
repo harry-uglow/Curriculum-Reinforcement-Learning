@@ -111,7 +111,7 @@ class DishRackEnv(SawyerEnv):
             _, _, _, byte_data = self.call_lua_function('get_image')
 
             # TODO: Get resolution programmatically
-            image = np.frombuffer(byte_data, dtype=np.uint8).reshape((32, 32, 3))
+            image = np.frombuffer(byte_data, dtype=np.uint8).reshape((64, 64, 3))
             return image
         elif mode == 'human':
             return  # Human rendering is automatically handled by headless mode.
