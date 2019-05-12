@@ -20,10 +20,10 @@ class CNN(nn.Module):
 
         # 1 input image channel, 6 output channels, 5x5 square convolution
         # kernel
-        self.conv1 = nn.Conv2d(num_inputs, num_inputs * 6, 5)
-        self.conv2 = nn.Conv2d(6 * num_inputs, num_inputs * 16, 5)
+        self.conv1 = nn.Conv2d(num_inputs, 32, 5)
+        self.conv2 = nn.Conv2d(32, 64, 5)
         # an affine operation: y = Wx + b
-        self.fc1 = nn.Linear(num_inputs * 16 * 5 * 5, 120)
+        self.fc1 = nn.Linear(64 * 5 * 5, 120)
         self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(84, num_outputs)
 
@@ -34,6 +34,8 @@ class CNN(nn.Module):
         return self._output_size
 
     def forward(self, x):
+        # Normalise inputs
+        x = x / 255.0
         # Max pooling over a (2, 2) window
         x = F.max_pool2d(F.relu(self.conv1(x)), (2, 2))
         # If the size is a square you can only specify a single number

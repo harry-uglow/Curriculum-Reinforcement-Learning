@@ -3,13 +3,21 @@ import torch
 from baselines.common.vec_env import VecEnvWrapper
 
 
+def get_residual_layers(venv):
+    if isinstance(venv, ResidualVecEnvWrapper):
+        return [venv] + get_residual_layers(venv.venv)
+    elif hasattr(venv, 'venv'):
+        return get_residual_layers(venv.venv)
+    return []
+
+
 class ResidualVecEnvWrapper(VecEnvWrapper):
     def __init__(self, venv, initial_policy, ob_rms, device, clipob=10., epsilon=1e-8):
         super(ResidualVecEnvWrapper, self).__init__(venv)
         self.ip = initial_policy
         self.ip.eval()
         self.ob_rms = ob_rms
-        self.ob_size = len(ob_rms.mean) if ob_rms else None
+        self.ob_size = len(ob_rms.mean) if ob_rms else venv.observation_space.shape[0]
         self.device = device
         self.clipob = clipob
         self.epsilon = epsilon
