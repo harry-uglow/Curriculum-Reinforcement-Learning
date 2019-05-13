@@ -38,13 +38,12 @@ def main():
 
     null_action = torch.zeros((args.num_processes, envs.action_space.shape[0]))
 
+    obs = envs.reset()
     image = format_images(envs.get_images())
 
     images = np.zeros((args.num_steps, *image.shape[1:]), dtype=np.uint8)
     images[0: args.num_processes] = image
     positions = np.zeros((args.num_steps, len(args.state_indices)))
-
-    obs = envs.reset()
     positions[0: args.num_processes] = obs[:, args.state_indices]
 
     for i in tqdm(range(1, args.num_steps // args.num_processes)):

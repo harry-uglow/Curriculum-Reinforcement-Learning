@@ -14,12 +14,10 @@ rack_upper = [0.15, (-0.45), 0.25]
 
 
 class DishRackEnv(SawyerEnv):
-    metadata = {'render.modes': ['human', 'rgb_array']}
     scene_path = dir_path + '/dish_rack.ttt'
     observation_space = spaces.Box(np.array([-3.] * 7 + rack_lower),
                                    np.array([3.] * 7 + rack_upper), dtype=np.float32)
     timestep = 0
-    vision_enabled = False
 
     def __init__(self, seed, rank, headless, ep_len=64):
         super().__init__(seed, rank, self.scene_path, headless)
@@ -28,8 +26,6 @@ class DishRackEnv(SawyerEnv):
 
         self.plate_handle = catch_errors(vrep.simxGetObjectHandle(self.cid,
                 "Plate_center", vrep.simx_opmode_blocking))
-        self.vis_handle = catch_errors(vrep.simxGetObjectHandle(self.cid,
-                "Vision_sensor", vrep.simx_opmode_blocking))
         self.rack_handle = catch_errors(vrep.simxGetObjectHandle(self.cid,
                 "DishRack", vrep.simx_opmode_blocking))
         self.rack_pos = catch_errors(vrep.simxGetObjectPosition(self.cid, self.rack_handle,
@@ -98,22 +94,3 @@ class DishRackEnv(SawyerEnv):
         orientation = catch_errors(vrep.simxGetObjectOrientation(
             self.cid, self.plate_handle, self.target_handle, vrep.simx_opmode_blocking))
         return np.array(orientation[:-1])
-
-    def render(self, mode='rgb_array'):
-        if mode == 'rgb_array':
-            if not self.vision_enabled:
-                vrep.simxSetBooleanParameter(self.cid,
-                                             vrep.sim_boolparam_vision_sensor_handling_enabled,
-                                             True, vrep.simx_opmode_blocking)
-                self.update_sim()
-                self.vision_enabled = True
-            _, _, _, byte_data = self.call_lua_function('get_image')
-
-            # TODO: Get resolution programmatically
-            image = np.frombuffer(byte_data, dtype=np.uint8).reshape((64, 64, 3))
-            return image
-        elif mode == 'human':
-            return  # Human rendering is automatically handled by headless mode.
-            # TODO: Render footage from vision sensor
-        else:
-            super(DishRackEnv, self).render(mode=mode)
