@@ -5,20 +5,19 @@ from gym import spaces
 import vrep
 from a2c_ppo_acktr.envs.SawyerEnv import SawyerEnv
 from a2c_ppo_acktr.envs.VrepEnv import catch_errors
-from matplotlib import image as im
 
 np.set_printoptions(precision=2, linewidth=200)  # DEBUG
 dir_path = os.getcwd()
 
-rack_lower = np.array([-0.05, (-0.45)])
-rack_upper = np.array([0.15, (-0.6)])
-max_rack_rot = 0.25
+rack_lower = [-0.05, (-0.6), -0.25]  # x, y, rotation
+rack_upper = [0.15, (-0.45), 0.25]
 
 
 class DishRackEnv(SawyerEnv):
     metadata = {'render.modes': ['human', 'rgb_array']}
     scene_path = dir_path + '/dish_rack.ttt'
-    observation_space = spaces.Box(np.array([0] * 10), np.array([1] * 10), dtype=np.float32)
+    observation_space = spaces.Box(np.array([-3.] * 7 + rack_lower),
+                                   np.array([3.] * 7 + rack_upper), dtype=np.float32)
     timestep = 0
     vision_enabled = False
 
@@ -49,7 +48,7 @@ class DishRackEnv(SawyerEnv):
         super(DishRackEnv, self).reset()
         self.rack_pos[0] = self.np_random.uniform(rack_lower[0], rack_upper[0])
         self.rack_pos[1] = self.np_random.uniform(rack_lower[1], rack_upper[1])
-        self.rack_rot[0] = self.np_random.uniform(-max_rack_rot, max_rack_rot)
+        self.rack_rot[0] = self.np_random.uniform(rack_lower[2], rack_upper[2])
         vrep.simxSetObjectPosition(self.cid, self.rack_handle, -1, self.rack_pos,
                                    vrep.simx_opmode_blocking)
         vrep.simxSetObjectOrientation(self.cid, self.rack_handle, self.rack_rot_ref, self.rack_rot,

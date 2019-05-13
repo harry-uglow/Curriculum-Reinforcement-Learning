@@ -15,7 +15,7 @@ from im2state.model import CNN
 
 from tqdm import tqdm
 
-from im2state.utils import format_images
+from im2state.utils import format_images, normalise_coords
 
 args = get_args()
 
@@ -31,57 +31,32 @@ def main():
     torch.set_num_threads(1)
     device = torch.device("cuda:0" if args.cuda else "cpu")
 
-    policies = torch.load(os.path.join(args.load_dir, args.initial_policy + ".pt"))
+    images, positions = torch.load(os.path.join(args.load_dir, args.env_name + ".pt"))
 
-    # CREATE ENVIRONMENT
-    envs = make_vec_envs(args.env_name, args.seed, args.num_processes, args.gamma, args.log_dir,
-                         args.add_timestep, device, False, policies, no_norm=True)
-
-    null_action = torch.zeros((args.num_processes, envs.action_space.shape[0]))
-
-    net = CNN(3, len(args.state_indices))
-    net.to(device)
-
-    num_training_images = 4096
-
-    # start = time.time() # MAYBE USE TIMINGS
-    # start_update = start
-
-    image = format_images(envs.get_images())
-
-    images = np.zeros((num_training_images, *image.shape[1:]), dtype=np.uint8)
-    images[0: args.num_processes] = image
-    positions = np.zeros((num_training_images, len(args.state_indices)))
-
-    obs = envs.reset()
-    positions[0: args.num_processes] = obs[:, args.state_indices]
-
-    for i in tqdm(range(1, num_training_images // args.num_processes)):
-
-        obs, _, done, _ = envs.step(null_action)
-        start_index = args.num_processes * i
-        positions[start_index:start_index + args.num_processes] = obs[:, args.state_indices]
-
-        img = format_images(envs.get_images())
-        images[start_index:start_index + args.num_processes] = img
-
-    envs.close()
-
-    # TRAIN NN
-    save_path = os.path.join(args.save_dir, args.algo)
+    save_path = os.path.join('trained_models', 'im2state')
     try:
         os.makedirs(save_path)
     except OSError:
         pass
 
-    optimizer = optim.SGD(net.parameters(), lr=0.1)
+    net = CNN(3, len(args.state_indices))
+    net.to(device)
+
+    optimizer = optim.SGD(net.parameters(), lr=0.01)
     criterion = nn.MSELoss()
 
-    num_test_examples = len(images) // 10
+    env = make_vec_envs(args.env_name, args.seed + 1000, 1, None, None, args.add_timestep, 'cpu',
+                        False, None, no_norm=True)
+    env.close()
+    low = env.observation_space.low[args.state_indices]
+    high = env.observation_space.high[args.state_indices]
 
     p = np.random.permutation(len(images))
     x = images[p]
-    y = positions[p]
+    y = normalise_coords(positions, low, high)[p]
+
+    batch_size = 128
+    num_test_examples = 512
 
     train_x = torch.Tensor(x[num_test_examples:])
     train_y = torch.Tensor(y[num_test_examples:])
@@ -98,14 +73,17 @@ def main():
     epochs = 0
     while updates_with_no_improvement < 5:
         epochs += 1
-        actual_y = net(train_x)
-        loss = criterion(actual_y, train_y)
-        train_loss += [loss.item()]
+        losses = []
+        for batch_idx in range(0, len(train_x), batch_size):
+            actual_y = net(train_x[batch_idx:batch_idx + batch_size])
+            loss = criterion(actual_y, train_y[batch_idx:batch_idx + batch_size])
+            losses += [loss.item()]
 
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
 
+        train_loss += [np.mean(losses)]
         test_loss += [criterion(net(test_x), test_y).item()]
         if test_loss[-1] < min_test_loss:
             updates_with_no_improvement = 0
@@ -118,9 +96,10 @@ def main():
             if args.cuda:
                 save_model = copy.deepcopy(net).cpu()
 
-            torch.save(save_model, os.path.join(save_path, args.env_name + ".pt"))
+            if updates_with_no_improvement <= 1:
+                torch.save(save_model, os.path.join(save_path, args.save_as + ".pt"))
 
-        if epochs % args.log_interval == 0:
+        if epochs % args.log_interval == 0 or updates_with_no_improvement == 5:
             plt.figure()
             plt.plot(range(epochs), train_loss, label="Training Loss")
             plt.plot(range(epochs), test_loss,  label="Test Loss")

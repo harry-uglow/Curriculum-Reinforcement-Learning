@@ -74,6 +74,7 @@ def get_args():
     parser.add_argument('--port', type=int, default=8097,
                         help='port to run the server on (default: 8097)')
     # TODO: Remove
+    parser.add_argument('--save-as', default='i2s', help='Name to save im2state model under')
     parser.add_argument('--state-indices', nargs='+', type=int)
     args = parser.parse_args()
 
