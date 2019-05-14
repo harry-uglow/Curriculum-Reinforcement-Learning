@@ -63,7 +63,12 @@ def main():
     except OSError:
         pass
 
-    torch.save([images, positions], os.path.join(save_path, f'{args.env_name}_{args.num_steps}.pt'))
+    low = envs.observation_space.low[args.state_indices]
+    high = envs.observation_space.high[args.state_indices]
+    res = images.shape[2]
+
+    torch.save([images, positions, low, high],
+               os.path.join(save_path, f'{args.env_name}_{res}_{args.num_steps}.pt'))
 
 
 if __name__ == "__main__":

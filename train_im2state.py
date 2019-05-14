@@ -1,21 +1,17 @@
-import argparse
 import copy
 import math
 import os
-import time
 
 import numpy as np
 import torch
 from torch import nn, optim
 import matplotlib.pyplot as plt
-
-from a2c_ppo_acktr.arguments import get_args
-from a2c_ppo_acktr.envs.envs import make_vec_envs, get_vec_normalize
-from im2state.model import CNN
-
 from tqdm import tqdm
 
-from im2state.utils import format_images, normalise_coords
+from a2c_ppo_acktr.arguments import get_args
+from im2state.model import CNN
+
+from im2state.utils import normalise_coords
 
 args = get_args()
 
@@ -31,7 +27,7 @@ def main():
     torch.set_num_threads(1)
     device = torch.device("cuda:0" if args.cuda else "cpu")
 
-    images, positions = torch.load(os.path.join(args.load_dir, args.env_name + ".pt"))
+    images, positions, low, high = torch.load(os.path.join(args.load_dir, args.env_name + ".pt"))
 
     save_path = os.path.join('trained_models', 'im2state')
     try:
@@ -39,24 +35,18 @@ def main():
     except OSError:
         pass
 
-    net = CNN(3, len(args.state_indices))
+    net = CNN(3, positions.shape[1])
     net.to(device)
 
     optimizer = optim.SGD(net.parameters(), lr=0.01)
     criterion = nn.MSELoss()
 
-    env = make_vec_envs(args.env_name, args.seed + 1000, 1, None, None, args.add_timestep, 'cpu',
-                        False, None, no_norm=True)
-    env.close()
-    low = env.observation_space.low[args.state_indices]
-    high = env.observation_space.high[args.state_indices]
-
     p = np.random.permutation(len(images))
     x = images[p]
     y = normalise_coords(positions, low, high)[p]
 
-    batch_size = 128
-    num_test_examples = 512
+    num_test_examples = len(images) // 8
+    batch_size = num_test_examples // 2
 
     train_x = torch.Tensor(x[num_test_examples:])
     train_y = torch.Tensor(y[num_test_examples:])
@@ -74,7 +64,7 @@ def main():
     while updates_with_no_improvement < 5:
         epochs += 1
         losses = []
-        for batch_idx in range(0, len(train_x), batch_size):
+        for batch_idx in tqdm(range(0, len(train_x), batch_size)):
             actual_y = net(train_x[batch_idx:batch_idx + batch_size])
             loss = criterion(actual_y, train_y[batch_idx:batch_idx + batch_size])
             losses += [loss.item()]
