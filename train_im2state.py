@@ -38,7 +38,7 @@ def main():
     net = CNN(3, positions.shape[1])
     net.to(device)
 
-    optimizer = optim.SGD(net.parameters(), lr=0.01)
+    optimizer = optim.SGD(net.parameters(), lr=0.001)
     criterion = nn.MSELoss()
 
     p = np.random.permutation(len(images))
