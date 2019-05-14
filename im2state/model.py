@@ -23,17 +23,17 @@ class CNN(nn.Module):
                                lambda x: nn.init.constant_(x, 0),
                                nn.init.calculate_gain('relu'))
 
-        self.main = nn.Sequential(  # 64 x 64
-            init_(nn.Conv2d(num_inputs, 32, 7, stride=3)),  # 20 x 20
+        self.main = nn.Sequential(  # 128 x 128
+            init_(nn.Conv2d(num_inputs, 32, 8, stride=4)),  # 31 x 31
             nn.ReLU(),
-            init_(nn.Conv2d(32, 64, 4, stride=2)),  # 9 x 9
+            init_(nn.Conv2d(32, 64, 5, stride=2)),  # 14 x 14
             nn.ReLU(),
-            init_(nn.Conv2d(64, 32, 3, stride=1)),  # 7 x 7
+            init_(nn.Conv2d(64, 32, 5, stride=1)),  # 10 x 10
             nn.ReLU(),
-            init_(nn.Conv2d(32, 16, 3, stride=1)),  # 5 x 5
+            init_(nn.Conv2d(32, 16, 5, stride=1)),  # 6 x 6
             nn.ReLU(),
             Flatten(),
-            init_(nn.Linear(16 * 5 * 5, 64)),
+            init_(nn.Linear(16 * 6 * 6, 64)),
             nn.ReLU(),
             init_(nn.Linear(64, num_outputs))
         )

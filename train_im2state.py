@@ -64,7 +64,7 @@ def main():
     while updates_with_no_improvement < 5:
         epochs += 1
         losses = []
-        for batch_idx in tqdm(range(0, len(train_x), batch_size)):
+        for batch_idx in range(0, len(train_x), batch_size):
             actual_y = net(train_x[batch_idx:batch_idx + batch_size])
             loss = criterion(actual_y, train_y[batch_idx:batch_idx + batch_size])
             losses += [loss.item()]
