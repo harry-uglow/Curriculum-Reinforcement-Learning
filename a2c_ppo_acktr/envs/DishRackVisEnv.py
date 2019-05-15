@@ -1,11 +1,8 @@
-import os
-
 import numpy as np
-from gym import spaces
 import vrep
 from a2c_ppo_acktr.envs.DishRackEnv import DishRackEnv
-from a2c_ppo_acktr.envs.SawyerEnv import SawyerEnv
 from a2c_ppo_acktr.envs.VrepEnv import catch_errors
+import matplotlib.image as im
 
 
 class DishRackVisEnv(DishRackEnv):
@@ -62,20 +59,25 @@ class DishRackVisEnv(DishRackEnv):
             vrep.simxSetObjectPosition(self.cid, handle, -1, pos + displace,
                                        vrep.simx_opmode_blocking)
 
-        self.update_sim()  # Update not usually needed in reset, but we need the camera to render
-
         return self._get_obs()
 
     def render(self, mode='rgb_array'):
         if mode == 'rgb_array':
-            _, _, _, byte_data = self.call_lua_function('get_image')
-
-            # TODO: Get resolution programmatically
-            image = np.frombuffer(byte_data, dtype=np.uint8).reshape((64, 64, 3))
-            # DEBUG
-            return image
+            return self._read_vision_sensor()
+        elif mode == 'mask':
+            mask = self._read_vision_sensor(grayscale=True)
+            mask[mask > 0] = 255
+            return mask
         elif mode == 'human':
             return  # Human rendering is automatically handled by headless mode.
             # TODO: Render footage from vision sensor
         else:
             super(DishRackVisEnv, self).render(mode=mode)
+
+    def _read_vision_sensor(self, grayscale=False):
+        vrep.simxSetObjectIntParameter(self.cid, self.vis_handle,
+                                       vrep.sim_visionintparam_entity_to_render, self.rack_handle
+                                       if grayscale else -1, vrep.simx_opmode_blocking)
+        res, _, _, byte_data = self.call_lua_function('get_image', ints=[int(grayscale)])
+        num_channels = len(byte_data) // (res[0] * res[1])
+        return np.frombuffer(byte_data, dtype=np.uint8).reshape((res[0], res[1], num_channels))

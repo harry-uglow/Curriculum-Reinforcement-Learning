@@ -27,7 +27,8 @@ def main():
     torch.set_num_threads(1)
     device = torch.device("cuda:0" if args.cuda else "cpu")
 
-    images, positions, low, high = torch.load(os.path.join(args.load_dir, args.env_name + ".pt"))
+    images, masks, positions, low, high = torch.load(os.path.join(args.load_dir,
+                                                                  args.env_name + ".pt"))
 
     save_path = os.path.join('trained_models', 'im2state')
     try:

@@ -40,9 +40,12 @@ def main():
 
     obs = envs.reset()
     image = format_images(envs.get_images())
+    mask = format_images(envs.get_images(mode='mask'))
 
     images = np.zeros((args.num_steps, *image.shape[1:]), dtype=np.uint8)
     images[0: args.num_processes] = image
+    masks = np.zeros((args.num_steps, *mask.shape[1:]), dtype=np.uint8)
+    masks[0: args.num_processes] = mask
     positions = np.zeros((args.num_steps, len(args.state_indices)))
     positions[0: args.num_processes] = obs[:, args.state_indices]
 
@@ -53,7 +56,9 @@ def main():
         positions[start_index:start_index + args.num_processes] = obs[:, args.state_indices]
 
         img = format_images(envs.get_images())
+        mask = format_images(envs.get_images(mode='mask'))
         images[start_index:start_index + args.num_processes] = img
+        masks[start_index:start_index + args.num_processes] = mask
 
     envs.close()
 
@@ -67,8 +72,8 @@ def main():
     high = envs.observation_space.high[args.state_indices]
     res = images.shape[2]
 
-    torch.save([images, positions, low, high],
-               os.path.join(save_path, f'{args.env_name}_{res}_{args.num_steps}.pt'))
+    torch.save([images, masks, positions, low, high],
+               os.path.join(save_path, f'{args.env_name}_{res}_{args.num_steps}_masks.pt'))
 
 
 if __name__ == "__main__":
