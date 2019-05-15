@@ -48,10 +48,10 @@ def main():
     num_test_examples = len(images) // 8
     batch_size = num_test_examples // 2
 
-    train_x = torch.Tensor(x[num_test_examples:])
-    train_y = torch.Tensor(y[num_test_examples:])
-    test_x = torch.Tensor(x[:num_test_examples])
-    test_y = torch.Tensor(y[:num_test_examples])
+    train_x = torch.Tensor(x[num_test_examples:]).to(device)
+    train_y = torch.Tensor(y[num_test_examples:]).to(device)
+    test_x = torch.Tensor(x[:num_test_examples]).to(device)
+    test_y = torch.Tensor(y[:num_test_examples]).to(device)
 
     train_loss = []
     test_loss = []

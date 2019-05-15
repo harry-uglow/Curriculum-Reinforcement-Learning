@@ -61,12 +61,7 @@ def main():
 
     base_kwargs = {'recurrent': args.recurrent_policy,
                    'zero_last_layer': initial_policies is not None}
-    if initial_policies is not None:
-        base_kwargs['hidden_size'] = initial_policies[0].base.output_size
     actor_critic = Policy(envs.observation_space.shape, envs.action_space, base_kwargs=base_kwargs)
-    if initial_policies is not None:
-        critic_state = initial_policies[0].base.critic.state_dict()
-        actor_critic.base.critic.load_state_dict(critic_state)
     actor_critic.to(device)
 
     if args.algo == 'a2c':
@@ -76,9 +71,8 @@ def main():
                                max_grad_norm=args.max_grad_norm)
     elif args.algo == 'ppo':
         agent = algo.PPO(actor_critic, args.clip_param, args.ppo_epoch, args.num_mini_batch,
-                         args.value_loss_coef, args.entropy_coef, lr=args.lr,
-                               eps=args.eps,
-                               max_grad_norm=args.max_grad_norm)
+                         args.value_loss_coef, args.entropy_coef, lr=args.lr, eps=args.eps,
+                         max_grad_norm=args.max_grad_norm, burn_in=initial_policies is not None)
     elif args.algo == 'acktr':
         agent = algo.A2C_ACKTR(actor_critic, args.value_loss_coef,
                                args.entropy_coef, acktr=True)

@@ -42,7 +42,8 @@ policies = torch.load(os.path.join(args.load_dir, args.env_name + ".pt"))
 
 im2state = torch.load(os.path.join(args.i2s_load_dir, args.image_layer + ".pt")) if \
     args.image_layer is not None else None
-im2state.eval()
+if im2state:
+    im2state.eval()
 
 env = make_vec_envs(args.env_name, args.seed + 1000, 1, None, None, args.add_timestep, 'cpu',
                     False, policies, vis=True, no_norm=True)

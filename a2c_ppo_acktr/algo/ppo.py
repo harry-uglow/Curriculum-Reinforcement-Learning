@@ -15,7 +15,8 @@ class PPO():
                  lr=None,
                  eps=None,
                  max_grad_norm=None,
-                 use_clipped_value_loss=True):
+                 use_clipped_value_loss=True,
+                 burn_in=False):
 
         self.actor_critic = actor_critic
 
@@ -29,6 +30,9 @@ class PPO():
         self.max_grad_norm = max_grad_norm
         self.use_clipped_value_loss = use_clipped_value_loss
 
+        self.burn_in = burn_in
+        self.bi_beta = 1.
+
         self.optimizer = optim.Adam(actor_critic.parameters(), lr=lr, eps=eps)
 
     def update(self, rollouts):
@@ -39,6 +43,8 @@ class PPO():
         value_loss_epoch = 0
         action_loss_epoch = 0
         dist_entropy_epoch = 0
+
+        actor_loss_coef = 0. if self.burn_in else 1.
 
         for e in range(self.ppo_epoch):
             if self.actor_critic.is_recurrent:
@@ -74,7 +80,7 @@ class PPO():
                     value_loss = 0.5 * (return_batch - values).pow(2).mean()
 
                 self.optimizer.zero_grad()
-                (value_loss * self.value_loss_coef + action_loss -
+                (value_loss * self.value_loss_coef + action_loss * actor_loss_coef -
                  dist_entropy * self.entropy_coef).backward()
                 nn.utils.clip_grad_norm_(self.actor_critic.parameters(),
                                          self.max_grad_norm)
@@ -89,5 +95,8 @@ class PPO():
         value_loss_epoch /= num_updates
         action_loss_epoch /= num_updates
         dist_entropy_epoch /= num_updates
+
+        if self.burn_in and value_loss_epoch < self.bi_beta:
+            self.burn_in = False
 
         return value_loss_epoch, action_loss_epoch, dist_entropy_epoch
