@@ -17,13 +17,13 @@ class DishRackVisEnv(DishRackEnv):
                 "Vision_sensor", vrep.simx_opmode_blocking))
         self.plate_obj_handle = catch_errors(vrep.simxGetObjectHandle(self.cid, "Plate",
                                                                       vrep.simx_opmode_blocking))
-        self.stand_handle = catch_errors(vrep.simxGetObjectHandle(self.cid, "Stand",
+        self.cloth_handle = catch_errors(vrep.simxGetObjectHandle(self.cid, "Cloth",
                                                                   vrep.simx_opmode_blocking))
         self.init_cam_pos = catch_errors(vrep.simxGetObjectPosition(self.cid, self.vis_handle, -1,
                                                                     vrep.simx_opmode_blocking))
         self.init_plate_color = self.call_lua_function('get_color', ints=[self.plate_obj_handle])[1]
         self.init_rack_color = self.call_lua_function('get_color', ints=[self.rack_handle])[1]
-        self.init_stand_color = self.call_lua_function('get_color', ints=[self.stand_handle])[1]
+        self.init_cloth_color = self.call_lua_function('get_color', ints=[self.cloth_handle])[1]
         self.light_handles = [catch_errors(vrep.simxGetObjectHandle(self.cid, f'LocalLight{c}',
                                                                     vrep.simx_opmode_blocking))
                               for c in ['A', 'B', 'C', 'D']]
@@ -31,18 +31,15 @@ class DishRackVisEnv(DishRackEnv):
                                                                    vrep.simx_opmode_blocking))
                            for handle in self.light_handles]
 
-        vrep.simxSetBooleanParameter(self.cid, vrep.sim_boolparam_vision_sensor_handling_enabled,
-                                     True, vrep.simx_opmode_blocking)
-
     def reset(self):
         super(DishRackVisEnv, self).reset()
         # VARY COLORS
         plate_color = self.np_random.normal(loc=self.init_plate_color, scale=0.05)
         rack_color = self.np_random.normal(loc=self.init_rack_color, scale=0.05)
-        stand_color = self.np_random.normal(loc=self.init_stand_color, scale=0.05)
+        cloth_color = self.np_random.normal(loc=self.init_cloth_color, scale=0.05)
         self.call_lua_function('set_color', ints=[self.plate_obj_handle], floats=plate_color)
         self.call_lua_function('set_color', ints=[self.rack_handle], floats=rack_color)
-        self.call_lua_function('set_color', ints=[self.stand_handle], floats=stand_color)
+        self.call_lua_function('set_color', ints=[self.cloth_handle], floats=cloth_color)
         # VARY CAMERA POSITION
         cam_displacement = self.np_random.uniform(-self.max_cam_displace, self.max_cam_displace, 3)
         vrep.simxSetObjectPosition(self.cid, self.vis_handle, -1,

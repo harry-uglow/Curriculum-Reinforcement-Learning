@@ -2,6 +2,7 @@ import argparse
 import copy
 import math
 import os
+import platform
 import time
 
 import numpy as np
@@ -25,6 +26,8 @@ torch.cuda.manual_seed_all(args.seed)
 if args.cuda and torch.cuda.is_available() and args.cuda_deterministic:
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
+
+save_root = '' if platform.system() == 'Darwin' else '/vol/bitbucket2/hu115/'
 
 
 def main():
@@ -62,7 +65,7 @@ def main():
 
     envs.close()
 
-    save_path = os.path.join('training_data')
+    save_path = os.path.join(save_root, 'training_data')
     try:
         os.makedirs(save_path)
     except OSError:
