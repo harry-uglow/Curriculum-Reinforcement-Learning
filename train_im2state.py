@@ -38,7 +38,7 @@ def main():
     net = CNN(3, positions.shape[1])
     net.to(device)
 
-    optimizer = optim.SGD(net.parameters(), lr=0.001)
+    optimizer = optim.Adam(net.parameters(), lr=0.001)
     criterion = nn.MSELoss()
 
     p = np.random.permutation(len(images))
@@ -46,7 +46,7 @@ def main():
     y = normalise_coords(positions, low, high)[p]
 
     num_test_examples = len(images) // 8
-    batch_size = num_test_examples // 2
+    batch_size = 1024
 
     train_x = torch.Tensor(x[num_test_examples:]).to(device)
     train_y = torch.Tensor(y[num_test_examples:]).to(device)
