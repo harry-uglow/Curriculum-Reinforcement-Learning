@@ -94,7 +94,7 @@ def main():
             plt.plot(range(epochs), train_loss, label="Training Loss")
             plt.plot(range(epochs), test_loss,  label="Test Loss")
             plt.legend()
-            plt.show()
+            plt.savefig(f'imgs/{args.save_as}.png')
             print(f"Training epoch {epochs} - validation loss: {test_loss[-1]}")
 
 
