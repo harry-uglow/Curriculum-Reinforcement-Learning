@@ -6,7 +6,6 @@ import numpy as np
 import torch
 from torch import nn, optim
 import matplotlib.pyplot as plt
-from tqdm import tqdm
 
 from a2c_ppo_acktr.arguments import get_args
 from im2state.model import CNN
@@ -27,8 +26,8 @@ def main():
     torch.set_num_threads(1)
     device = torch.device("cuda:0" if args.cuda else "cpu")
 
-    images, masks, positions, low, high = torch.load(os.path.join(args.load_dir,
-                                                                  args.env_name + ".pt"))
+    images, positions, low, high = torch.load(os.path.join(args.load_dir, args.env_name + ".pt"))
+    images = np.transpose([np.array(img) for img in images], (0, 3, 1, 2))
 
     save_path = os.path.join('trained_models', 'im2state')
     try:
