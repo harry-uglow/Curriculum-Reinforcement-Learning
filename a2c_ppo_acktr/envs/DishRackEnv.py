@@ -20,7 +20,7 @@ class DishRackEnv(SawyerEnv):
     timestep = 0
 
     def __init__(self, seed, rank, headless, ep_len=64):
-        super().__init__(seed, rank, self.scene_path, headless)
+        super().__init__(seed, rank, self.scene_path, False)
 
         self.ep_len = ep_len
 
@@ -55,7 +55,7 @@ class DishRackEnv(SawyerEnv):
 
     def step(self, a):
         self.target_velocities = a
-        dist = np.linalg.norm(self.get_plate_pos() - self.target_pos)
+        dist = np.linalg.norm(self.get_plate_dist())
         orientation_diff = np.abs(self.get_plate_orientation()).sum()
         rew_collision = - int(catch_errors(vrep.simxReadCollision(
             self.cid, self.collision_handle, vrep.simx_opmode_blocking)))
@@ -80,9 +80,9 @@ class DishRackEnv(SawyerEnv):
 
         return np.concatenate((joint_obs, self.target_pos[:-1], [self.rack_rot[0]]))
 
-    def get_plate_pos(self):
+    def get_plate_dist(self):
         pose = catch_errors(vrep.simxGetObjectPosition(
-            self.cid, self.plate_handle, -1, vrep.simx_opmode_blocking))
+            self.cid, self.plate_handle, self.target_handle, vrep.simx_opmode_blocking))
         return np.array(pose)
 
     def get_target_pos(self):
@@ -100,7 +100,7 @@ class NonRespondableDREnv(DishRackEnv):
 
     def step(self, a):
         self.target_velocities = a
-        dist = np.linalg.norm(self.get_plate_pos() - self.target_pos)
+        dist = np.linalg.norm(self.get_plate_dist())
         orientation_diff = np.abs(self.get_plate_orientation()).sum()
 
         self.timestep += 1
