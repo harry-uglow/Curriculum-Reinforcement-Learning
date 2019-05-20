@@ -38,7 +38,6 @@ class DishRackEnv(SawyerEnv):
                 "Collision", vrep.simx_opmode_blocking))
         self.target_handle = catch_errors(vrep.simxGetObjectHandle(self.cid,
                 "Target", vrep.simx_opmode_blocking))
-        self.target_pos = self.get_target_pos()
 
     def reset(self):
         super(DishRackEnv, self).reset()
@@ -53,66 +52,13 @@ class DishRackEnv(SawyerEnv):
 
         return self._get_obs()
 
-    def step(self, a):
-        self.target_velocities = a
-        dist = np.linalg.norm(self.get_plate_dist())
-        orientation_diff = np.abs(self.get_plate_orientation()).sum()
-        rew_collision = - int(catch_errors(vrep.simxReadCollision(
-            self.cid, self.collision_handle, vrep.simx_opmode_blocking)))
-
-        self.timestep += 1
-        self.update_sim()
-
-        ob = self._get_obs()
-        done = (self.timestep == self.ep_len)
-
-        rew_dist = - dist
-        rew_ctrl = - np.square(np.abs(self.target_velocities).mean())
-        rew_orientation = - orientation_diff / max(dist, 0.11)  # Radius = 0.11
-        rew = 0.01 * (rew_dist + rew_ctrl + 0.04 * rew_orientation + 0.1 * rew_collision)
-
-        return ob, rew, done, dict(rew_dist=rew_dist, rew_ctrl=rew_ctrl,
-                                   rew_orientation=rew_orientation, rew_collision=rew_collision)
-
     def _get_obs(self):
         joint_obs = super(DishRackEnv, self)._get_obs()
-        self.target_pos = self.get_target_pos()
 
-        return np.concatenate((joint_obs, self.target_pos[:-1], [self.rack_rot[0]]))
-
-    def get_plate_dist(self):
-        pose = catch_errors(vrep.simxGetObjectPosition(
-            self.cid, self.plate_handle, self.target_handle, vrep.simx_opmode_blocking))
-        return np.array(pose)
-
-    def get_target_pos(self):
-        pose = catch_errors(vrep.simxGetObjectPosition(
-            self.cid, self.target_handle, -1, vrep.simx_opmode_blocking))
-        return np.array(pose)
+        return np.concatenate((joint_obs, self.get_position(self.target_handle)[:-1],
+                               [self.rack_rot[0]]))
 
     def get_plate_orientation(self):
         orientation = catch_errors(vrep.simxGetObjectOrientation(
             self.cid, self.plate_handle, self.target_handle, vrep.simx_opmode_blocking))
         return np.array(orientation[:-1])
-
-
-class NonRespondableDREnv(DishRackEnv):
-
-    def step(self, a):
-        self.target_velocities = a
-        dist = np.linalg.norm(self.get_plate_dist())
-        orientation_diff = np.abs(self.get_plate_orientation()).sum()
-
-        self.timestep += 1
-        self.update_sim()
-
-        ob = self._get_obs()
-        done = (self.timestep == self.ep_len)
-
-        rew_dist = - dist
-        rew_ctrl = - np.square(np.abs(self.target_velocities).mean())
-        rew_orientation = - orientation_diff / max(dist, 0.11)  # Radius = 0.11
-        rew = 0.01 * (rew_dist + rew_ctrl + 0.04 * rew_orientation)
-
-        return ob, rew, done, dict(rew_dist=rew_dist, rew_ctrl=rew_ctrl,
-                                   rew_orientation=rew_orientation)

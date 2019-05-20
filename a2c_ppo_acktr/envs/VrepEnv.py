@@ -4,6 +4,7 @@ import platform
 import signal
 import time
 
+import numpy as np
 from gym import Env
 from subprocess import Popen
 import vrep
@@ -103,3 +104,14 @@ class VrepEnv(Env):
 
     def render(self, mode='human'):
         pass
+
+    def get_vector(self, from_handle, to_handle):
+        pose = catch_errors(vrep.simxGetObjectPosition(
+            self.cid, to_handle, from_handle, vrep.simx_opmode_blocking))
+        return np.array(pose)
+
+    def get_position(self, handle):
+        return self.get_vector(-1, handle)
+
+    def get_distance(self, from_handle, to_handle):
+        return np.linalg.norm(self.get_vector(from_handle, to_handle))

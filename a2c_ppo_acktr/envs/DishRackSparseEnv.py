@@ -18,7 +18,7 @@ class DishRackSparseEnv(DishRackEnv):
 
     def step(self, a):
         self.target_velocities = a
-        dist = np.abs(self.get_plate_dist())
+        dist = np.abs(self.get_vector(self.target_handle, self.plate_handle))
         orientation_diff = np.abs(self.get_plate_orientation())
 
         rew_success = 0.1 if np.all(orientation_diff <= max_rot) and np.all(dist <= max_dist) else 0
