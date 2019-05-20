@@ -1,11 +1,10 @@
 import numpy as np
 import vrep
-from a2c_ppo_acktr.envs.DishRackEnv import DishRackEnv
+from a2c_ppo_acktr.envs.DRNoWaypointEnv import DRNoWaypointEnv
 from a2c_ppo_acktr.envs.VrepEnv import catch_errors
-import matplotlib.image as im
 
 
-class DishRackVisEnv(DishRackEnv):
+class DishRackVisEnv(DRNoWaypointEnv):
     metadata = {'render.modes': ['human', 'rgb_array']}
     max_cam_displace = 0.1
     max_light_displace = 0.5
