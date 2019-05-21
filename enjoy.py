@@ -46,7 +46,7 @@ if im2state:
     im2state.eval()
 
 env = make_vec_envs(args.env_name, args.seed + 1000, 1, None, None, args.add_timestep, 'cpu',
-                    False, policies, vis=True, no_norm=True)
+                    False, policies, show=True, no_norm=True)
 null_action = torch.zeros((1, env.action_space.shape[0]))
 low = env.observation_space.low[args.state_indices]
 high = env.observation_space.high[args.state_indices]

@@ -115,7 +115,6 @@ def main():
 
             for info in infos:
                 if 'episode' in info.keys():
-                    print("Reward: ", info['episode']['r'])
                     episode_rewards.append(info['episode']['r'])
 
             # If done then clean the history of observations.
@@ -142,7 +141,7 @@ def main():
             except OSError:
                 pass
 
-            # TODO: Save better and include initial policy
+            # TODO: Save better
             save_model = actor_critic
             if args.cuda:
                 save_model = copy.deepcopy(actor_critic).cpu()
@@ -173,7 +172,7 @@ def main():
                 and j % args.eval_interval == 0):
             eval_envs = make_vec_envs(
                 args.env_name, args.seed + args.num_processes, 1, args.gamma, eval_log_dir,
-                args.add_timestep, device, True, vis=True)
+                args.add_timestep, device, True, show=True)
 
             vec_norm = get_vec_normalize(eval_envs)
             if vec_norm is not None:
