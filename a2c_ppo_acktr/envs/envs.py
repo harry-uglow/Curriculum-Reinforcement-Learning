@@ -15,6 +15,7 @@ from a2c_ppo_acktr.envs.DRWaypointEnv import DRWaypointEnv
 from a2c_ppo_acktr.envs.DishRackSparseEnv import DishRackSparseEnv
 from a2c_ppo_acktr.envs.DishRackVisEnv import DishRackVisEnv
 from a2c_ppo_acktr.envs.ResidualVecEnvWrapper import ResidualVecEnvWrapper
+from a2c_ppo_acktr.envs.wrappers import ImageObsVecEnvWrapper, PoseEstimatorVecEnvWrapper
 
 try:
     import dm_control2gym
@@ -96,7 +97,7 @@ def wrap_initial_policies(envs, device, initial_policies):
 
 def make_vec_envs(env_name, seed, num_processes, gamma, log_dir, add_timestep, device,
                   allow_early_resets, initial_policies, num_frame_stack=None, show=False,
-                  no_norm=False, imgs=False, state=True):
+                  no_norm=False, imgs=False, pose_estimator=None):
     envs = [make_env(env_name, seed, i, log_dir, add_timestep, allow_early_resets, show)
             for i in range(num_processes)]
 
@@ -106,10 +107,10 @@ def make_vec_envs(env_name, seed, num_processes, gamma, log_dir, add_timestep, d
         envs = DummyVecEnv(envs)
 
     envs = wrap_initial_policies(envs, device, initial_policies)
-    #
-    # if imgs:
-    #     envs = ImageObservationWrapper
-    #
+
+    if pose_estimator is not None:
+        # Two separate layers as they may have their uses separately
+        envs = PoseEstimatorVecEnvWrapper(ImageObsVecEnvWrapper(envs), pose_estimator)
 
     if len(envs.observation_space.shape) == 1 and not no_norm:
         if gamma is None:

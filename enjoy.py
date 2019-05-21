@@ -78,7 +78,7 @@ while True:
             obs = obs.numpy()
             obs[:, args.state_indices] = part_state
             for policy in policy_wrappers:
-                policy.last_obs = policy.normalize_obs(obs)
+                policy.curr_obs = policy.normalize_obs(obs)
 
     # Obser reward and next obs
     obs, _, done, _ = env.step(null_action)
