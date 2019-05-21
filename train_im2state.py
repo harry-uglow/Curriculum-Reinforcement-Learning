@@ -11,7 +11,7 @@ from tqdm import tqdm
 from a2c_ppo_acktr.arguments import get_args
 from im2state.model import CNN
 
-from im2state.utils import normalise_coords, unnormalise_y
+from im2state.utils import normalise_coords
 
 args = get_args()
 
@@ -67,9 +67,8 @@ def main():
         epochs += 1
         losses = []
         for batch_idx in tqdm(range(0, len(train_x), batch_size)):
-            actual_y = unnormalise_y(net(train_x[batch_idx:batch_idx + batch_size]), low, high)
-            loss = criterion(actual_y, unnormalise_y(train_y[batch_idx:batch_idx + batch_size],
-                                                     low, high))
+            actual_y = net(train_x[batch_idx:batch_idx + batch_size])
+            loss = criterion(actual_y, train_y[batch_idx:batch_idx + batch_size])
             losses += [loss.item()]
 
             optimizer.zero_grad()
