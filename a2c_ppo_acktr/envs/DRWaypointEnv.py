@@ -13,6 +13,10 @@ class DRWaypointEnv(DishRackEnv):
         self.waypoint_handle = catch_errors(vrep.simxGetObjectHandle(self.cid, "Waypoint",
                                                                      vrep.simx_opmode_blocking))
 
+    def reset(self):
+        self.reached_waypoint = False
+        return super(DRWaypointEnv, self).reset()
+
     def step(self, a):
         self.target_velocities = a
         plate_trg = self.get_distance(self.target_handle, self.plate_handle)
