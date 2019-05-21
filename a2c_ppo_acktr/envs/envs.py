@@ -12,8 +12,6 @@ from baselines.common.vec_env.dummy_vec_env import DummyVecEnv
 from baselines.common.vec_env.vec_normalize import VecNormalize as VecNormalize_
 
 from a2c_ppo_acktr.envs.DRWaypointEnv import DRWaypointEnv
-from a2c_ppo_acktr.envs.DishRackSparseEnv import DishRackSparseEnv
-from a2c_ppo_acktr.envs.DishRackVisEnv import DishRackVisEnv
 from a2c_ppo_acktr.envs.ResidualVecEnvWrapper import ResidualVecEnvWrapper
 from a2c_ppo_acktr.envs.wrappers import ImageObsVecEnvWrapper, PoseEstimatorVecEnvWrapper
 
