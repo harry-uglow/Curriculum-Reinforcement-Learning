@@ -6,11 +6,12 @@ import numpy as np
 import torch
 from torch import nn, optim
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 from a2c_ppo_acktr.arguments import get_args
 from im2state.model import CNN
 
-from im2state.utils import normalise_coords
+from im2state.utils import normalise_coords, unnormalise_y
 
 args = get_args()
 
@@ -27,7 +28,8 @@ def main():
     device = torch.device("cuda:0" if args.cuda else "cpu")
 
     images, positions, low, high = torch.load(os.path.join(args.load_dir, args.env_name + ".pt"))
-    images = np.transpose([np.array(img) for img in images], (0, 3, 1, 2))
+    print("Loaded")
+    images = np.transpose([np.array(img) for img in tqdm(images)], (0, 3, 1, 2))
 
     save_path = os.path.join('trained_models', 'im2state')
     try:
@@ -38,15 +40,15 @@ def main():
     net = CNN(3, positions.shape[1])
     net.to(device)
 
-    optimizer = optim.Adam(net.parameters(), lr=0.001)
+    optimizer = optim.Adam(net.parameters(), lr=0.00001)
     criterion = nn.MSELoss()
 
     p = np.random.permutation(len(images))
     x = images[p]
     y = normalise_coords(positions, low, high)[p]
 
-    num_test_examples = len(images) // 8
-    batch_size = 1024
+    num_test_examples = 256
+    batch_size = 128
 
     train_x = torch.Tensor(x[num_test_examples:]).to(device)
     train_y = torch.Tensor(y[num_test_examples:]).to(device)
@@ -64,9 +66,10 @@ def main():
     while updates_with_no_improvement < 5:
         epochs += 1
         losses = []
-        for batch_idx in range(0, len(train_x), batch_size):
-            actual_y = net(train_x[batch_idx:batch_idx + batch_size])
-            loss = criterion(actual_y, train_y[batch_idx:batch_idx + batch_size])
+        for batch_idx in tqdm(range(0, len(train_x), batch_size)):
+            actual_y = unnormalise_y(net(train_x[batch_idx:batch_idx + batch_size]), low, high)
+            loss = criterion(actual_y, unnormalise_y(train_y[batch_idx:batch_idx + batch_size],
+                                                     low, high))
             losses += [loss.item()]
 
             optimizer.zero_grad()
@@ -74,7 +77,8 @@ def main():
             optimizer.step()
 
         train_loss += [np.mean(losses)]
-        test_loss += [criterion(net(test_x), test_y).item()]
+        with torch.no_grad():
+            test_loss += [criterion(net(test_x), test_y).item()]
         if test_loss[-1] < min_test_loss:
             updates_with_no_improvement = 0
             min_test_loss = test_loss[-1]
@@ -90,11 +94,12 @@ def main():
                 torch.save(save_model, os.path.join(save_path, args.save_as + ".pt"))
 
         if epochs % args.log_interval == 0 or updates_with_no_improvement == 5:
-            plt.figure()
+            fig = plt.figure()
             plt.plot(range(epochs), train_loss, label="Training Loss")
             plt.plot(range(epochs), test_loss,  label="Test Loss")
             plt.legend()
             plt.savefig(f'imgs/{args.save_as}.png')
+            plt.close(fig)
             print(f"Training epoch {epochs} - validation loss: {test_loss[-1]}")
 
 
