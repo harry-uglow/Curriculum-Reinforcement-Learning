@@ -53,11 +53,17 @@ def main():
     torch.set_num_threads(1)
     device = torch.device("cuda:0" if args.cuda else "cpu")
 
-    initial_policies = torch.load(os.path.join(args.load_dir, args.initial_policy + ".pt")) if \
-        args.initial_policy else None
+    initial_policies = torch.load(os.path.join(args.load_dir, args.algo,
+                                               args.initial_policy + ".pt")) \
+        if args.initial_policy else None
+
+    pose_estimator = torch.load(os.path.join(args.load_dir, "im2state",
+                                             args.pose_estimator + ".pt")) \
+        if args.pose_estimator else None
 
     envs = make_vec_envs(args.env_name, args.seed, args.num_processes, args.gamma, args.log_dir,
-                         args.add_timestep, device, False, initial_policies)
+                         args.add_timestep, device, False, initial_policies,
+                         pose_estimator=pose_estimator)
 
     base_kwargs = {'recurrent': args.recurrent_policy,
                    'zero_last_layer': initial_policies is not None}
@@ -78,8 +84,8 @@ def main():
                                args.entropy_coef, acktr=True)
 
     rollouts = RolloutStorage(args.num_steps, args.num_processes,
-                        envs.observation_space.shape, envs.action_space,
-                        actor_critic.recurrent_hidden_state_size)
+                              envs.observation_space.shape, envs.action_space,
+                              actor_critic.recurrent_hidden_state_size)
 
     obs = envs.reset()
     rollouts.obs[0].copy_(obs)

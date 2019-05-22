@@ -47,7 +47,7 @@ class ResidualVecEnvWrapper(VecEnvWrapper):
         whole_action = ip_action + action
         self.venv.step_async(whole_action)
 
-    def reset(self, **kwargs):
-        obs = self.venv.reset(**kwargs)
+    def reset(self):
+        obs = self.venv.reset()
         self.curr_obs = self.normalize_obs(obs)
         return obs

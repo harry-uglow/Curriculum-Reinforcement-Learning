@@ -41,7 +41,7 @@ args.det = not args.non_det
 policies = torch.load(os.path.join(args.load_dir, args.env_name + ".pt"))
 
 im2state = torch.load(os.path.join(args.i2s_load_dir, args.image_layer + ".pt")) if \
-    args.image_layer is not None else None
+    args.image_layer else None
 if im2state:
     im2state.eval()
 

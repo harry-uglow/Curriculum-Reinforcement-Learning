@@ -13,6 +13,7 @@ from baselines.common.vec_env.vec_normalize import VecNormalize as VecNormalize_
 
 from a2c_ppo_acktr.envs.DRNoWaypointEnv import DRNoWaypointEnv
 from a2c_ppo_acktr.envs.DRWaypointEnv import DRWaypointEnv
+from a2c_ppo_acktr.envs.DishRackSparseEnv import DishRackSparseEnv
 from a2c_ppo_acktr.envs.ResidualVecEnvWrapper import ResidualVecEnvWrapper
 from a2c_ppo_acktr.envs.wrappers import ImageObsVecEnvWrapper, PoseEstimatorVecEnvWrapper
 
@@ -34,7 +35,7 @@ except ImportError:
 
 def make_env(env_id, seed, rank, log_dir, add_timestep, allow_early_resets, vis):
     def _thunk():
-        env = DRWaypointEnv(seed, rank, not vis)
+        env = DishRackSparseEnv(seed, rank, not vis)
         if log_dir is not None:
             env = bench.Monitor(env, os.path.join(log_dir, str(rank)),
                                 allow_early_resets=allow_early_resets)
@@ -71,7 +72,7 @@ def make_env(env_id, seed, rank, log_dir, add_timestep, allow_early_resets, vis)
     #         if len(env.observation_space.shape) == 3:
     #             env = wrap_deepmind(env)
     #     elif len(env.observation_space.shape) == 3:
-    #         raise NotImplementedError("CNN models work only for atari,\n"
+    #         raise NotImplementedError("PoseEstimator models work only for atari,\n"
     #             "please use a custom wrapper for a custom pixel input env.\n"
     #             "See wrap_deepmind for an example.")
     #
@@ -96,7 +97,7 @@ def wrap_initial_policies(envs, device, initial_policies):
 
 def make_vec_envs(env_name, seed, num_processes, gamma, log_dir, add_timestep, device,
                   allow_early_resets, initial_policies, num_frame_stack=None, show=False,
-                  no_norm=False, imgs=False, pose_estimator=None):
+                  no_norm=False, pose_estimator=None):
     envs = [make_env(env_name, seed, i, log_dir, add_timestep, allow_early_resets, show)
             for i in range(num_processes)]
 
@@ -109,7 +110,7 @@ def make_vec_envs(env_name, seed, num_processes, gamma, log_dir, add_timestep, d
 
     if pose_estimator is not None:
         # Two separate layers as they may have their uses separately
-        envs = PoseEstimatorVecEnvWrapper(ImageObsVecEnvWrapper(envs), pose_estimator)
+        envs = ImageObsVecEnvWrapper(envs)
 
     if len(envs.observation_space.shape) == 1 and not no_norm:
         if gamma is None:
@@ -119,9 +120,12 @@ def make_vec_envs(env_name, seed, num_processes, gamma, log_dir, add_timestep, d
 
     envs = VecPyTorch(envs, device)
 
+    if pose_estimator is not None:
+        envs = PoseEstimatorVecEnvWrapper(envs, pose_estimator, device)
+
     if num_frame_stack is not None:
         envs = VecPyTorchFrameStack(envs, num_frame_stack, device)
-    elif len(envs.observation_space.shape) == 3:
+    elif len(envs.observation_space.shape) == 3 and not pose_estimator:
         envs = VecPyTorchFrameStack(envs, 4, device)
 
     return envs

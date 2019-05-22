@@ -53,11 +53,13 @@ def get_args():
                         help='environment to train on (default: PongNoFrameskip-v4)')
     parser.add_argument('--initial-policy', default=None,
                         help='initial policy to use, located in trained_models/ppo/{name}.pt')
+    parser.add_argument('--pose-estimator', default=None,
+                        help='pose estimator to use, located in trained_models/im2state/{name}.pt')
     parser.add_argument('--log-dir', default='/tmp/gym/',
                         help='directory to save agent logs (default: /tmp/gym)')
     parser.add_argument('--save-dir', default='./trained_models/',
                         help='directory to save agent logs (default: ./trained_models/)')
-    parser.add_argument('--load-dir', default='./trained_models/ppo/',
+    parser.add_argument('--load-dir', default='./trained_models/',
                         help='directory to load initial policy from (default: ./trained_models/)')
     parser.add_argument('--no-cuda', action='store_true', default=False,
                         help='disables CUDA training')

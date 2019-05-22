@@ -44,7 +44,7 @@ class DishRackEnv(SawyerEnv):
         # VISION
         self.vis_handle = catch_errors(vrep.simxGetObjectHandle(self.cid,
                 "Vision_sensor", vrep.simx_opmode_blocking))
-        self.res = self.call_lua_function('get_resolution')
+        self.res = self.call_lua_function('get_resolution')[0]
         self.plate_obj_handle = catch_errors(vrep.simxGetObjectHandle(self.cid, "Plate",
                                                                       vrep.simx_opmode_blocking))
         self.cloth_handle = catch_errors(vrep.simxGetObjectHandle(self.cid, "Cloth",

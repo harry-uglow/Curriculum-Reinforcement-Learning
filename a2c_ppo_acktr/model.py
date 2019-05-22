@@ -171,7 +171,7 @@ class NNBase(nn.Module):
 
 
 class CNNBase(NNBase):
-    def __init__(self, num_inputs, recurrent=False, hidden_size=512):
+    def __init__(self, num_inputs, recurrent=False, hidden_size=512, zero_last_layer=False):
         super(CNNBase, self).__init__(recurrent, hidden_size, hidden_size)
 
         init_ = lambda m: init(m,
@@ -179,15 +179,22 @@ class CNNBase(NNBase):
             lambda x: nn.init.constant_(x, 0),
             nn.init.calculate_gain('relu'))
 
-        self.main = nn.Sequential(  # 84 x 84
-            init_(nn.Conv2d(num_inputs, 32, 8, stride=4)),  # 20 x 20
+        init_zeros = lambda m: init(m, lambda x, gain=None: nn.init.constant_(x, 0),
+                                    lambda x: nn.init.constant_(x, 0), np.sqrt(2))
+
+        init_last_layer = init_zeros if zero_last_layer else init_
+
+        self.main = nn.Sequential(  # 84 x 84  128
+            init_(nn.Conv2d(num_inputs, 32, 8, stride=4)),  # 20 x 20  31
             nn.ReLU(),
-            init_(nn.Conv2d(32, 64, 4, stride=2)),  # 9 x 9
+            init_(nn.Conv2d(32, 64, 5, stride=2)),  # 9 x 9  14
             nn.ReLU(),
-            init_(nn.Conv2d(64, 32, 3, stride=1)),  # 7 x 7
+            init_(nn.Conv2d(64, 48, 5, stride=1)),  # Extra Layer for 128 10
+            nn.ReLU(),
+            init_(nn.Conv2d(48, 32, 3, stride=1)),  # 8 x 8
             nn.ReLU(),
             Flatten(),
-            init_(nn.Linear(32 * 7 * 7, hidden_size)),
+            init_last_layer(nn.Linear(32 * 8 * 8, hidden_size)),
             nn.ReLU()
         )
 
@@ -220,26 +227,19 @@ class MLPBase(NNBase):
             lambda x: nn.init.constant_(x, 0),
             np.sqrt(2))
 
-        if zero_last_layer:
-            init_zeros = lambda m: init(m, lambda x, gain=None: nn.init.constant_(x, 0),
-                                        lambda x: nn.init.constant_(x, 0), np.sqrt(2))
-            self.actor = nn.Sequential(
-                init_(nn.Linear(num_inputs, hidden_size)),
-                nn.Tanh(),
-                init_(nn.Linear(hidden_size, hidden_size)),
-                nn.Tanh(),
-                init_zeros(nn.Linear(hidden_size, hidden_size)),
-                nn.Tanh()
-            )
-        else:
-            self.actor = nn.Sequential(
-                init_(nn.Linear(num_inputs, hidden_size)),
-                nn.Tanh(),
-                init_(nn.Linear(hidden_size, hidden_size)),
-                nn.Tanh(),
-                init_(nn.Linear(hidden_size, hidden_size)),
-                nn.Tanh()
-            )
+        init_zeros = lambda m: init(m, lambda x, gain=None: nn.init.constant_(x, 0),
+                                    lambda x: nn.init.constant_(x, 0), np.sqrt(2))
+
+        init_last_layer = init_zeros if zero_last_layer else init_
+
+        self.actor = nn.Sequential(
+            init_(nn.Linear(num_inputs, hidden_size)),
+            nn.Tanh(),
+            init_(nn.Linear(hidden_size, hidden_size)),
+            nn.Tanh(),
+            init_last_layer(nn.Linear(hidden_size, hidden_size)),
+            nn.Tanh()
+        )
 
         self.critic = nn.Sequential(
             init_(nn.Linear(num_inputs, hidden_size)),
