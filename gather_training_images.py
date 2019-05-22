@@ -58,7 +58,7 @@ def main():
     high = envs.observation_space.high[args.state_indices]
     res = images[0].size[0]
 
-    torch.save([images, positions, low, high],
+    torch.save([images, positions, args.state_indices, low, high],
                os.path.join(save_path, f'{args.env_name}_{res}_{args.num_steps}_PIL.pt'))
 
 

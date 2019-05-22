@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 from a2c_ppo_acktr.arguments import get_args
-from im2state.model import CNN
+from im2state.model import PoseEstimator
 
 from im2state.utils import normalise_coords
 
@@ -27,7 +27,8 @@ def main():
     torch.set_num_threads(1)
     device = torch.device("cuda:0" if args.cuda else "cpu")
 
-    images, positions, low, high = torch.load(os.path.join(args.load_dir, args.env_name + ".pt"))
+    images, positions, state_to_estimate, low, high = torch.load(
+        os.path.join(args.load_dir, args.env_name + ".pt"))
     print("Loaded")
     images = np.transpose([np.array(img) for img in tqdm(images)], (0, 3, 1, 2))
 
@@ -37,7 +38,7 @@ def main():
     except OSError:
         pass
 
-    net = CNN(3, positions.shape[1])
+    net = PoseEstimator(3, positions.shape[1], args.state_indices)
     net.to(device)
 
     optimizer = optim.Adam(net.parameters(), lr=0.00001)
