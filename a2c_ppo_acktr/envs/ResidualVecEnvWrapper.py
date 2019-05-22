@@ -16,6 +16,7 @@ class ResidualVecEnvWrapper(VecEnvWrapper):
         super(ResidualVecEnvWrapper, self).__init__(venv)
         self.ip = initial_policy
         self.ip.eval()
+        self.ip.to(device)
         self.ob_rms = ob_rms
         self.ob_size = len(ob_rms.mean) if ob_rms else venv.observation_space.shape[0]
         self.device = device
