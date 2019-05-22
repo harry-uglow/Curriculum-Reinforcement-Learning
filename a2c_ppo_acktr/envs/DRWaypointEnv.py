@@ -40,6 +40,6 @@ class DRWaypointEnv(DishRackEnv):
         rew_dist = - (plate_trg if self.reached_waypoint else plate_way + way_trg)
         rew_ctrl = - np.square(np.abs(self.target_velocities).mean())
         rew_orientation = 0.05 if np.all(orientation_diff <= max_rot) else 0
-        rew = 0.01 * (rew_dist + rew_orientation)
+        rew = 0.01 * rew_dist
 
-        return ob, rew, done, dict(rew_dist=rew_dist, rew_orientation=rew_orientation)
+        return ob, rew, done, dict(rew_dist=rew_dist)
