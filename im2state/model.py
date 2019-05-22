@@ -13,10 +13,11 @@ class Flatten(nn.Module):
         return x.view(x.size(0), -1)
 
 
-class CNN(nn.Module):
-    def __init__(self, num_inputs, num_outputs):
-        super(CNN, self).__init__()
+class PoseEstimator(nn.Module):
+    def __init__(self, num_inputs, num_outputs, state_to_estimate):
+        super(PoseEstimator, self).__init__()
         self._output_size = num_outputs
+        self.state_to_estimate = state_to_estimate
 
         init_ = lambda m: init(m,
                                nn.init.orthogonal_,
@@ -52,10 +53,3 @@ class CNN(nn.Module):
         # Normalise inputs
         x = self.main(x / 255.0)
         return x
-
-    def num_flat_features(self, x):
-        size = x.size()[1:]  # all dimensions except the batch dimension
-        num_features = 1
-        for s in size:
-            num_features *= s
-        return num_features
