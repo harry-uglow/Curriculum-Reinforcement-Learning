@@ -33,20 +33,26 @@ parser.add_argument('--non-det', action='store_true', default=False,
 parser.add_argument('--image-layer', default=None,
                     help='network taking images as input and giving state as output')
 parser.add_argument('--state-indices', nargs='+', type=int)
+parser.add_argument('--rip', action='store_true', default=False)
 args = parser.parse_args()
 
 args.det = not args.non_det
 
 # We need to use the same statistics for normalization as used in training
-policies = torch.load(os.path.join(args.load_dir, args.env_name + ".pt"))
+policies = torch.load(os.path.join(args.load_dir, args.env_name + ".pt"),
+                      map_location=torch.device('cpu'))
 
-im2state = torch.load(os.path.join(args.i2s_load_dir, args.image_layer + ".pt")) if \
-    args.image_layer else None
+if args.rip:
+    rip, im2state, policies = policies
+else:
+    im2state = torch.load(os.path.join(args.i2s_load_dir, args.image_layer + ".pt")) if \
+        args.image_layer else None
+    rip = None
 if im2state:
     im2state.eval()
 
 env = make_vec_envs(args.env_name, args.seed + 1000, 1, None, None, args.add_timestep, 'cpu',
-                    False, policies, show=True, no_norm=True)
+                    False, policies, show=True, no_norm=True, pose_estimator=im2state)
 null_action = torch.zeros((1, env.action_space.shape[0]))
 low = env.observation_space.low[args.state_indices]
 high = env.observation_space.high[args.state_indices]
@@ -55,6 +61,10 @@ policy_wrappers = get_residual_layers(env)
 
 # Get a render function
 render_func = get_render_func(env)
+
+if rip:
+    recurrent_hidden_states = torch.zeros(1, rip.recurrent_hidden_state_size)
+    masks = torch.zeros(1, 1)
 
 obs = env.reset()
 
@@ -72,13 +82,18 @@ if args.env_name.find('Bullet') > -1:
 while True:
 
     with torch.no_grad():
-        if im2state:
-            image = torch.from_numpy(format_images(env.get_images())).float()
-            part_state = unnormalise_y(im2state(image).numpy(), low, high)
-            obs = obs.numpy()
-            obs[:, args.state_indices] = part_state
-            for policy in policy_wrappers:
-                policy.curr_obs = policy.normalize_obs(obs)
+        if rip:
+            value, action, _, recurrent_hidden_states = rip.act(
+                obs, recurrent_hidden_states, masks, deterministic=args.det)
+        else:
+            action = null_action
+            if im2state:
+                image = torch.from_numpy(format_images(env.get_images())).float()
+                part_state = unnormalise_y(im2state(image).numpy(), low, high)
+                obs = obs.numpy()
+                obs[:, args.state_indices] = part_state
+                for policy in policy_wrappers:
+                    policy.curr_obs = policy.normalize_obs(obs)
 
     # Obser reward and next obs
     obs, _, done, _ = env.step(null_action)
