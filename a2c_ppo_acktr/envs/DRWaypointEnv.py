@@ -28,8 +28,6 @@ class DRWaypointEnv(DishRackEnv):
             self.reached_waypoint = True
 
         orientation_diff = np.abs(self.get_plate_orientation()).sum()
-        rew_collision = - int(catch_errors(vrep.simxReadCollision(
-            self.cid, self.collision_handle, vrep.simx_opmode_blocking)))
 
         self.timestep += 1
         self.update_sim()
@@ -39,7 +37,8 @@ class DRWaypointEnv(DishRackEnv):
 
         rew_dist = - (plate_trg if self.reached_waypoint else plate_way + way_trg)
         rew_ctrl = - np.square(np.abs(self.target_velocities).mean())
-        rew_orientation = 0.05 if np.all(orientation_diff <= max_rot) else 0
-        rew = 0.01 * rew_dist
+        rew_orientation = - orientation_diff / max(plate_trg, 0.11)  # Radius = 0.11
+        rew = 0.01 * (rew_dist + 0.5 * rew_ctrl + 0.04 * rew_orientation)
 
-        return ob, rew, done, dict(rew_dist=rew_dist)
+        return ob, rew, done, dict(rew_dist=rew_dist, rew_ctrl=rew_ctrl,
+                                   rew_orientation=rew_orientation)
