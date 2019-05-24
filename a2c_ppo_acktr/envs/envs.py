@@ -35,7 +35,7 @@ except ImportError:
 
 def make_env(env_id, seed, rank, log_dir, add_timestep, allow_early_resets, vis):
     def _thunk():
-        env = DRNoWaypointEnv(seed, rank, not vis)
+        env = DRNoWaypointEnv(seed, rank,  vis)
         if log_dir is not None:
             env = bench.Monitor(env, os.path.join(log_dir, str(rank)),
                                 allow_early_resets=allow_early_resets)
