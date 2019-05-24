@@ -53,6 +53,8 @@ vrep_path = '/Users/Harry/Applications/V-REP_PRO_EDU_V3_6_1_Mac/vrep.app' \
             '/Contents/MacOS/vrep' \
     if platform.system() == 'Darwin' else \
     os.path.expanduser('~/Desktop/V-REP_PRO_EDU_V3_6_1_Ubuntu18_04/vrep.sh')
+xvfb_args = ['xvfb-run', '--auto-servernum', '--server-num=1'] \
+    if not platform.system() == 'Darwin' else []
 
 
 class VrepEnv(Env):
@@ -73,7 +75,7 @@ class VrepEnv(Env):
         if not headless:  # DEBUG: Helps run enjoy while Train is running
             port_num += 16
         remote_api_string = '-gREMOTEAPISERVERSERVICE_' + str(port_num) + '_FALSE_TRUE'
-        args = [vrep_path, '-h' if headless else '', remote_api_string]
+        args = [*xvfb_args, vrep_path, '-h' if headless else '', remote_api_string]
         self.process = Popen(args, preexec_fn=os.setsid)
         time.sleep(6)
 
