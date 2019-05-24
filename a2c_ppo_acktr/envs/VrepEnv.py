@@ -52,7 +52,7 @@ host = '127.0.0.1'
 vrep_path = '/Users/Harry/Applications/V-REP_PRO_EDU_V3_6_1_Mac/vrep.app' \
             '/Contents/MacOS/vrep' \
     if platform.system() == 'Darwin' else \
-    '~/Desktop/V-REP_PRO_EDU_V3_6_1_Ubuntu18_04/vrep.sh'
+    os.path.expanduser('~/Desktop/V-REP_PRO_EDU_V3_6_1_Ubuntu18_04/vrep.sh')
 
 
 class VrepEnv(Env):
