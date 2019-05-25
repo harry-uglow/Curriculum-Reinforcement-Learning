@@ -218,7 +218,7 @@ def main():
                 format(len(eval_episode_rewards),
                        np.mean(eval_episode_rewards)))
 
-        if args.vis and j % args.vis_interval == 0:
+        if args.vis and (j % args.vis_interval == 0 or j == num_updates - 1):
             try:
                 # Sometimes monitor doesn't properly flush the outputs
                 visdom_plot(args.log_dir, args.env_name,
