@@ -23,14 +23,16 @@ class Reach2DEnv(Env):
     timestep = 0
     screen_size = 900
 
-    def __init__(self, seed, ep_len=32):
+    def __init__(self, seed, rank, headless, ep_len=32):
         self.target_norm = self.normalise_target()
         self.np_random = np.random.RandomState()
-        self.np_random.seed(seed)
+        self.rank = rank
+        self.np_random.seed(seed + rank)
         self.ep_len = ep_len
-        self.screen = pygame.display.set_mode((self.screen_size,
-                                               self.screen_size))
-        pygame.display.set_caption("PPO Output Visualisation")
+        if not headless:
+            self.screen = pygame.display.set_mode((self.screen_size,
+                                                   self.screen_size))
+            pygame.display.set_caption("PPO Output Visualisation")
 
     def normalise_target(self, lower=-0.5, upper=0.5):
         return (self.target_pose - lower) / (upper - lower)

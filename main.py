@@ -3,6 +3,7 @@ import glob
 import os
 import time
 from collections import deque
+from distutils.dir_util import copy_tree
 
 import numpy as np
 import torch
@@ -221,10 +222,11 @@ def main():
         if args.vis and (j % args.vis_interval == 0 or j == num_updates - 1):
             try:
                 # Sometimes monitor doesn't properly flush the outputs
-                visdom_plot(args.log_dir, args.env_name,
-                            args.algo, args.num_env_steps)
+                visdom_plot(args.log_dir, args.env_name, args.algo, args.num_env_steps)
             except IOError:
                 pass
+    # Copy logs to permanent location so new graphs can be drawn.
+    copy_tree(args.log_dir, os.path.join('logs', args.env_name))
 
 
 if __name__ == "__main__":
