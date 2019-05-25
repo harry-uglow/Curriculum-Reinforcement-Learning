@@ -49,7 +49,7 @@ class PoseEstimatorVecEnvWrapper(VecEnvWrapper):
             obs[:, self.estimator.state_to_estimate] = estimation
             for policy in self.policy_layers:
                 policy.curr_obs = policy.normalize_obs(obs)
-        self.venv.step_async(actions * 0.2)
+        self.venv.step_async(actions)
 
     def step_wait(self):
         self.curr_image, rew, done, info = self.venv.step_wait()
