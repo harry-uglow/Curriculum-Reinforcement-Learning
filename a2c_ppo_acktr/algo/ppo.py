@@ -31,7 +31,7 @@ class PPO():
         self.use_clipped_value_loss = use_clipped_value_loss
 
         self.burn_in = burn_in
-        self.bi_beta = 1.
+        self.bi_beta = 0.01
 
         self.optimizer = optim.Adam(actor_critic.parameters(), lr=lr, eps=eps)
 
@@ -97,6 +97,7 @@ class PPO():
         dist_entropy_epoch /= num_updates
 
         if self.burn_in and value_loss_epoch < self.bi_beta:
+            print("Burned in")
             self.burn_in = False
 
         return value_loss_epoch, action_loss_epoch, dist_entropy_epoch
