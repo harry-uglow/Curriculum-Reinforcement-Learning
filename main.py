@@ -154,7 +154,7 @@ def main():
                 save_model = copy.deepcopy(actor_critic).cpu()
 
             if pose_estimator is not None:
-                save_model = [save_model, pose_estimator, initial_policies]
+                save_model = [[save_model, image_ip], pose_estimator, initial_policies]
             else:
                 save_model = [save_model, getattr(get_vec_normalize(envs), 'ob_rms', None),
                               initial_policies]
