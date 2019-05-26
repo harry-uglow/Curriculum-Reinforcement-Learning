@@ -54,17 +54,17 @@ def main():
     torch.set_num_threads(1)
     device = torch.device("cuda:0" if args.cuda else "cpu")
 
-    image_ip, pose_estimator, initial_policies = torch.load(
-        os.path.join(args.load_dir, args.algo, args.initial_policy + ".pt"), map_location='cpu') \
+    initial_policies = torch.load(os.path.join(args.load_dir, args.algo,
+                                               args.initial_policy + ".pt")) \
         if args.initial_policy else None
 
     pose_estimator = torch.load(os.path.join(args.load_dir, "im2state",
                                              args.pose_estimator + ".pt")) \
-        if args.pose_estimator else pose_estimator
+        if args.pose_estimator else None
 
     envs = make_vec_envs(args.env_name, args.seed, args.num_processes, args.gamma, args.log_dir,
                          args.add_timestep, device, False, initial_policies,
-                         pose_estimator=pose_estimator, image_ips=[image_ip, None, None])
+                         pose_estimator=pose_estimator)
 
     base_kwargs = {'recurrent': args.recurrent_policy,
                    'zero_last_layer': initial_policies is not None}
@@ -154,7 +154,7 @@ def main():
                 save_model = copy.deepcopy(actor_critic).cpu()
 
             if pose_estimator is not None:
-                save_model = [[save_model, image_ip], pose_estimator, initial_policies]
+                save_model = [save_model, pose_estimator, initial_policies]
             else:
                 save_model = [save_model, getattr(get_vec_normalize(envs), 'ob_rms', None),
                               initial_policies]
