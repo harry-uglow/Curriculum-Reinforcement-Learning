@@ -20,10 +20,10 @@ class ReachOverWallEnv(SawyerEnv):
     observation_space = spaces.Box(np.array([0] * 11), np.array([1] * 11), dtype=np.float32)
     timestep = 0
 
-    def __init__(self, seed, rank, headless, ep_len=64):
-        super().__init__(seed, rank, self.scene_path, headless)
+    def __init__(self, *args):
+        super().__init__(self.scene_path, *args)
 
-        self.ep_len = ep_len
+        self.ep_len = 64
 
         return_code, self.end_handle = vrep.simxGetObjectHandle(self.cid,
                 "Waypoint_tip", vrep.simx_opmode_blocking)

@@ -3,7 +3,7 @@ import os
 import numpy as np
 from gym import spaces
 import vrep
-from a2c_ppo_acktr.envs.SawyerEnv import SawyerEnv, normalise_coords
+from a2c_ppo_acktr.envs.SawyerEnv import SawyerEnv
 
 from a2c_ppo_acktr.envs.VrepEnv import check_for_errors
 
@@ -26,7 +26,6 @@ class SawyerReacherEnv(SawyerEnv):
     def __init__(self, seed, rank, headless, ep_len=64):
         super().__init__(seed, rank, self.scene_path, headless)
 
-        self.target_norm = normalise_coords(self.target_pose, cube_lower, cube_upper)
         self.ep_len = ep_len
 
         return_code, self.end_handle = vrep.simxGetObjectHandle(self.cid,
@@ -39,7 +38,6 @@ class SawyerReacherEnv(SawyerEnv):
         super(SawyerReacherEnv, self).reset()
         self.target_pose[0] = self.np_random.uniform(cube_lower[0], cube_upper[0])
         self.target_pose[1] = self.np_random.uniform(cube_lower[1], cube_upper[1])
-        self.target_norm = normalise_coords(self.target_pose, cube_lower, cube_upper)
         vrep.simxSetObjectPosition(self.cid, self.target_handle, -1, self.target_pose,
                                    vrep.simx_opmode_blocking)
 
@@ -66,7 +64,7 @@ class SawyerReacherEnv(SawyerEnv):
 
     def _get_obs(self):
         joint_obs = super(SawyerReacherEnv, self)._get_obs()
-        return np.append(joint_obs, self.target_norm)
+        return np.append(joint_obs, self.target_pose)
 
     def get_end_pose(self):
         pose = vrep.simxGetObjectPosition(self.cid, self.end_handle, -1, vrep.simx_opmode_blocking)[1]

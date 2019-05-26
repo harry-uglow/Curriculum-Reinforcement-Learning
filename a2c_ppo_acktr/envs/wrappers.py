@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 from baselines.common.vec_env import VecEnvWrapper
-from gym import spaces
+from gym import spaces, ActionWrapper
 
 from a2c_ppo_acktr.envs.ResidualVecEnvWrapper import get_residual_layers
 from im2state.utils import unnormalise_y
@@ -66,3 +66,12 @@ def get_image_obs_wrapper(venv):
     elif hasattr(venv, 'venv'):
         return get_image_obs_wrapper(venv.venv)
     return None
+
+
+class ScaleActions(ActionWrapper):
+    def __init__(self, env):
+        super(ScaleActions, self).__init__(env)
+
+    def action(self, action):
+        action_range = self.action_space.high - self.action_space.low
+        return (np.tanh(action) + 1) / 2 * action_range + self.action_space.low

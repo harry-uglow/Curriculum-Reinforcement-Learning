@@ -7,18 +7,16 @@ from a2c_ppo_acktr.envs.VrepEnv import catch_errors, VrepEnv
 
 class SawyerEnv(VrepEnv):
     num_joints = 7
-    action_space = spaces.Box(np.array([-1] * num_joints), np.array([1] * num_joints),
+    action_space = spaces.Box(np.array([-0.4] * num_joints), np.array([0.4] * num_joints),
                               dtype=np.float32)
     target_velocities = np.array([0., 0., 0., 0., 0., 0., 0.])
     scale = 0.01
     identity = scale * np.identity(num_joints)
 
-    # TODO: Make random_initial_angles mandatory
-    def __init__(self, seed, rank, scene_path, headless, random_initial_angles=True):
-        super().__init__(rank, headless)
+    def __init__(self, scene_path, *args):
+        super().__init__(*args)
 
         self.np_random = np.random.RandomState()
-        self.np_random.seed(seed + rank)
 
         catch_errors(vrep.simxSynchronous(self.cid, enable=True))
 
@@ -36,6 +34,9 @@ class SawyerEnv(VrepEnv):
 
         # Start the simulation (the "Play" button in V-Rep should now be in a "Pressed" state)
         catch_errors(vrep.simxStartSimulation(self.cid, vrep.simx_opmode_blocking))
+
+    def seed(self, seed=None):
+        self.np_random.seed(seed)
 
     def reset(self):
         initial_pose = self.np_random.multivariate_normal(self.init_joint_angles, self.identity)

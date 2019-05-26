@@ -14,9 +14,10 @@ from baselines.common.vec_env.vec_normalize import VecNormalize as VecNormalize_
 from a2c_ppo_acktr.envs.DRNoWaypointEnv import DRNoWaypointEnv
 from a2c_ppo_acktr.envs.DRWaypointEnv import DRWaypointEnv
 from a2c_ppo_acktr.envs.DishRackSparseEnv import DishRackSparseEnv
+from a2c_ppo_acktr.envs.Reach2DEnv import Reach2DEnv
 from a2c_ppo_acktr.envs.ResidualVecEnvWrapper import ResidualVecEnvWrapper
-from a2c_ppo_acktr.envs.wrappers import ImageObsVecEnvWrapper, PoseEstimatorVecEnvWrapper
-
+from a2c_ppo_acktr.envs.SawyerReacherEnv import SawyerReacherEnv
+from a2c_ppo_acktr.envs.wrappers import ImageObsVecEnvWrapper, PoseEstimatorVecEnvWrapper, ScaleActions
 try:
     import dm_control2gym
 except ImportError:
@@ -35,7 +36,12 @@ except ImportError:
 
 def make_env(env_id, seed, rank, log_dir, add_timestep, allow_early_resets, vis):
     def _thunk():
-        env = DRNoWaypointEnv(seed, rank, not vis)
+        env = DRWaypointEnv(rank, not vis)
+
+        env.seed(seed + rank)
+
+        env = ScaleActions(env)
+
         if log_dir is not None:
             env = bench.Monitor(env, os.path.join(log_dir, str(rank)),
                                 allow_early_resets=allow_early_resets)

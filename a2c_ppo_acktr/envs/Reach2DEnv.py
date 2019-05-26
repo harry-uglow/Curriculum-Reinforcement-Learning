@@ -17,18 +17,17 @@ class Reach2DEnv(Env):
                                    dtype=np.float32)
     action_space = spaces.Box(np.array([0, 0, 0]),
                               np.array([1, 1, 1]), dtype=np.float32)
-    joint_angles = np.array([0.1, 1.0, 0.5])
-    target_pose = np.array([0.2, 0.2])
-    link_lengths = [0.2, 0.15, 0.1]
     timestep = 0
     screen_size = 900
 
     def __init__(self, seed, rank, headless, ep_len=32):
-        self.target_norm = self.normalise_target()
         self.np_random = np.random.RandomState()
         self.rank = rank
         self.np_random.seed(seed + rank)
         self.ep_len = ep_len
+        self.joint_angles = np.array([0.1, 1.0, 0.5])
+        self.target_pose = np.array([0.2, 0.2])
+        self.link_lengths = np.array([0.2, 0.15, 0.1])
         if not headless:
             self.screen = pygame.display.set_mode((self.screen_size,
                                                    self.screen_size))
@@ -68,7 +67,6 @@ class Reach2DEnv(Env):
     def reset(self):
         self.target_pose = self.np_random.uniform(0, 0.3, 2)
         # self.target_pose = np.array([0.2, 0.2])
-        self.target_norm = self.normalise_target()
 
         self.joint_angles = np.array([0.1, 1.0, 0.5])
         self.timestep = 0
@@ -87,12 +85,11 @@ class Reach2DEnv(Env):
 
         ob = self._get_obs()
         done = (self.timestep == self.ep_len)
-        return ob, reward, done, dict(reward_dist=reward_dist,
-                                      reward_ctrl=reward_ctrl)
+        return ob, reward, done, dict(reward_dist=reward_dist, reward_ctrl=reward_ctrl)
 
     def _get_obs(self):
         norm_joints = self.normalise_joints()
-        return np.append(norm_joints, self.target_norm)
+        return np.append(norm_joints, self.target_pose)
 
     # Function to draw the state of the world onto the screen
     def draw_current_state(self, current_joint_angles, current_target_pose):

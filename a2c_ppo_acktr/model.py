@@ -185,18 +185,16 @@ class CNNBase(NNBase):
         init_last_layer = init_zeros if zero_last_layer else init_
 
         self.main = nn.Sequential(  # 84 x 84  128
-            init_(nn.Conv2d(num_inputs, 32, 3, stride=2)),  # 63 x 63
+            init_(nn.Conv2d(num_inputs, 32, 8, stride=4)),  # 20 x 20  31
             nn.ReLU(),
-            init_(nn.Conv2d(32, 48, 3, stride=2)),  # 31 * 31
+            init_(nn.Conv2d(32, 64, 5, stride=2)),  # 9 x 9  14
             nn.ReLU(),
-            init_(nn.Conv2d(48, 64, 3, stride=2)),  # 15 x 15
+            init_(nn.Conv2d(64, 48, 5, stride=1)),  # Extra Layer for 128 10
             nn.ReLU(),
-            init_(nn.Conv2d(64, 128, 3, stride=2)),  # 7 x 7
-            nn.ReLU(),
-            init_(nn.Conv2d(128, 64, 3, stride=1)),  # 5 x 5
+            init_(nn.Conv2d(48, 32, 3, stride=1)),  # 8 x 8
             nn.ReLU(),
             Flatten(),
-            init_last_layer(nn.Linear(64 * 5 * 5, hidden_size)),
+            init_last_layer(nn.Linear(32 * 8 * 8, hidden_size)),
             nn.ReLU()
         )
 

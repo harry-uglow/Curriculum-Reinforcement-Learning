@@ -22,10 +22,10 @@ class DishRackEnv(SawyerEnv):
     max_cam_displace = 0.1
     max_light_displace = 0.5
 
-    def __init__(self, seed, rank, headless, ep_len=64):
-        super().__init__(seed, rank, self.scene_path, headless)
+    def __init__(self, *args):
+        super().__init__(self.scene_path, *args)
 
-        self.ep_len = ep_len
+        self.ep_len = 64
 
         self.plate_handle = catch_errors(vrep.simxGetObjectHandle(self.cid,
                 "Plate_center", vrep.simx_opmode_blocking))
