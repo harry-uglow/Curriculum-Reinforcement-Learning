@@ -96,7 +96,7 @@ while True:
                     policy.curr_obs = policy.normalize_obs(obs)
 
     # Obser reward and next obs
-    obs, _, done, _ = env.step(null_action)
+    obs, _, done, _ = env.step(action)
 
     if args.env_name.find('Bullet') > -1:
         if torsoId > -1:
