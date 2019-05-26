@@ -54,17 +54,17 @@ def main():
     torch.set_num_threads(1)
     device = torch.device("cuda:0" if args.cuda else "cpu")
 
-    initial_policies = torch.load(os.path.join(args.load_dir, args.algo,
-                                               args.initial_policy + ".pt")) \
+    image_ip, pose_estimator, initial_policies = torch.load(
+        os.path.join(args.load_dir, args.algo, args.initial_policy + ".pt"), map_location='cpu') \
         if args.initial_policy else None
 
     pose_estimator = torch.load(os.path.join(args.load_dir, "im2state",
                                              args.pose_estimator + ".pt")) \
-        if args.pose_estimator else None
+        if args.pose_estimator else pose_estimator
 
     envs = make_vec_envs(args.env_name, args.seed, args.num_processes, args.gamma, args.log_dir,
                          args.add_timestep, device, False, initial_policies,
-                         pose_estimator=pose_estimator)
+                         pose_estimator=pose_estimator, image_ips=[image_ip, None, None])
 
     base_kwargs = {'recurrent': args.recurrent_policy,
                    'zero_last_layer': initial_policies is not None}

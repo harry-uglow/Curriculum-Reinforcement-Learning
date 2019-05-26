@@ -18,7 +18,7 @@ class ResidualVecEnvWrapper(VecEnvWrapper):
         self.ip.eval()
         self.ip.to(device)
         self.ob_rms = ob_rms
-        self.ob_size = len(ob_rms.mean) if ob_rms else venv.observation_space.shape[0]
+        self.ob_size = len(ob_rms.mean) if ob_rms else venv.observation_space.shape
         self.device = device
         self.clipob = clipob
         self.epsilon = epsilon
@@ -27,10 +27,12 @@ class ResidualVecEnvWrapper(VecEnvWrapper):
         self.masks = torch.zeros(venv.num_envs, 1)
 
     def normalize_obs(self, obs):
-        obs = obs[:, :self.ob_size]
         if self.ob_rms:
+            obs = obs[:, :self.ob_size]
             obs = np.clip((obs - self.ob_rms.mean) / np.sqrt(self.ob_rms.var + self.epsilon), -self.clipob, self.clipob)
-        return torch.from_numpy(obs).float().to(self.device)
+            return torch.from_numpy(obs).float().to(self.device)
+        else:
+            return obs
 
     def step_wait(self):
         obs, rew, done, info = self.venv.step_wait()
@@ -44,7 +46,8 @@ class ResidualVecEnvWrapper(VecEnvWrapper):
         with torch.no_grad():
             _, ip_action, _, self.rnn_hxs = self.ip.act(self.curr_obs, self.rnn_hxs, self.masks,
                                                         deterministic=True)
-        ip_action = ip_action.squeeze(1).cpu().numpy()
+        if self.ob_rms:
+            ip_action = ip_action.squeeze(1).cpu().numpy()
         whole_action = ip_action + action
         self.venv.step_async(whole_action)
 

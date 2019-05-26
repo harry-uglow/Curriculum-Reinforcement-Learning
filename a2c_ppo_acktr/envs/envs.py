@@ -35,7 +35,7 @@ except ImportError:
 
 def make_env(env_id, seed, rank, log_dir, add_timestep, allow_early_resets, vis):
     def _thunk():
-        env = DRWaypointEnv(rank, not vis)
+        env = DishRackSparseEnv(rank, not vis)
 
         env.seed(seed + rank)
 
@@ -102,7 +102,7 @@ def wrap_initial_policies(envs, device, initial_policies):
 
 def make_vec_envs(env_name, seed, num_processes, gamma, log_dir, add_timestep, device,
                   allow_early_resets, initial_policies, num_frame_stack=None, show=False,
-                  no_norm=False, pose_estimator=None):
+                  no_norm=False, pose_estimator=None, image_ips=None):
     envs = [make_env(env_name, seed, i, log_dir, add_timestep, allow_early_resets, show)
             for i in range(num_processes)]
 
@@ -127,6 +127,7 @@ def make_vec_envs(env_name, seed, num_processes, gamma, log_dir, add_timestep, d
 
     if pose_estimator is not None:
         envs = PoseEstimatorVecEnvWrapper(envs, pose_estimator, device)
+        envs = wrap_initial_policies(envs, device, image_ips)
 
     if num_frame_stack is not None:
         envs = VecPyTorchFrameStack(envs, num_frame_stack, device)
