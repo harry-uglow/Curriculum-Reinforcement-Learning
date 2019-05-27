@@ -35,11 +35,11 @@ except ImportError:
 
 def make_env(env_id, seed, rank, log_dir, add_timestep, allow_early_resets, vis):
     def _thunk():
-        env = DishRackSparseEnv(rank, not vis)
+        env = DRWaypointEnv(rank, not vis)
 
         env.seed(seed + rank)
 
-        # env = ScaleActions(env)
+        env = ScaleActions(env)
 
         if log_dir is not None:
             env = bench.Monitor(env, os.path.join(log_dir, str(rank)),

@@ -20,9 +20,9 @@ class DRWaypointEnv(DishRackEnv):
 
     def step(self, a):
         self.target_velocities = a
-        plate_trg = self.get_distance(self.target_handle, self.plate_handle)
+        plate_trg = self.get_distance(self.target_handle, self.plate_handle) * 4
         plate_way = self.get_distance(self.waypoint_handle, self.plate_handle)
-        way_trg = self.get_distance(self.target_handle, self.waypoint_handle)
+        way_trg = self.get_distance(self.target_handle, self.waypoint_handle) * 4
 
         if not self.reached_waypoint and plate_way < 0.05:
             self.reached_waypoint = True

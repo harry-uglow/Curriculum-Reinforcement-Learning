@@ -7,7 +7,7 @@ from a2c_ppo_acktr.envs.VrepEnv import catch_errors, VrepEnv
 
 class SawyerEnv(VrepEnv):
     num_joints = 7
-    action_space = spaces.Box(np.array([-0.4] * num_joints), np.array([0.4] * num_joints),
+    action_space = spaces.Box(np.array([-0.3] * num_joints), np.array([0.3] * num_joints),
                               dtype=np.float32)
     target_velocities = np.array([0., 0., 0., 0., 0., 0., 0.])
     scale = 0.01
