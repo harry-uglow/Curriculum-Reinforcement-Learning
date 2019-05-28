@@ -107,7 +107,7 @@ def main():
         if np.all(dones):
             if i % 10 == 0:
                 print(i)
-            i += 10
+            i += args.num_processes
             rew = sum([int(rew > 0) for rew in rews])
             total_successes += rew
 
