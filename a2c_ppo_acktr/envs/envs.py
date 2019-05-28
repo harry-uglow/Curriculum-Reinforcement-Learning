@@ -38,7 +38,7 @@ except ImportError:
 
 def make_env(env_id, seed, rank, log_dir, add_timestep, allow_early_resets, vis):
     def _thunk():
-        env = DRNoWaypointEnv(rank, not vis)
+        env = DishRackSparseEnv(rank, not vis)
 
         env.seed(seed + rank)
 
