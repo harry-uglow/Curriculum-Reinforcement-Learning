@@ -11,12 +11,14 @@ from baselines.common.vec_env.subproc_vec_env import SubprocVecEnv
 from baselines.common.vec_env.dummy_vec_env import DummyVecEnv
 from baselines.common.vec_env.vec_normalize import VecNormalize as VecNormalize_
 
-from a2c_ppo_acktr.envs.DRNoWaypointEnv import DRNoWaypointEnv
+from a2c_ppo_acktr.envs.DRNoWaypointEnv import DRNoWaypointEnv, DRNonRespondableEnv
 from a2c_ppo_acktr.envs.DRWaypointEnv import DRWaypointEnv
 from a2c_ppo_acktr.envs.DishRackSparseEnv import DishRackSparseEnv
 from a2c_ppo_acktr.envs.ResidualVecEnvWrapper import ResidualVecEnvWrapper
 from a2c_ppo_acktr.envs.SawyerReacherEnv import SawyerReacherEnv
-from a2c_ppo_acktr.envs.wrappers import ImageObsVecEnvWrapper, PoseEstimatorVecEnvWrapper, ScaleActions
+from a2c_ppo_acktr.envs.wrappers import ImageObsVecEnvWrapper, PoseEstimatorVecEnvWrapper, \
+    ScaleActions, E2EVecEnvWrapper
+
 try:
     import dm_control2gym
 except ImportError:
@@ -35,7 +37,7 @@ except ImportError:
 
 def make_env(env_id, seed, rank, log_dir, add_timestep, allow_early_resets, vis):
     def _thunk():
-        env = DRWaypointEnv(rank, not vis)
+        env = DRNonRespondableEnv(rank, not vis)
 
         env.seed(seed + rank)
 
@@ -102,7 +104,7 @@ def wrap_initial_policies(envs, device, initial_policies):
 
 def make_vec_envs(env_name, seed, num_processes, gamma, log_dir, add_timestep, device,
                   allow_early_resets, initial_policies, num_frame_stack=None, show=False,
-                  no_norm=False, pose_estimator=None, image_ips=None):
+                  no_norm=False, pose_estimator=None, image_ips=None, e2e=False):
     envs = [make_env(env_name, seed, i, log_dir, add_timestep, allow_early_resets, show)
             for i in range(num_processes)]
 
@@ -117,11 +119,14 @@ def make_vec_envs(env_name, seed, num_processes, gamma, log_dir, add_timestep, d
         # Two separate layers as they may have their uses separately
         envs = ImageObsVecEnvWrapper(envs)
 
-    if len(envs.observation_space.shape) == 1 and not no_norm:
+    if len(envs.observation_space.shape) == 1 and not (no_norm or e2e):
         if gamma is None:
             envs = VecNormalize(envs, ret=False)
         else:
             envs = VecNormalize(envs, gamma=gamma)
+
+    if e2e:
+        envs = E2EVecEnvWrapper(envs)
 
     envs = VecPyTorch(envs, device)
 
@@ -131,7 +136,7 @@ def make_vec_envs(env_name, seed, num_processes, gamma, log_dir, add_timestep, d
 
     if num_frame_stack is not None:
         envs = VecPyTorchFrameStack(envs, num_frame_stack, device)
-    elif len(envs.observation_space.shape) == 3 and not pose_estimator:
+    elif not (pose_estimator or e2e) and len(envs.observation_space.shape) == 3:
         envs = VecPyTorchFrameStack(envs, 4, device)
 
     return envs

@@ -266,3 +266,64 @@ class MLPBase(NNBase):
         hidden_actor = self.actor(x)
 
         return self.critic_linear(hidden_critic), hidden_actor, rnn_hxs
+
+
+class E2EBase(NNBase):
+    def __init__(self, obs_shape, recurrent=False, hidden_size=128, zero_last_layer=False):
+        super(E2EBase, self).__init__(recurrent, hidden_size, hidden_size)
+        image_obs_shape, state_obs_shape = obs_shape
+
+        init_convs = lambda m: init(m,
+            nn.init.orthogonal_,
+            lambda x: nn.init.constant_(x, 0),
+            nn.init.calculate_gain('relu'))
+
+        self.conv_layers = nn.Sequential(  # 84 x 84  128
+            init_convs(nn.Conv2d(image_obs_shape[0], 32, 3, stride=2)),  # 63 x 63
+            nn.ReLU(),
+            init_convs(nn.Conv2d(32, 48, 3, stride=2)),  # 31 * 31
+            nn.ReLU(),
+            init_convs(nn.Conv2d(48, 64, 3, stride=2)),  # 15 x 15
+            nn.ReLU(),
+            init_convs(nn.Conv2d(64, 128, 3, stride=2)),  # 7 x 7
+            nn.ReLU(),
+            init_convs(nn.Conv2d(128, 192, 3, stride=2)),  # 3 x 3
+            nn.ReLU(),
+            init_convs(nn.Conv2d(192, 256, 3, stride=2)),  # 1 x 1
+            nn.ReLU(),
+            Flatten(),
+        )
+
+        init_fcs = lambda m: init(m, nn.init.orthogonal_, lambda x: nn.init.constant_(x, 0),
+                               np.sqrt(2))
+
+        init_zeros = lambda m: init(m, lambda x, gain=None: nn.init.constant_(x, 0),
+                                    lambda x: nn.init.constant_(x, 0), np.sqrt(2))
+
+        init_last_layer = init_zeros if zero_last_layer else init_fcs
+
+        self.actor = nn.Sequential(
+            init_fcs(nn.LSTM(256 + state_obs_shape[0], hidden_size, batch_first=True)),
+            nn.Tanh(),
+            init_last_layer(nn.Linear(hidden_size, hidden_size // 2)),
+            nn.Tanh(),
+        )
+
+        self.critic_linear = nn.Sequential(
+            init_fcs(nn.LSTM(256 + state_obs_shape[0], hidden_size, batch_first=True)),
+            nn.Tanh(),
+            init_last_layer(nn.Linear(hidden_size, hidden_size // 2)),
+            nn.Tanh(),
+        )
+
+        self.critic_linear = init_convs(nn.Linear(hidden_size, 1))
+
+        self.train()
+
+    def forward(self, inputs, rnn_hxs, masks):
+        x = self.main(inputs / 255.0)
+
+        if self.is_recurrent:
+            x, rnn_hxs = self._forward_gru(x, rnn_hxs, masks)
+
+        return self.critic_linear(x), x, rnn_hxs

@@ -1,6 +1,7 @@
 import argparse
 import os
 
+import numpy as np
 import torch
 
 from a2c_ppo_acktr.envs.ResidualVecEnvWrapper import get_residual_layers
@@ -18,6 +19,8 @@ sys.path.append('a2c_ppo_acktr')
 parser = argparse.ArgumentParser(description='RL')
 parser.add_argument('--seed', type=int, default=1,
                     help='random seed (default: 1)')
+parser.add_argument('--num-processes', type=int, default=1,
+                    help='how many training CPU processes to use (default: 16)')
 parser.add_argument('--log-interval', type=int, default=10,
                     help='log interval, one log per n updates (default: 10)')
 parser.add_argument('--env-name', default='PongNoFrameskip-v4',
@@ -38,72 +41,88 @@ args = parser.parse_args()
 
 args.det = not args.non_det
 
-# We need to use the same statistics for normalization as used in training
-policies = torch.load(os.path.join(args.load_dir, args.env_name + ".pt"),
-                      map_location=torch.device('cpu'))
 
-if args.rip:
-    rip, im2state, policies = policies
-else:
-    im2state = torch.load(os.path.join(args.i2s_load_dir, args.image_layer + ".pt")) if \
-        args.image_layer else None
-    rip = None
-if im2state:
-    im2state.eval()
+def main():
+    # We need to use the same statistics for normalization as used in training
+    policies = torch.load(os.path.join(args.load_dir, args.env_name + ".pt"),
+                          map_location=torch.device('cpu'))
 
-env = make_vec_envs(args.env_name, args.seed + 1000, 1, None, None, args.add_timestep, 'cpu',
-                    False, policies, show=True, no_norm=True, pose_estimator=im2state)
-null_action = torch.zeros((1, env.action_space.shape[0]))
-low = env.observation_space.low[args.state_indices]
-high = env.observation_space.high[args.state_indices]
+    if args.rip:
+        rip, im2state, policies = policies
+    else:
+        im2state = torch.load(os.path.join(args.i2s_load_dir, args.image_layer + ".pt")) if \
+            args.image_layer else None
+        rip = None
+    if im2state:
+        im2state.eval()
 
-policy_wrappers = get_residual_layers(env)
+    env = make_vec_envs(args.env_name, args.seed + 1000, args.num_processes, None, None,
+                        args.add_timestep, 'cpu', False, policies, show=True, no_norm=True,
+                        pose_estimator=im2state)
+    null_action = torch.zeros((1, env.action_space.shape[0]))
+    low = env.observation_space.low[args.state_indices]
+    high = env.observation_space.high[args.state_indices]
 
-# Get a render function
-render_func = get_render_func(env)
+    policy_wrappers = get_residual_layers(env)
 
-if rip:
-    recurrent_hidden_states = torch.zeros(1, rip.recurrent_hidden_state_size)
-    masks = torch.zeros(1, 1)
+    # Get a render function
+    render_func = get_render_func(env)
 
-obs = env.reset()
+    if rip:
+        recurrent_hidden_states = torch.zeros(1, rip.recurrent_hidden_state_size)
+        masks = torch.zeros(1, 1)
 
-if render_func is not None:
-    render_func('human')
-
-if args.env_name.find('Bullet') > -1:
-    import pybullet as p
-
-    torsoId = -1
-    for i in range(p.getNumBodies()):
-        if (p.getBodyInfo(i)[0].decode() == "torso"):
-            torsoId = i
-
-while True:
-
-    with torch.no_grad():
-        if rip:
-            value, action, _, recurrent_hidden_states = rip.act(
-                obs, recurrent_hidden_states, masks, deterministic=args.det)
-        else:
-            action = null_action
-            if im2state:
-                image = torch.from_numpy(format_images(env.get_images())).float()
-                part_state = unnormalise_y(im2state(image).numpy(), low, high)
-                obs = obs.numpy()
-                obs[:, args.state_indices] = part_state
-                for policy in policy_wrappers:
-                    policy.curr_obs = policy.normalize_obs(obs)
-
-    # Obser reward and next obs
-    obs, _, done, _ = env.step(action)
-
-    if args.env_name.find('Bullet') > -1:
-        if torsoId > -1:
-            distance = 5
-            yaw = 0
-            humanPos, humanOrn = p.getBasePositionAndOrientation(torsoId)
-            p.resetDebugVisualizerCamera(distance, yaw, -20, humanPos)
+    obs = env.reset()
 
     if render_func is not None:
         render_func('human')
+
+    if args.env_name.find('Bullet') > -1:
+        import pybullet as p
+
+        torsoId = -1
+        for i in range(p.getNumBodies()):
+            if (p.getBodyInfo(i)[0].decode() == "torso"):
+                torsoId = i
+
+    i = 0
+    total_successes = 0
+    while i < 100:
+        with torch.no_grad():
+            if rip:
+                value, action, _, recurrent_hidden_states = rip.act(
+                    obs, recurrent_hidden_states, masks, deterministic=args.det)
+            else:
+                action = null_action
+                if im2state:
+                    image = torch.from_numpy(format_images(env.get_images())).float()
+                    part_state = unnormalise_y(im2state(image).numpy(), low, high)
+                    obs = obs.numpy()
+                    obs[:, args.state_indices] = part_state
+                    for policy in policy_wrappers:
+                        policy.curr_obs = policy.normalize_obs(obs)
+
+        # Obser reward and next obs
+        obs, rews, dones, _ = env.step(action)
+        if np.all(dones):
+            if i % 10 == 0:
+                print(i)
+            i += 10
+            rew = sum([int(rew > 0) for rew in rews])
+            total_successes += rew
+
+        if args.env_name.find('Bullet') > -1:
+            if torsoId > -1:
+                distance = 5
+                yaw = 0
+                humanPos, humanOrn = p.getBasePositionAndOrientation(torsoId)
+                p.resetDebugVisualizerCamera(distance, yaw, -20, humanPos)
+
+        if render_func is not None:
+            render_func('human')
+
+    print(f"In 100 episodes: {total_successes} successes")
+
+
+if __name__ == "__main__":
+    main()

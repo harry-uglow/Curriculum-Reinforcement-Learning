@@ -75,3 +75,28 @@ class ScaleActions(ActionWrapper):
     def action(self, action):
         action_range = self.action_space.high - self.action_space.low
         return (np.tanh(action) + 1) / 2 * action_range + self.action_space.low
+
+
+class E2EVecEnvWrapper(VecEnvWrapper):
+    def __init__(self, venv):
+        res = np.array(venv.get_images()[0].shape)
+        image_obs_space = spaces.Box(0, 255, (12, 128, 128), dtype=np.uint8)
+        observation_space = spaces.Tuple((image_obs_space, venv.observation_space))
+        super().__init__(venv, observation_space)
+        self.curr_state_obs = None
+        self.last_4_image_obs = None
+
+    def reset(self):
+        self.curr_state_obs = self.venv.reset()
+        four_imgs_per_process = np.tile(self.venv.get_images(), 4)
+        image_obs = np.transpose(four_imgs_per_process, (0, 3, 1, 2))
+        self.last_4_image_obs = image_obs
+        return image_obs, self.curr_state_obs
+
+    # Swap out state for image
+    def step_wait(self):
+        self.curr_state_obs, rew, done, info = self.venv.step_wait()
+        image_obs = np.transpose(self.venv.get_images(), (0, 3, 1, 2))
+        self.last_4_image_obs = np.roll(self.last_4_image_obs, 3, axis=1)
+        self.last_4_image_obs[:, 9:] = image_obs
+        return (self.last_4_image_obs, self.curr_state_obs), rew, done, info

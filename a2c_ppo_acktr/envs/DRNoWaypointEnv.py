@@ -45,9 +45,7 @@ class DRNonRespondableEnv(DishRackEnv):
         done = (self.timestep == self.ep_len)
 
         rew_dist = - dist
-        rew_ctrl = - np.square(np.abs(self.target_velocities).mean())
         rew_orientation = - orientation_diff / max(dist, 0.11)  # Radius = 0.11
-        rew = 0.01 * (rew_dist + rew_ctrl + 0.04 * rew_orientation)
+        rew = 0.01 * (rew_dist + 0.04 * rew_orientation)
 
-        return ob, rew, done, dict(rew_dist=rew_dist, rew_ctrl=rew_ctrl,
-                                   rew_orientation=rew_orientation)
+        return ob, rew, done, dict(rew_dist=rew_dist, rew_orientation=rew_orientation)

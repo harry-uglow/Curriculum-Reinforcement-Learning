@@ -13,14 +13,10 @@ class SawyerEnv(VrepEnv):
     scale = 0.01
     identity = scale * np.identity(num_joints)
 
-    def __init__(self, scene_path, *args):
+    def __init__(self, *args):
         super().__init__(*args)
 
         self.np_random = np.random.RandomState()
-
-        catch_errors(vrep.simxSynchronous(self.cid, enable=True))
-
-        catch_errors(vrep.simxLoadScene(self.cid, scene_path, 0, vrep.simx_opmode_blocking))
 
         # Get the initial configuration of the robot (needed to later reset the robot's pose)
         self.init_config_tree, _, _, _ = self.call_lua_function('get_configuration_tree')

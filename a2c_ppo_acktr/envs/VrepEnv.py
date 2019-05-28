@@ -49,6 +49,7 @@ base_port_num = 19998
 # Define the host where this communication is taking place
 host = '127.0.0.1'
 
+scene_dir_path = os.path.join(os.getcwd(), 'scenes')
 vrep_path = '/Users/Harry/Applications/V-REP_PRO_EDU_V3_6_1_Mac/vrep.app' \
             '/Contents/MacOS/vrep' \
     if platform.system() == 'Darwin' else \
@@ -68,7 +69,7 @@ class VrepEnv(Env):
     actual observations of the environment as per usual.
     """
 
-    def __init__(self, rank, headless):
+    def __init__(self, scene_name, rank, headless):
         # Launch a V-Rep server
         # Read more here: http://www.coppeliarobotics.com/helpFiles/en/commandLine.htm
         port_num = base_port_num + rank
@@ -80,6 +81,10 @@ class VrepEnv(Env):
         time.sleep(6)
 
         self.cid = vrep.simxStart(host, port_num, True, True, 5000, 5)
+        catch_errors(vrep.simxSynchronous(self.cid, enable=True))
+
+        scene_path = os.path.join(scene_dir_path, f'{scene_name}.ttt')
+        catch_errors(vrep.simxLoadScene(self.cid, scene_path, 0, vrep.simx_opmode_blocking))
         atexit.register(self.close)
 
     # Function to call a Lua function in V-Rep
