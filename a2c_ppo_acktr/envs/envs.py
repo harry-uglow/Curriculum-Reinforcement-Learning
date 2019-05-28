@@ -18,6 +18,7 @@ from a2c_ppo_acktr.envs.ResidualVecEnvWrapper import ResidualVecEnvWrapper
 from a2c_ppo_acktr.envs.SawyerReacherEnv import SawyerReacherEnv
 from a2c_ppo_acktr.envs.wrappers import ImageObsVecEnvWrapper, PoseEstimatorVecEnvWrapper, \
     ScaleActions, E2EVecEnvWrapper
+from a2c_ppo_acktr.tuple_tensor import TupleTensor
 
 try:
     import dm_control2gym
@@ -41,7 +42,7 @@ def make_env(env_id, seed, rank, log_dir, add_timestep, allow_early_resets, vis)
 
         env.seed(seed + rank)
 
-        # env = ScaleActions(env)
+        env = ScaleActions(env)
 
         if log_dir is not None:
             env = bench.Monitor(env, os.path.join(log_dir, str(rank)),
@@ -200,7 +201,11 @@ class VecPyTorch(VecEnvWrapper):
 
     def reset(self):
         obs = self.venv.reset()
-        obs = torch.from_numpy(obs).float().to(self.device)
+        if isinstance(obs, tuple):
+            obs = TupleTensor(torch.from_numpy(obs[0]).float().to(self.device),
+                              torch.from_numpy(obs[1]).float().to(self.device))
+        else:
+            obs = torch.from_numpy(obs).float().to(self.device)
         return obs
 
     def step_async(self, actions):

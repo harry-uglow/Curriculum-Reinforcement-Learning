@@ -82,6 +82,7 @@ class E2EVecEnvWrapper(VecEnvWrapper):
         res = np.array(venv.get_images()[0].shape)
         image_obs_space = spaces.Box(0, 255, (12, 128, 128), dtype=np.uint8)
         observation_space = spaces.Tuple((image_obs_space, venv.observation_space))
+        observation_space.shape = ((12, 128, 128), venv.observation_space.shape)
         super().__init__(venv, observation_space)
         self.curr_state_obs = None
         self.last_4_image_obs = None

@@ -32,6 +32,7 @@ class DRNoWaypointEnv(DishRackEnv):
 
 
 class DRNonRespondableEnv(DishRackEnv):
+    scene_path = 'dish_rack_nr'
 
     def step(self, a):
         self.target_velocities = a

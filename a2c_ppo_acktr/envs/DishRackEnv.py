@@ -13,7 +13,7 @@ rack_upper = [0.15, (-0.45), 0.25]
 
 
 class DishRackEnv(SawyerEnv):
-    scene_path = 'dish_rack_tall'
+    scene_path = 'dish_rack'
     observation_space = spaces.Box(np.array([-3.] * 7 + rack_lower),
                                    np.array([3.] * 7 + rack_upper), dtype=np.float32)
     timestep = 0
