@@ -14,7 +14,8 @@ max_dist = 0.015  # 1.5cm
 max_rot = 0.1  # ~5.7 deg
 
 
-class DishRackSparseEnv(DishRackEnv):
+class DRSparseEnv(DishRackEnv):
+    scene_path = 'dish_rack_nr'
 
     def step(self, a):
         self.target_velocities = a

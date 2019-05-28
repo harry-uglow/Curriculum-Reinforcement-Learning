@@ -13,7 +13,7 @@ from baselines.common.vec_env.vec_normalize import VecNormalize as VecNormalize_
 
 from a2c_ppo_acktr.envs.DRNoWaypointEnv import DRNoWaypointEnv, DRNonRespondableEnv
 from a2c_ppo_acktr.envs.DRWaypointEnv import DRWaypointEnv
-from a2c_ppo_acktr.envs.DishRackSparseEnv import DishRackSparseEnv
+from a2c_ppo_acktr.envs.DRSparseEnv import DRSparseEnv
 from a2c_ppo_acktr.envs.ResidualVecEnvWrapper import ResidualVecEnvWrapper
 from a2c_ppo_acktr.envs.SawyerReacherEnv import SawyerReacherEnv
 from a2c_ppo_acktr.envs.wrappers import ImageObsVecEnvWrapper, PoseEstimatorVecEnvWrapper, \
@@ -38,7 +38,7 @@ except ImportError:
 
 def make_env(env_id, seed, rank, log_dir, add_timestep, allow_early_resets, vis):
     def _thunk():
-        env = DishRackSparseEnv(rank, not vis)
+        env = DRSparseEnv(rank, not vis)
 
         env.seed(seed + rank)
 
