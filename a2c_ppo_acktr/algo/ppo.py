@@ -31,7 +31,7 @@ class PPO():
         self.use_clipped_value_loss = use_clipped_value_loss
 
         self.burn_in = burn_in
-        self.bi_beta = 0.01
+        self.bi_beta = 1.
 
         self.optimizer = optim.Adam(actor_critic.parameters(), lr=lr, eps=eps)
 
