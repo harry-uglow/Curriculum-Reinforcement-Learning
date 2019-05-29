@@ -75,6 +75,8 @@ def get_args():
                         help='enable visdom visualization')
     parser.add_argument('--port', type=int, default=8097,
                         help='port to run the server on (default: 8097)')
+    parser.add_argument('--e2e', action='store_true', default=False,
+                        help='Train an e2e policy (do not use full state observations)')
     # TODO: Remove
     parser.add_argument('--save-as', default='i2s', help='Name to save im2state model under')
     parser.add_argument('--state-indices', nargs='+', type=int)

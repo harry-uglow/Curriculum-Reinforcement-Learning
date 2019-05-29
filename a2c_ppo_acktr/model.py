@@ -285,7 +285,7 @@ class E2EBase(NNBase):
             nn.init.calculate_gain('relu'))
 
         self.conv_layers = nn.Sequential(  # 84 x 84  128
-            init_convs(nn.Conv2d(image_obs_shape[1], 32, 3, stride=2)),  # 63 x 63
+            init_convs(nn.Conv2d(image_obs_shape[0], 32, 3, stride=2)),  # 63 x 63
             nn.ReLU(),
             init_convs(nn.Conv2d(32, 48, 3, stride=2)),  # 31 * 31
             nn.ReLU(),
@@ -330,20 +330,11 @@ class E2EBase(NNBase):
         self.train()
 
     def forward(self, inputs, rnn_hxs, masks):
-        images = inputs.fst
-        joint_angles = inputs.snd
+        images, joint_angles = inputs.items
 
-        num_batch, num_sequence, *img_shape = images.shape
-        x = images.view(-1, *img_shape)
+        conv_output = self.conv_layers(images / 255.0)
 
-        conv_output = self.conv_layers(x / 255.0)
-
-        # if self.is_recurrent:
-        #     x, rnn_hxs = self._forward_gru(x, rnn_hxs, masks)
-
-        conv_output = conv_output.view(num_batch, num_sequence, -1)
-        joint_angles = joint_angles.expand([num_sequence, *joint_angles.shape]).transpose(1, 0)
-        x = torch.cat((conv_output, joint_angles), dim=2)
+        x = torch.cat((conv_output, joint_angles), dim=1)
         hidden_critic = self.critic(x)
         hidden_actor = self.actor(x)
 

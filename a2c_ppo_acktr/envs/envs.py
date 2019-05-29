@@ -38,7 +38,7 @@ except ImportError:
 
 def make_env(env_id, seed, rank, log_dir, add_timestep, allow_early_resets, vis):
     def _thunk():
-        env = DRSparseEnv(rank, not vis)
+        env = DRNonRespondableEnv(rank, not vis)
 
         env.seed(seed + rank)
 
@@ -214,7 +214,11 @@ class VecPyTorch(VecEnvWrapper):
 
     def step_wait(self):
         obs, reward, done, info = self.venv.step_wait()
-        obs = torch.from_numpy(obs).float().to(self.device)
+        if isinstance(obs, tuple):
+            obs = TupleTensor(torch.from_numpy(obs[0]).float().to(self.device),
+                              torch.from_numpy(obs[1]).float().to(self.device))
+        else:
+            obs = torch.from_numpy(obs).float().to(self.device)
         reward = torch.from_numpy(reward).unsqueeze(dim=1).float()
         return obs, reward, done, info
 

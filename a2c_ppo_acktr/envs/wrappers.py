@@ -79,8 +79,8 @@ class ScaleActions(ActionWrapper):
 
 class E2EVecEnvWrapper(VecEnvWrapper):
     def __init__(self, venv):
-        res = np.append(venv.get_images()[0].shape, 4)
-        image_obs_space = spaces.Box(0, 255, res[[3, 2, 0, 1]], dtype=np.uint8)
+        res = np.array(venv.get_images()[0].shape)
+        image_obs_space = spaces.Box(0, 255, res[[2, 0, 1]], dtype=np.uint8)
         base_obs_space = venv.observation_space
         state_obs_space = spaces.Box(base_obs_space.low[:7], base_obs_space.high[:7],
                                      dtype=base_obs_space.dtype)
@@ -92,10 +92,7 @@ class E2EVecEnvWrapper(VecEnvWrapper):
 
     def reset(self):
         self.curr_state_obs = self.venv.reset()[:, :7]
-        img_obs = self.venv.get_images()
-        four_imgs_per_process = np.stack([img_obs]*4, axis=1)
-        image_obs = np.transpose(four_imgs_per_process, (0, 1, 4, 2, 3))
-        self.last_4_image_obs = image_obs
+        image_obs = np.transpose(self.venv.get_images(), (0, 3, 1, 2))
         return image_obs, self.curr_state_obs
 
     # Swap out state for image
@@ -103,6 +100,4 @@ class E2EVecEnvWrapper(VecEnvWrapper):
         obs, rew, done, info = self.venv.step_wait()
         self.curr_state_obs = obs[:, :7]
         image_obs = np.transpose(self.venv.get_images(), (0, 3, 1, 2))
-        self.last_4_image_obs = np.roll(self.last_4_image_obs, 3, axis=1)
-        self.last_4_image_obs[:, 3] = image_obs
-        return (self.last_4_image_obs, self.curr_state_obs), rew, done, info
+        return (image_obs, self.curr_state_obs), rew, done, info

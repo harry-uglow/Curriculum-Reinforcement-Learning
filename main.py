@@ -64,7 +64,7 @@ def main():
 
     envs = make_vec_envs(args.env_name, args.seed, args.num_processes, args.gamma, args.log_dir,
                          args.add_timestep, device, False, initial_policies,
-                         pose_estimator=pose_estimator)
+                         pose_estimator=pose_estimator, e2e=args.e2eg)
 
     base_kwargs = {'recurrent': args.recurrent_policy,
                    'zero_last_layer': initial_policies is not None}
