@@ -20,7 +20,9 @@ class Policy(nn.Module):
         if base_kwargs is None:
             base_kwargs = {}
         if base is None:
-            if len(obs_shape) == 3:
+            if isinstance(obs_shape[0], tuple):
+                base = E2EBase
+            elif len(obs_shape) == 3:
                 base = CNNBase
             elif len(obs_shape) == 1:
                 base = MLPBase
@@ -273,8 +275,9 @@ class MLPBase(NNBase):
 
 
 class E2EBase(NNBase):
-    def __init__(self, _, recurrent=False, hidden_size=128, zero_last_layer=False):
-        super(E2EBase, self).__init__(recurrent, hidden_size, hidden_size)
+    def __init__(self, obs_shape, recurrent=False, hidden_size=64, zero_last_layer=False):
+        super(E2EBase, self).__init__(False, hidden_size, hidden_size)
+        image_obs_shape, state_obs_shape = obs_shape
 
         init_convs = lambda m: init(m,
             nn.init.orthogonal_,
@@ -282,7 +285,7 @@ class E2EBase(NNBase):
             nn.init.calculate_gain('relu'))
 
         self.conv_layers = nn.Sequential(  # 84 x 84  128
-            init_convs(nn.Conv2d(12, 32, 3, stride=2)),  # 63 x 63
+            init_convs(nn.Conv2d(image_obs_shape[1], 32, 3, stride=2)),  # 63 x 63
             nn.ReLU(),
             init_convs(nn.Conv2d(32, 48, 3, stride=2)),  # 31 * 31
             nn.ReLU(),
@@ -306,16 +309,16 @@ class E2EBase(NNBase):
         init_last_layer = init_zeros if zero_last_layer else init_fcs
 
         self.actor = nn.Sequential(
-            nn.LSTM(256 + 10, hidden_size, batch_first=True),
+            init_fcs(nn.Linear(256 + state_obs_shape[0], 128)),
             nn.Tanh(),
-            init_last_layer(nn.Linear(hidden_size, hidden_size // 2)),
+            init_last_layer(nn.Linear(128, hidden_size)),
             nn.Tanh(),
         )
 
         self.critic = nn.Sequential(
-            nn.LSTM(256 + 10, hidden_size, batch_first=True),
+            init_fcs(nn.Linear(256 + state_obs_shape[0], 128)),
             nn.Tanh(),
-            init_last_layer(nn.Linear(hidden_size, hidden_size // 2)),
+            init_last_layer(nn.Linear(128, hidden_size)),
             nn.Tanh(),
         )
 
@@ -326,11 +329,22 @@ class E2EBase(NNBase):
 
         self.train()
 
-    # TODO: Properly
     def forward(self, inputs, rnn_hxs, masks):
-        x = self.main(inputs / 255.0)
+        images = inputs.fst
+        joint_angles = inputs.snd
 
-        if self.is_recurrent:
-            x, rnn_hxs = self._forward_gru(x, rnn_hxs, masks)
+        num_batch, num_sequence, *img_shape = images.shape
+        x = images.view(-1, *img_shape)
 
-        return self.critic_linear(x), x, rnn_hxs
+        conv_output = self.conv_layers(x / 255.0)
+
+        # if self.is_recurrent:
+        #     x, rnn_hxs = self._forward_gru(x, rnn_hxs, masks)
+
+        conv_output = conv_output.view(num_batch, num_sequence, -1)
+        joint_angles = joint_angles.expand([num_sequence, *joint_angles.shape]).transpose(1, 0)
+        x = torch.cat((conv_output, joint_angles), dim=2)
+        hidden_critic = self.critic(x)
+        hidden_actor = self.actor(x)
+
+        return self.critic_linear(hidden_critic), hidden_actor, rnn_hxs

@@ -57,8 +57,8 @@ def main():
         im2state.eval()
 
     env = make_vec_envs(args.env_name, args.seed + 1000, args.num_processes, None, None,
-                        args.add_timestep, 'cpu', False, policies, show=True, no_norm=True,
-                        pose_estimator=im2state)
+                        args.add_timestep, 'cpu', False, policies, show=(args.num_processes == 1),
+                        no_norm=True, pose_estimator=im2state)
     null_action = torch.zeros((1, env.action_space.shape[0]))
     low = env.observation_space.low[args.state_indices]
     high = env.observation_space.high[args.state_indices]
@@ -106,7 +106,7 @@ def main():
         obs, rews, dones, _ = env.step(action)
         if np.all(dones):
             if i % 10 == 0:
-                print(i)
+                print(rews)
             i += args.num_processes
             rew = sum([int(rew > 0) for rew in rews])
             total_successes += rew
