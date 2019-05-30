@@ -38,7 +38,7 @@ except ImportError:
 
 def make_env(env_id, seed, rank, log_dir, add_timestep, allow_early_resets, vis):
     def _thunk():
-        env = DRSparseEnv(rank, not vis)
+        env = DRNonRespondableEnv(rank, not vis)
 
         env.seed(seed + rank)
 
@@ -114,7 +114,8 @@ def make_vec_envs(env_name, seed, num_processes, gamma, log_dir, add_timestep, d
     else:
         envs = DummyVecEnv(envs)
 
-    envs = wrap_initial_policies(envs, device, initial_policies)
+    if not e2e:
+        envs = wrap_initial_policies(envs, device, initial_policies)
 
     if pose_estimator is not None:
         # Two separate layers as they may have their uses separately
@@ -134,6 +135,8 @@ def make_vec_envs(env_name, seed, num_processes, gamma, log_dir, add_timestep, d
     if pose_estimator is not None:
         envs = PoseEstimatorVecEnvWrapper(envs, pose_estimator, device)
         envs = wrap_initial_policies(envs, device, image_ips)
+    if e2e:
+        envs = wrap_initial_policies(envs, device, initial_policies)
 
     if num_frame_stack is not None:
         envs = VecPyTorchFrameStack(envs, num_frame_stack, device)

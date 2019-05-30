@@ -37,6 +37,7 @@ parser.add_argument('--image-layer', default=None,
                     help='network taking images as input and giving state as output')
 parser.add_argument('--state-indices', nargs='+', type=int)
 parser.add_argument('--rip', action='store_true', default=False)
+parser.add_argument('--e2e', action='store_true', default=False)
 args = parser.parse_args()
 
 args.det = not args.non_det
@@ -58,10 +59,10 @@ def main():
 
     env = make_vec_envs(args.env_name, args.seed + 1000, args.num_processes, None, None,
                         args.add_timestep, 'cpu', False, policies, show=(args.num_processes == 1),
-                        no_norm=True, pose_estimator=im2state)
+                        no_norm=True, pose_estimator=im2state, e2e=True)
     null_action = torch.zeros((1, env.action_space.shape[0]))
-    low = env.observation_space.low[args.state_indices]
-    high = env.observation_space.high[args.state_indices]
+    # low = env.observation_space.low[args.state_indices]
+    # high = env.observation_space.high[args.state_indices]
 
     policy_wrappers = get_residual_layers(env)
 
