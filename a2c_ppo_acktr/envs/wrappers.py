@@ -9,8 +9,8 @@ from im2state.utils import unnormalise_y
 
 class ImageObsVecEnvWrapper(VecEnvWrapper):
     def __init__(self, venv):
-        res = np.array(venv.get_images()[0].shape)
-        observation_space = spaces.Box(0, 255, res[[2, 0, 1]], dtype=venv.observation_space.dtype)
+        res = venv.get_images(mode='activate')[0]
+        observation_space = spaces.Box(0, 255, [3, *res], dtype=venv.observation_space.dtype)
         super().__init__(venv, observation_space)
         self.curr_state_obs = None
 
@@ -79,8 +79,8 @@ class ScaleActions(ActionWrapper):
 
 class E2EVecEnvWrapper(VecEnvWrapper):
     def __init__(self, venv):
-        res = np.array(venv.get_images()[0].shape)
-        image_obs_space = spaces.Box(0, 255, res[[2, 0, 1]], dtype=np.uint8)
+        res = venv.get_images(mode='activate')[0]
+        image_obs_space = spaces.Box(0, 255, [3, *res], dtype=np.uint8)
         base_obs_space = venv.observation_space
         state_obs_space = spaces.Box(base_obs_space.low[:7], base_obs_space.high[:7],
                                      dtype=base_obs_space.dtype)
