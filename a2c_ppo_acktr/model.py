@@ -246,7 +246,6 @@ class MLPBase(NNBase):
             init_(nn.Linear(hidden_size, hidden_size)),
             nn.Tanh(),
             init_last_layer(nn.Linear(hidden_size, hidden_size)),
-            nn.Tanh()
         )
 
         self.critic = nn.Sequential(
@@ -287,17 +286,16 @@ class E2EBase(NNBase):
         self.conv_layers = nn.Sequential(  # 84 x 84  128
             init_convs(nn.Conv2d(image_obs_shape[0], 32, 3, stride=2)),  # 63 x 63
             nn.ReLU(),
-            init_convs(nn.Conv2d(32, 48, 3, stride=2)),  # 31 * 31
+            init_convs(nn.Conv2d(32, 32, 3, stride=2)),  # 31 * 31
             nn.ReLU(),
-            init_convs(nn.Conv2d(48, 64, 3, stride=2)),  # 15 x 15
+            init_convs(nn.Conv2d(32, 32, 3, stride=2)),  # 15 x 15
             nn.ReLU(),
-            init_convs(nn.Conv2d(64, 128, 3, stride=2)),  # 7 x 7
+            init_convs(nn.Conv2d(32, 32, 3, stride=2)),  # 7 x 7
             nn.ReLU(),
-            init_convs(nn.Conv2d(128, 192, 3, stride=2)),  # 3 x 3
-            nn.ReLU(),
-            init_convs(nn.Conv2d(192, 256, 3, stride=2)),  # 1 x 1
+            init_convs(nn.Conv2d(32, 32, 3, stride=1)),  # 5 x 5
             nn.ReLU(),
             Flatten(),
+
         )
 
         init_fcs = lambda m: init(m, nn.init.orthogonal_, lambda x: nn.init.constant_(x, 0),
@@ -309,33 +307,37 @@ class E2EBase(NNBase):
         init_last_layer = init_zeros if zero_last_layer else init_fcs
 
         self.actor = nn.Sequential(
-            init_fcs(nn.Linear(256 + state_obs_shape[0], 128)),
+            init_fcs(nn.Linear(32 * 5 * 5 + 7, 256)),
             nn.Tanh(),
-            init_last_layer(nn.Linear(128, hidden_size)),
+            init_fcs(nn.Linear(256, 256)),
+            nn.Tanh(),
+            init_fcs(nn.Linear(256, 256)),
+            nn.Tanh(),
+            init_last_layer(nn.Linear(256, hidden_size)),
             nn.Tanh(),
         )
 
         self.critic = nn.Sequential(
-            init_fcs(nn.Linear(256 + state_obs_shape[0], 128)),
+            init_fcs(nn.Linear(64 + state_obs_shape[0], 256)),
             nn.Tanh(),
-            init_last_layer(nn.Linear(128, hidden_size)),
+            init_fcs(nn.Linear(256, 256)),
             nn.Tanh(),
+            init_fcs(nn.Linear(256, 256)),
+            nn.Tanh(),
+            init_fcs(nn.Linear(256, 1)),
         )
-
-        init_critic_linear = lambda m: init(m, nn.init.orthogonal_,
-                                            lambda x: nn.init.constant_(x, 0))
-
-        self.critic_linear = init_critic_linear(nn.Linear(hidden_size, 1))
 
         self.train()
 
     def forward(self, inputs, rnn_hxs, masks):
-        images, joint_angles = inputs.items
+        images, state = inputs.items
+        joint_angles = state[:, :7]
 
         conv_output = self.conv_layers(images / 255.0)
 
         x = torch.cat((conv_output, joint_angles), dim=1)
-        hidden_critic = self.critic(x)
-        hidden_actor = self.actor(x)
+        actor_features = self.actor(x)
+        x = torch.cat((actor_features, state), dim=1)
+        value = self.critic(x)
 
-        return self.critic_linear(hidden_critic), hidden_actor, rnn_hxs
+        return value, actor_features, rnn_hxs

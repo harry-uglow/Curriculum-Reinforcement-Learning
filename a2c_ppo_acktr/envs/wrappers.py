@@ -81,9 +81,7 @@ class E2EVecEnvWrapper(VecEnvWrapper):
     def __init__(self, venv):
         res = venv.get_images(mode='activate')[0]
         image_obs_space = spaces.Box(0, 255, [3, *res], dtype=np.uint8)
-        base_obs_space = venv.observation_space
-        state_obs_space = spaces.Box(base_obs_space.low[:7], base_obs_space.high[:7],
-                                     dtype=base_obs_space.dtype)
+        state_obs_space = venv.observation_space
         observation_space = spaces.Tuple((image_obs_space, state_obs_space))
         observation_space.shape = (image_obs_space.shape, state_obs_space.shape)
         super().__init__(venv, observation_space)
@@ -91,13 +89,13 @@ class E2EVecEnvWrapper(VecEnvWrapper):
         self.last_4_image_obs = None
 
     def reset(self):
-        self.curr_state_obs = self.venv.reset()[:, :7]
+        self.curr_state_obs = self.venv.reset()
         image_obs = np.transpose(self.venv.get_images(), (0, 3, 1, 2))
         return image_obs, self.curr_state_obs
 
     # Swap out state for image
     def step_wait(self):
         obs, rew, done, info = self.venv.step_wait()
-        self.curr_state_obs = obs[:, :7]
+        self.curr_state_obs = obs
         image_obs = np.transpose(self.venv.get_images(), (0, 3, 1, 2))
         return (image_obs, self.curr_state_obs), rew, done, info
