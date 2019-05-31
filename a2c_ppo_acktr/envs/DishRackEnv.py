@@ -19,6 +19,7 @@ class DishRackEnv(SawyerEnv):
     timestep = 0
     metadata = {'render.modes': ['human', 'rgb_array', 'activate']}
     max_cam_displace = 0.05
+    max_cam_rotation = 0.05  # ~2.9 deg
     max_light_displace = 0.5
 
     # VISION PLACEHOLDERS
@@ -28,6 +29,7 @@ class DishRackEnv(SawyerEnv):
     plate_obj_handle = None
     cloth_handle = None
     init_cam_pos = None
+    init_cam_rot = None
     init_plate_color = None
     init_rack_color = None
     init_cloth_color = None
@@ -73,12 +75,17 @@ class DishRackEnv(SawyerEnv):
             self.call_lua_function('set_color', ints=[self.plate_obj_handle], floats=plate_color)
             self.call_lua_function('set_color', ints=[self.rack_handle], floats=rack_color)
             self.call_lua_function('set_color', ints=[self.cloth_handle], floats=cloth_color)
-            # VARY CAMERA POSITION
+            # VARY CAMERA POSE
             cam_displacement = self.np_random.uniform(-self.max_cam_displace,
                                                       self.max_cam_displace, 3)
             vrep.simxSetObjectPosition(self.cid, self.vis_handle, -1,
                                        self.init_cam_pos + cam_displacement,
                                        vrep.simx_opmode_blocking)
+            orientation_displacement = ((self.np_random.beta(2, 2, 3) - 0.5) * 2
+                                        * self.max_cam_rotation)
+            vrep.simxSetObjectOrientation(self.cid, self.vis_handle, -1,
+                                          self.init_cam_rot + orientation_displacement,
+                                          vrep.simx_opmode_blocking)
             # VARY LIGHTING
             # B and C are support lights and can be disabled.
             enabled = np.random.choice(a=[False, True], size=2)
@@ -143,6 +150,8 @@ class DishRackEnv(SawyerEnv):
                                                                   vrep.simx_opmode_blocking))
         self.init_cam_pos = catch_errors(vrep.simxGetObjectPosition(self.cid, self.vis_handle, -1,
                                                                     vrep.simx_opmode_blocking))
+        self.init_cam_rot = catch_errors(
+            vrep.simxGetObjectOrientation(self.cid, self.vis_handle, -1, vrep.simx_opmode_blocking))
         self.init_plate_color = self.call_lua_function('get_color', ints=[self.plate_obj_handle])[1]
         self.init_rack_color = self.call_lua_function('get_color', ints=[self.rack_handle])[1]
         self.init_cloth_color = self.call_lua_function('get_color', ints=[self.cloth_handle])[1]
