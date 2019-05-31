@@ -66,9 +66,9 @@ def main():
                          args.add_timestep, device, False, initial_policies,
                          pose_estimator=pose_estimator, e2e=args.e2e)
 
-    base_kwargs = {'recurrent': args.recurrent_policy,
-                   'zero_last_layer': initial_policies is not None}
-    actor_critic = Policy(envs.observation_space.shape, envs.action_space, base_kwargs=base_kwargs)
+    base_kwargs = {'recurrent': args.recurrent_policy}
+    actor_critic = Policy(envs.observation_space.shape, envs.action_space, base_kwargs=base_kwargs,
+                          zero_last_layer=initial_policies is not None)
     actor_critic.to(device)
 
     if args.algo == 'a2c':

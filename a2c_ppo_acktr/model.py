@@ -15,7 +15,7 @@ class Flatten(nn.Module):
 
 
 class Policy(nn.Module):
-    def __init__(self, obs_shape, action_space, base=None, base_kwargs=None):
+    def __init__(self, obs_shape, action_space, zero_last_layer=False, base=None, base_kwargs=None):
         super(Policy, self).__init__()
         if base_kwargs is None:
             base_kwargs = {}
@@ -33,13 +33,13 @@ class Policy(nn.Module):
 
         if action_space.__class__.__name__ == "Discrete":
             num_outputs = action_space.n
-            self.dist = Categorical(self.base.output_size, num_outputs)
+            self.dist = Categorical(self.base.output_size, num_outputs, zll=zero_last_layer)
         elif action_space.__class__.__name__ == "Box":
             num_outputs = action_space.shape[0]
-            self.dist = DiagGaussian(self.base.output_size, num_outputs)
+            self.dist = DiagGaussian(self.base.output_size, num_outputs, zll=zero_last_layer)
         elif action_space.__class__.__name__ == "MultiBinary":
             num_outputs = action_space.shape[0]
-            self.dist = Bernoulli(self.base.output_size, num_outputs)
+            self.dist = Bernoulli(self.base.output_size, num_outputs, zll=zero_last_layer)
         else:
             raise NotImplementedError
 
@@ -175,7 +175,7 @@ class NNBase(nn.Module):
 
 
 class CNNBase(NNBase):
-    def __init__(self, obs_shape, recurrent=False, hidden_size=512, zero_last_layer=False):
+    def __init__(self, obs_shape, recurrent=False, hidden_size=512):
         super(CNNBase, self).__init__(recurrent, hidden_size, hidden_size)
         num_inputs = obs_shape[0]
 
@@ -183,11 +183,6 @@ class CNNBase(NNBase):
             nn.init.orthogonal_,
             lambda x: nn.init.constant_(x, 0),
             nn.init.calculate_gain('relu'))
-
-        init_zeros = lambda m: init(m, lambda x, gain=None: nn.init.constant_(x, 0),
-                                    lambda x: nn.init.constant_(x, 0), np.sqrt(2))
-
-        init_last_layer = init_zeros if zero_last_layer else init_
 
         self.main = nn.Sequential(  # 84 x 84  128
             init_(nn.Conv2d(num_inputs, 32, 3, stride=2)),  # 63 x 63
@@ -201,7 +196,7 @@ class CNNBase(NNBase):
             init_(nn.Conv2d(128, 64, 3, stride=1)),  # 5 x 5
             nn.ReLU(),
             Flatten(),
-            init_last_layer(nn.Linear(64 * 5 * 5, hidden_size)),
+            init_(nn.Linear(64 * 5 * 5, hidden_size)),
             nn.ReLU()
         )
 
@@ -223,7 +218,7 @@ class CNNBase(NNBase):
 
 
 class MLPBase(NNBase):
-    def __init__(self, obs_shape, recurrent=False, hidden_size=64, zero_last_layer=False):
+    def __init__(self, obs_shape, recurrent=False, hidden_size=64):
         num_inputs = obs_shape[0]
         super(MLPBase, self).__init__(recurrent, num_inputs, hidden_size)
 
@@ -235,17 +230,13 @@ class MLPBase(NNBase):
             lambda x: nn.init.constant_(x, 0),
             np.sqrt(2))
 
-        init_zeros = lambda m: init(m, lambda x, gain=None: nn.init.constant_(x, 0),
-                                    lambda x: nn.init.constant_(x, 0), np.sqrt(2))
-
-        init_last_layer = init_zeros if zero_last_layer else init_
-
         self.actor = nn.Sequential(
             init_(nn.Linear(num_inputs, hidden_size)),
             nn.Tanh(),
             init_(nn.Linear(hidden_size, hidden_size)),
             nn.Tanh(),
-            init_last_layer(nn.Linear(hidden_size, hidden_size)),
+            init_(nn.Linear(hidden_size, hidden_size)),
+            nn.Tanh()
         )
 
         self.critic = nn.Sequential(
@@ -274,7 +265,7 @@ class MLPBase(NNBase):
 
 
 class E2EBase(NNBase):
-    def __init__(self, obs_shape, recurrent=False, hidden_size=64, zero_last_layer=False):
+    def __init__(self, obs_shape, recurrent=False, hidden_size=64):
         super(E2EBase, self).__init__(False, hidden_size, hidden_size)
         image_obs_shape, state_obs_shape = obs_shape
 
@@ -301,11 +292,6 @@ class E2EBase(NNBase):
         init_fcs = lambda m: init(m, nn.init.orthogonal_, lambda x: nn.init.constant_(x, 0),
                                np.sqrt(2))
 
-        init_zeros = lambda m: init(m, lambda x, gain=None: nn.init.constant_(x, 0),
-                                    lambda x: nn.init.constant_(x, 0), np.sqrt(2))
-
-        init_last_layer = init_zeros if zero_last_layer else init_fcs
-
         self.actor = nn.Sequential(
             init_fcs(nn.Linear(32 * 5 * 5 + 7, 256)),
             nn.Tanh(),
@@ -313,7 +299,7 @@ class E2EBase(NNBase):
             nn.Tanh(),
             init_fcs(nn.Linear(256, 256)),
             nn.Tanh(),
-            init_last_layer(nn.Linear(256, hidden_size)),
+            init_fcs(nn.Linear(256, hidden_size)),
             nn.Tanh(),
         )
 
