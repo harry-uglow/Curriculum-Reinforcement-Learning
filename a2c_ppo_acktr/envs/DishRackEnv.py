@@ -39,7 +39,7 @@ class DishRackEnv(SawyerEnv):
     def __init__(self, *args):
         super().__init__(self.scene_path, *args)
 
-        self.ep_len = 64
+        self.ep_len = 32
 
         self.plate_handle = catch_errors(vrep.simxGetObjectHandle(self.cid,
                 "Plate_center", vrep.simx_opmode_blocking))
