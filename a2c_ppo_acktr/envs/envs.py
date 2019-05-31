@@ -17,7 +17,7 @@ from a2c_ppo_acktr.envs.DRSparseEnv import DRSparseEnv
 from a2c_ppo_acktr.envs.ResidualVecEnvWrapper import ResidualVecEnvWrapper
 from a2c_ppo_acktr.envs.SawyerReacherEnv import SawyerReacherEnv
 from a2c_ppo_acktr.envs.wrappers import ImageObsVecEnvWrapper, PoseEstimatorVecEnvWrapper, \
-    ScaleActions, E2EVecEnvWrapper
+    ClipActions, E2EVecEnvWrapper
 from a2c_ppo_acktr.tuple_tensor import TupleTensor
 
 try:
@@ -42,7 +42,7 @@ def make_env(env_id, seed, rank, log_dir, add_timestep, allow_early_resets, vis)
 
         env.seed(seed + rank)
 
-        env = ScaleActions(env)
+        env = ClipActions(env)
 
         if log_dir is not None:
             env = bench.Monitor(env, os.path.join(log_dir, str(rank)),

@@ -49,6 +49,18 @@ FixedBernoulli.entropy = lambda self: bernoulli_entropy(self).sum(-1)
 FixedBernoulli.mode = lambda self: torch.gt(self.probs, 0.5).float()
 
 
+# Beta
+FixedBeta = torch.distributions.Beta
+
+log_prob_beta = FixedBeta.log_prob
+FixedBeta.log_probs = lambda self, actions: log_prob_beta(self, actions).sum(-1, keepdim=True)
+
+beta_entropy = FixedBeta.entropy
+FixedBeta.entropy = lambda self: beta_entropy(self).sum(-1)
+
+FixedBeta.mode = lambda self: self.mean
+
+
 class Categorical(nn.Module):
     def __init__(self, num_inputs, num_outputs):
         super(Categorical, self).__init__()
@@ -107,17 +119,23 @@ class Bernoulli(nn.Module):
         x = self.linear(x)
         return FixedBernoulli(logits=x)
 
-# class Beta(nn.Module):
-#     def __init__(self, num_inputs, num_outputs):
-#         super(Bernoulli, self).__init__()
-#
-#         init_ = lambda m: init(m,
-#             nn.init.orthogonal_,
-#             lambda x: nn.init.constant_(x, 0))
-#
-#         self.linear = init_(nn.Linear(num_inputs, num_outputs))
-#
-#     def forward(self, x):
-#         alpha = F.softplus(self.linear(x))
-#
-#         return FixedBernoulli(logits=x)
+
+class Beta(nn.Module):
+    def __init__(self, num_inputs, num_outputs, zll=False):
+        super(Beta, self).__init__()
+
+        init_ = lambda m: init(m, nn.init.orthogonal_, lambda x: nn.init.constant_(x, 0))
+
+        init_zeros = lambda m: init(m, lambda x, **kwargs: nn.init.constant_(x, 0),
+                                    lambda x: nn.init.constant_(x, 0))
+
+        init_last_layer = init_zeros if zll else init_
+
+        self.alpha_linear = init_last_layer(nn.Linear(num_inputs, num_outputs))
+        self.beta_linear = init_last_layer(nn.Linear(num_inputs, num_outputs))
+
+    def forward(self, x):
+        alpha = F.softplus(self.alpha_linear(x)) + 1
+        beta = F.softplus(self.beta_linear(x)) + 1
+
+        return FixedBernoulli(logits=x)

@@ -68,13 +68,13 @@ def get_image_obs_wrapper(venv):
     return None
 
 
-class ScaleActions(ActionWrapper):
+class ClipActions(ActionWrapper):
     def __init__(self, env):
-        super(ScaleActions, self).__init__(env)
+        super(ClipActions, self).__init__(env)
 
+    # Actions are assumed to be centred around 0 by default
     def action(self, action):
-        action_range = self.action_space.high - self.action_space.low
-        return (np.tanh(action) + 1) / 2 * action_range + self.action_space.low
+        return np.clip(action, self.action_space.low, self.action_space.high)
 
 
 class E2EVecEnvWrapper(VecEnvWrapper):
