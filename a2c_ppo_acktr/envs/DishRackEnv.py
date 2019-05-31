@@ -18,7 +18,7 @@ class DishRackEnv(SawyerEnv):
                                    np.array([3.] * 7 + rack_upper), dtype=np.float32)
     timestep = 0
     metadata = {'render.modes': ['human', 'rgb_array', 'activate']}
-    max_cam_displace = 0.1
+    max_cam_displace = 0.05
     max_light_displace = 0.5
 
     # VISION PLACEHOLDERS

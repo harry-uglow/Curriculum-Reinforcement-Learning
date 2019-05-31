@@ -128,7 +128,7 @@ def make_vec_envs(env_name, seed, num_processes, gamma, log_dir, add_timestep, d
             envs = VecNormalize(envs, gamma=gamma)
 
     if e2e:
-        envs = E2EVecEnvWrapper(envs)
+        envs = ImageObsVecEnvWrapper(envs)
 
     envs = VecPyTorch(envs, device)
 
