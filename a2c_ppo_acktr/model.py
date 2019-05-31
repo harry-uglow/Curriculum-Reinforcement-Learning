@@ -33,13 +33,13 @@ class Policy(nn.Module):
 
         if action_space.__class__.__name__ == "Discrete":
             num_outputs = action_space.n
-            self.dist = Categorical(self.base.output_size, num_outputs, zll=zero_last_layer)
+            self.dist = Categorical(self.base.output_size, num_outputs)
         elif action_space.__class__.__name__ == "Box":
             num_outputs = action_space.shape[0]
             self.dist = DiagGaussian(self.base.output_size, num_outputs, zll=zero_last_layer)
         elif action_space.__class__.__name__ == "MultiBinary":
             num_outputs = action_space.shape[0]
-            self.dist = Bernoulli(self.base.output_size, num_outputs, zll=zero_last_layer)
+            self.dist = Bernoulli(self.base.output_size, num_outputs)
         else:
             raise NotImplementedError
 

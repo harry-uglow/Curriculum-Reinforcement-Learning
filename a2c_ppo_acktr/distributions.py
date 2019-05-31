@@ -66,14 +66,19 @@ class Categorical(nn.Module):
 
 
 class DiagGaussian(nn.Module):
-    def __init__(self, num_inputs, num_outputs):
+    def __init__(self, num_inputs, num_outputs, zll=False):
         super(DiagGaussian, self).__init__()
 
         init_ = lambda m: init(m,
             nn.init.orthogonal_,
             lambda x: nn.init.constant_(x, 0))
 
-        self.fc_mean = init_(nn.Linear(num_inputs, num_outputs))
+        init_zeros = lambda m: init(m, lambda x, **kwargs: nn.init.constant_(x, 0),
+                                    lambda x: nn.init.constant_(x, 0))
+
+        init_last_layer = init_zeros if zll else init_
+
+        self.fc_mean = init_last_layer(nn.Linear(num_inputs, num_outputs))
         self.logstd = AddBias(torch.zeros(num_outputs))
 
     def forward(self, x):
@@ -101,3 +106,18 @@ class Bernoulli(nn.Module):
     def forward(self, x):
         x = self.linear(x)
         return FixedBernoulli(logits=x)
+
+# class Beta(nn.Module):
+#     def __init__(self, num_inputs, num_outputs):
+#         super(Bernoulli, self).__init__()
+#
+#         init_ = lambda m: init(m,
+#             nn.init.orthogonal_,
+#             lambda x: nn.init.constant_(x, 0))
+#
+#         self.linear = init_(nn.Linear(num_inputs, num_outputs))
+#
+#     def forward(self, x):
+#         alpha = F.softplus(self.linear(x))
+#
+#         return FixedBernoulli(logits=x)
