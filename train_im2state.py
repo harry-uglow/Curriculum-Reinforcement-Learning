@@ -105,6 +105,7 @@ def main():
     print("Finished training")
     print("Evaluating")
     net = torch.load(os.path.join(save_path, args.save_as + ".pt"))
+    net.to(device)
     net.eval()
     with torch.no_grad():
         distances = []
