@@ -48,7 +48,7 @@ def main():
     x = images[p]
     y = normalise_coords(positions, low, high)[p]
 
-    num_test_examples = 512
+    num_test_examples = 256
     batch_size = 50
 
     train_x = torch.Tensor(x[num_test_examples:]).to(device)
