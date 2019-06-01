@@ -3,6 +3,7 @@ import os
 
 import numpy as np
 import torch
+from torch import nn
 
 from a2c_ppo_acktr.envs.ResidualVecEnvWrapper import get_residual_layers
 from a2c_ppo_acktr.envs.envs import make_vec_envs, get_vec_normalize
@@ -12,7 +13,7 @@ from a2c_ppo_acktr.utils import get_render_func
 # workaround to unpickle olf model files
 import sys
 
-from im2state.utils import format_images, unnormalise_y
+from im2state.utils import format_images, unnormalise_y, normalise_coords
 
 sys.path.append('a2c_ppo_acktr')
 
@@ -61,10 +62,6 @@ def main():
                         args.add_timestep, 'cpu', False, policies, show=(args.num_processes == 1),
                         no_norm=True, pose_estimator=im2state, e2e=args.e2e)
     null_action = torch.zeros((1, env.action_space.shape[0]))
-    # low = env.observation_space.low[args.state_indices]
-    # high = env.observation_space.high[args.state_indices]
-
-    policy_wrappers = get_residual_layers(env)
 
     # Get a render function
     render_func = get_render_func(env)
@@ -95,13 +92,6 @@ def main():
                     obs, recurrent_hidden_states, masks, deterministic=args.det)
             else:
                 action = null_action
-                if im2state:
-                    image = torch.from_numpy(format_images(env.get_images())).float()
-                    part_state = unnormalise_y(im2state(image).numpy(), low, high)
-                    obs = obs.numpy()
-                    obs[:, args.state_indices] = part_state
-                    for policy in policy_wrappers:
-                        policy.curr_obs = policy.normalize_obs(obs)
 
         # Obser reward and next obs
         obs, rews, dones, _ = env.step(action)

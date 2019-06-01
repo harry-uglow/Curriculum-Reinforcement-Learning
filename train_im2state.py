@@ -109,8 +109,8 @@ def main():
     with torch.no_grad():
         distances = []
         thetas = []
-        for x, y in zip(test_x, unnormalise_y(test_y.detach().numpy(), low, high)):
-            actual_y = unnormalise_y(net(x.unsqueeze(0)).squeeze().detach().numpy(), low, high)
+        for x, y in zip(test_x, unnormalise_y(test_y.cpu().numpy(), low, high)):
+            actual_y = unnormalise_y(net(x.unsqueeze(0)).squeeze().cpu().numpy(), low, high)
             pred_y = y
             distances += [np.linalg.norm(pred_y[:2] - actual_y[:2])]
             thetas += [pred_y[2] - actual_y[2]]

@@ -8,14 +8,14 @@ from a2c_ppo_acktr.envs.VrepEnv import catch_errors
 
 np.set_printoptions(precision=2, linewidth=200)  # DEBUG
 
-rack_lower = [-0.05, (-0.6), -0.25]  # x, y, rotation
-rack_upper = [0.15, (-0.45), 0.25]
+rack_lower = np.array([-0.05, (-0.6), -0.25])  # x, y, rotation
+rack_upper = np.array([0.15, (-0.45), 0.25])
 
 
 class DishRackEnv(SawyerEnv):
     scene_path = 'dish_rack'
-    observation_space = spaces.Box(np.array([-3.] * 7 + rack_lower),
-                                   np.array([3.] * 7 + rack_upper), dtype=np.float32)
+    observation_space = spaces.Box(np.append([-3.] * 7, rack_lower),
+                                   np.append([3.] * 7, rack_upper), dtype=np.float32)
     timestep = 0
     metadata = {'render.modes': ['human', 'rgb_array', 'activate']}
     max_cam_displace = 0.05
