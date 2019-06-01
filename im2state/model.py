@@ -25,36 +25,36 @@ class PoseEstimator(nn.Module):
                                nn.init.calculate_gain('relu'))
 
         self.main = nn.Sequential(  # 128 x 128
-            init_(nn.Conv2d(num_inputs, 64, 3, padding=1)),
+            (nn.Conv2d(num_inputs, 64, 3, padding=1)),
             nn.ReLU(),
-            init_(nn.Conv2d(64, 64, 3, padding=1)),
+            (nn.Conv2d(64, 64, 3, padding=1)),
             nn.ReLU(),
             nn.MaxPool2d(2),  # 64
-            init_(nn.Conv2d(64, 128, 3, padding=1)),
+            (nn.Conv2d(64, 128, 3, padding=1)),
             nn.ReLU(),
-            init_(nn.Conv2d(128, 128, 3, padding=1)),
+            (nn.Conv2d(128, 128, 3, padding=1)),
             nn.ReLU(),
             nn.MaxPool2d(2),  # 32
-            init_(nn.Conv2d(128, 256, 3, padding=1)),
+            (nn.Conv2d(128, 256, 3, padding=1)),
             nn.ReLU(),
-            init_(nn.Conv2d(256, 256, 3, padding=1)),
+            (nn.Conv2d(256, 256, 3, padding=1)),
             nn.ReLU(),
-            init_(nn.Conv2d(256, 256, 3, padding=1)),
+            (nn.Conv2d(256, 256, 3, padding=1)),
             nn.ReLU(),
             nn.MaxPool2d(2),  # 16
-            init_(nn.Conv2d(256, 512, 3, padding=1)),
+            (nn.Conv2d(256, 512, 3, padding=1)),
             nn.ReLU(),
-            init_(nn.Conv2d(512, 512, 3, padding=1)),
+            (nn.Conv2d(512, 512, 3, padding=1)),
             nn.ReLU(),
-            init_(nn.Conv2d(512, 512, 3)),  # 14
+            (nn.Conv2d(512, 512, 3)),  # 14
             nn.ReLU(),
             nn.MaxPool2d(2),  # 7
             Flatten(),
-            init_(nn.Linear(7 * 7 * 512, 256)),
+            (nn.Linear(7 * 7 * 512, 256)),
             nn.ReLU(),
-            init_(nn.Linear(256, 64)),
+            (nn.Linear(256, 64)),
             nn.ReLU(),
-            init_(nn.Linear(64, num_outputs))
+            (nn.Linear(64, num_outputs))
         )
 
         self.train()
