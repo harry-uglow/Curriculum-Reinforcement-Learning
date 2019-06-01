@@ -26,13 +26,14 @@ def main():
     torch.set_num_threads(1)
     device = torch.device("cuda:0" if args.cuda else "cpu")
 
-    policies = torch.load(os.path.join(args.load_dir, args.env_name + ".pt"))
+    policies = torch.load(os.path.join(args.load_dir, 'ppo', args.env_name + ".pt"))
 
     envs = make_vec_envs(args.env_name, args.seed, args.num_processes, args.gamma, args.log_dir,
                          args.add_timestep, device, False, policies, no_norm=True)
 
     null_action = torch.zeros((args.num_processes, envs.action_space.shape[0]))
 
+    envs.get_images(mode='activate')
     obs = envs.reset()
     images = [Image.fromarray(img, 'RGB') for img in envs.get_images()]
     positions = np.zeros((args.num_steps, len(args.state_indices)))

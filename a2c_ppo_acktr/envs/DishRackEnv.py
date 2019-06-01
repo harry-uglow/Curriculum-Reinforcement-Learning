@@ -70,39 +70,7 @@ class DishRackEnv(SawyerEnv):
         self.timestep = 0
 
         if self.vis_mode:
-            # VARY COLORS
-            plate_color = self.np_random.normal(loc=self.init_plate_color, scale=0.05)
-            rack_color = self.np_random.normal(loc=self.init_rack_color, scale=0.05)
-            cloth_color = self.np_random.normal(loc=self.init_cloth_color, scale=0.05)
-            wall_color = self.np_random.normal(loc=self.init_wall_color, scale=0.02)
-            self.call_lua_function('set_color', ints=[self.plate_obj_handle], floats=plate_color)
-            self.call_lua_function('set_color', ints=[self.rack_handle], floats=rack_color)
-            self.call_lua_function('set_color', ints=[self.cloth_handle], floats=cloth_color)
-            self.call_lua_function('set_color', ints=[self.wall_handle], floats=wall_color)
-            # VARY CAMERA POSE
-            cam_displacement = self.np_random.uniform(-self.max_cam_displace,
-                                                      self.max_cam_displace, 3)
-            vrep.simxSetObjectPosition(self.cid, self.vis_handle, -1,
-                                       self.init_cam_pos + cam_displacement,
-                                       vrep.simx_opmode_blocking)
-            orientation_displacement = ((self.np_random.beta(2, 2, 3) - 0.5) * 2
-                                        * self.max_cam_rotation)
-            vrep.simxSetObjectOrientation(self.cid, self.vis_handle, -1,
-                                          self.init_cam_rot + orientation_displacement,
-                                          vrep.simx_opmode_blocking)
-            # VARY LIGHTING
-            # B and C are support lights and can be disabled.
-            enabled = np.random.choice(a=[False, True], size=2)
-            for i in range(2):
-                f_name = 'enable_light' if enabled[i] else 'disable_light'
-                self.call_lua_function(f_name, ints=[self.light_handles[i + 1]])
-            light_displacement = self.np_random.uniform(-self.max_light_displace,
-                                                        self.max_light_displace, (4, 3))
-            for handle, pos, displace in zip(self.light_handles, self.light_poss,
-                                             light_displacement):
-                vrep.simxSetObjectPosition(self.cid, handle, -1, pos + displace,
-                                           vrep.simx_opmode_blocking)
-
+            self.randomise_domain()
         return self._get_obs()
 
     def _get_obs(self):
@@ -152,7 +120,7 @@ class DishRackEnv(SawyerEnv):
         self.cloth_handle = catch_errors(vrep.simxGetObjectHandle(self.cid, "Cloth",
                                                                   vrep.simx_opmode_blocking))
         self.wall_handle = catch_errors(vrep.simxGetObjectHandle(self.cid, "Wall",
-                                                                  vrep.simx_opmode_blocking))
+                                                                 vrep.simx_opmode_blocking))
         self.init_cam_pos = catch_errors(vrep.simxGetObjectPosition(self.cid, self.vis_handle, -1,
                                                                     vrep.simx_opmode_blocking))
         self.init_cam_rot = catch_errors(
@@ -167,3 +135,37 @@ class DishRackEnv(SawyerEnv):
         self.light_poss = [catch_errors(vrep.simxGetObjectPosition(self.cid, handle, -1,
                                                                    vrep.simx_opmode_blocking))
                            for handle in self.light_handles]
+
+    def randomise_domain(self):
+        # VARY COLORS
+        plate_color = self.np_random.normal(loc=self.init_plate_color, scale=0.05)
+        rack_color = self.np_random.normal(loc=self.init_rack_color, scale=0.05)
+        cloth_color = self.np_random.normal(loc=self.init_cloth_color, scale=0.05)
+        wall_color = self.np_random.normal(loc=self.init_wall_color, scale=0.02)
+        self.call_lua_function('set_color', ints=[self.plate_obj_handle], floats=plate_color)
+        self.call_lua_function('set_color', ints=[self.rack_handle], floats=rack_color)
+        self.call_lua_function('set_color', ints=[self.cloth_handle], floats=cloth_color)
+        self.call_lua_function('set_color', ints=[self.wall_handle], floats=wall_color)
+        # VARY CAMERA POSE
+        cam_displacement = self.np_random.uniform(-self.max_cam_displace,
+                                                  self.max_cam_displace, 3)
+        vrep.simxSetObjectPosition(self.cid, self.vis_handle, -1,
+                                   self.init_cam_pos + cam_displacement,
+                                   vrep.simx_opmode_blocking)
+        orientation_displacement = ((self.np_random.beta(2, 2, 3) - 0.5) * 2
+                                    * self.max_cam_rotation)
+        vrep.simxSetObjectOrientation(self.cid, self.vis_handle, -1,
+                                      self.init_cam_rot + orientation_displacement,
+                                      vrep.simx_opmode_blocking)
+        # VARY LIGHTING
+        # B and C are support lights and can be disabled.
+        enabled = np.random.choice(a=[False, True], size=2)
+        for i in range(2):
+            f_name = 'enable_light' if enabled[i] else 'disable_light'
+            self.call_lua_function(f_name, ints=[self.light_handles[i + 1]])
+        light_displacement = self.np_random.uniform(-self.max_light_displace,
+                                                    self.max_light_displace, (4, 3))
+        for handle, pos, displace in zip(self.light_handles, self.light_poss,
+                                         light_displacement):
+            vrep.simxSetObjectPosition(self.cid, handle, -1, pos + displace,
+                                       vrep.simx_opmode_blocking)

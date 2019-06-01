@@ -41,15 +41,15 @@ def main():
     net = PoseEstimator(3, positions.shape[1], args.state_indices)
     net.to(device)
 
-    optimizer = optim.Adam(net.parameters(), lr=0.00001)
+    optimizer = optim.Adam(net.parameters(), lr=0.0001)
     criterion = nn.MSELoss()
 
     p = np.random.permutation(len(images))
     x = images[p]
     y = normalise_coords(positions, low, high)[p]
 
-    num_test_examples = 256
-    batch_size = 128
+    num_test_examples = 512
+    batch_size = 50
 
     train_x = torch.Tensor(x[num_test_examples:]).to(device)
     train_y = torch.Tensor(y[num_test_examples:]).to(device)
