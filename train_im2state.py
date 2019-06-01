@@ -4,14 +4,14 @@ import os
 
 import numpy as np
 import torch
-from torch import nn, optim
+from torch import optim
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 from a2c_ppo_acktr.arguments import get_args
 from im2state.model import PoseEstimator
 
-from im2state.utils import normalise_coords, unnormalise_y
+from im2state.utils import normalise_coords, unnormalise_y, ren_loss
 
 args = get_args()
 
@@ -38,11 +38,11 @@ def main():
     except OSError:
         pass
 
-    net = PoseEstimator(3, positions.shape[1], args.state_indices)
+    net = PoseEstimator(3, positions.shape[1], state_to_estimate)
     net.to(device)
 
     optimizer = optim.Adam(net.parameters(), lr=0.0001)
-    criterion = nn.MSELoss()
+    criterion = ren_loss
 
     p = np.random.permutation(len(images))
     x = images[p]
