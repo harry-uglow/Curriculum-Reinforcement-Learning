@@ -96,7 +96,7 @@ def main():
         if epochs % args.log_interval == 0 or updates_with_no_improvement == 5:
             fig = plt.figure()
             plt.plot(range(epochs), train_loss, label="Training Loss")
-            plt.plot(range(epochs), test_loss,  label="Test Loss")
+            plt.plot(range(1, epochs + 1), test_loss,  label="Test Loss")
             plt.legend()
             plt.savefig(f'imgs/{args.save_as}.png')
             plt.close(fig)
