@@ -67,6 +67,7 @@ def main():
                          pose_estimator=pose_estimator, e2e=args.e2e)
 
     base_kwargs = {'recurrent': args.recurrent_policy}
+    base = initial_policies[0].base if initial_policies else None
     actor_critic = Policy(envs.observation_space.shape, envs.action_space, base_kwargs=base_kwargs,
                           zero_last_layer=initial_policies is not None)
     actor_critic.to(device)

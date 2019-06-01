@@ -57,6 +57,7 @@ def main():
         rip = None
     if im2state:
         im2state.eval()
+        im2state.state_to_estimate = args.state_indices
 
     env = make_vec_envs(args.env_name, args.seed + 1000, args.num_processes, None, None,
                         args.add_timestep, 'cpu', False, policies, show=(args.num_processes == 1),

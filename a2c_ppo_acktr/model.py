@@ -1,8 +1,5 @@
-from typing import Any
-
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import numpy as np
 
 from a2c_ppo_acktr.distributions import Categorical, DiagGaussian, Bernoulli
@@ -28,8 +25,10 @@ class Policy(nn.Module):
                 base = MLPBase
             else:
                 raise NotImplementedError
+            self.base = base(obs_shape, **base_kwargs)
+        else:
+            self.base = base
 
-        self.base = base(obs_shape, **base_kwargs)
 
         if action_space.__class__.__name__ == "Discrete":
             num_outputs = action_space.n
