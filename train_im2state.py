@@ -114,7 +114,7 @@ def main():
             actual_y = unnormalise_y(net(x.unsqueeze(0)).squeeze().cpu().numpy(), low, high)
             pred_y = y
             distances += [np.linalg.norm(pred_y[:2] - actual_y[:2])]
-            thetas += [pred_y[2] - actual_y[2]]
+            thetas += [np.abs(pred_y[2] - actual_y[2])]
         print(f"Mean distance error: {(1000 * sum(distances) / len(distances))}mm")
         print(f"Mean rotational error: {(sum(thetas) / len(thetas))} radians")
         print(f"Final test loss: {criterion(net(test_x), test_y).item()}")
