@@ -23,8 +23,7 @@ def unnormalise_y(y, low, high):
     return (((y + 1) / 2) * (high - low)) + low
 
 
-def ren_loss(pred, actual):
-    l1_translation_loss = torch.nn.L1Loss()(pred[:, :2], actual[:, :2])
-    cosine_difference = torch.cos(pred[:, 2] - actual[:, 2])
-    orientation_loss = torch.nn.L1Loss()(cosine_difference, torch.ones_like(cosine_difference))
-    return torch.add(l1_translation_loss, orientation_loss)
+def custom_loss(pred, actual):
+    l1_translation_loss = torch.nn.MSELoss()(pred[:, :2], actual[:, :2])
+    orientation_loss = torch.nn.MSELoss()(pred[:, 2], actual[:, 2])
+    return torch.add(5 * l1_translation_loss, orientation_loss)

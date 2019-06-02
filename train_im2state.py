@@ -11,7 +11,7 @@ from tqdm import tqdm
 from a2c_ppo_acktr.arguments import get_args
 from im2state.model import PoseEstimator
 
-from im2state.utils import normalise_coords, unnormalise_y, ren_loss
+from im2state.utils import normalise_coords, unnormalise_y, custom_loss
 
 args = get_args()
 
@@ -42,7 +42,7 @@ def main():
     net.to(device)
 
     optimizer = optim.Adam(net.parameters(), lr=0.0001)
-    criterion = ren_loss
+    criterion = custom_loss
 
     p = np.random.permutation(len(images))
     x = images[p]
