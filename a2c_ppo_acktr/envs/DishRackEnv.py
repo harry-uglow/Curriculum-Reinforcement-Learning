@@ -5,6 +5,7 @@ from gym import spaces
 import vrep
 from a2c_ppo_acktr.envs.SawyerEnv import SawyerEnv
 from a2c_ppo_acktr.envs.VrepEnv import catch_errors
+import math
 
 np.set_printoptions(precision=2, linewidth=200)  # DEBUG
 
@@ -14,8 +15,9 @@ rack_upper = np.array([0.15, (-0.45), 0.25])
 
 class DishRackEnv(SawyerEnv):
     scene_path = 'dish_rack'
-    observation_space = spaces.Box(np.append([-3.] * 7, rack_lower),
-                                   np.append([3.] * 7, rack_upper), dtype=np.float32)
+    observation_space = spaces.Box(np.array([-3.]*7 + [-math.inf]*3 + [rack_lower[2]]),
+                                   np.array([3.]*7 + [math.inf]*3 + [rack_upper[2]]),
+                                   dtype=np.float32)
     timestep = 0
     metadata = {'render.modes': ['human', 'rgb_array', 'activate']}
     max_cam_displace = 0.05
@@ -75,8 +77,9 @@ class DishRackEnv(SawyerEnv):
 
     def _get_obs(self):
         joint_obs = super(DishRackEnv, self)._get_obs()
+        pos_vector = self.get_position(self.target_handle) - self.get_position(self.plate_handle)
 
-        return np.concatenate((joint_obs, self.rack_pos[:-1], self.rack_rot[:1]))
+        return np.concatenate((joint_obs, pos_vector, self.rack_rot[:1]))
 
     def get_plate_orientation(self):
         orientation = catch_errors(vrep.simxGetObjectOrientation(

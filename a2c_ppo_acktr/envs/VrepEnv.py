@@ -112,6 +112,7 @@ class VrepEnv(Env):
     def render(self, mode='human'):
         pass
 
+    # Returns a vector in from one item to another under "from"s axes (not the world axes).
     def get_vector(self, from_handle, to_handle):
         pose = catch_errors(vrep.simxGetObjectPosition(
             self.cid, to_handle, from_handle, vrep.simx_opmode_blocking))

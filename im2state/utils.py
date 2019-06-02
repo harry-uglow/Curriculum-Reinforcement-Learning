@@ -1,5 +1,5 @@
 import numpy as np
-import torch
+from torch import nn
 
 
 def format_images(imgs):
@@ -24,6 +24,6 @@ def unnormalise_y(y, low, high):
 
 
 def custom_loss(pred, actual):
-    l1_translation_loss = torch.nn.MSELoss()(pred[:, :2], actual[:, :2])
-    orientation_loss = torch.nn.MSELoss()(pred[:, 2], actual[:, 2])
-    return torch.add(5 * l1_translation_loss, orientation_loss)
+    translation_loss = nn.MSELoss()(pred[:, :2], actual[:, :2])
+    orientation_loss = nn.MSELoss()(pred[:, 2], actual[:, 2])
+    return 5 * translation_loss + orientation_loss
