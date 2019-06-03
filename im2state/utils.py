@@ -24,6 +24,6 @@ def unnormalise_y(y, low, high):
 
 
 def custom_loss(pred, actual):
-    translation_loss = nn.MSELoss()(pred[:, :2], actual[:, :2])
-    orientation_loss = nn.MSELoss()(pred[:, 2], actual[:, 2])
-    return 5 * translation_loss + orientation_loss
+    translation_loss = nn.MSELoss()(pred[:, :3], actual[:, :3])
+    orientation_loss = nn.MSELoss()(pred[:, 3], actual[:, 3])
+    return 10 * translation_loss + orientation_loss

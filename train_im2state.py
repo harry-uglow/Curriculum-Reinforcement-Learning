@@ -4,7 +4,7 @@ import os
 
 import numpy as np
 import torch
-from torch import optim
+from torch import optim, nn
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
@@ -41,12 +41,12 @@ def main():
     net = PoseEstimator(3, positions.shape[1], state_to_estimate)
     net.to(device)
 
-    optimizer = optim.Adam(net.parameters(), lr=0.0001)
+    optimizer = optim.Adam(net.parameters(), lr=0.00001)
     criterion = custom_loss
 
     p = np.random.permutation(len(images))
     x = images[p]
-    y = normalise_coords(positions, low, high)[p]
+    y = positions[p]
 
     num_test_examples = 256
     batch_size = 50
@@ -110,8 +110,8 @@ def main():
     with torch.no_grad():
         distances = []
         thetas = []
-        for x, y in zip(test_x, unnormalise_y(test_y.cpu().numpy(), low, high)):
-            actual_y = unnormalise_y(net(x.unsqueeze(0)).squeeze().cpu().numpy(), low, high)
+        for x, y in zip(test_x, test_y.cpu().numpy()):
+            actual_y = net(x.unsqueeze(0)).squeeze().cpu().numpy()
             pred_y = y
             distances += [np.linalg.norm(pred_y[:2] - actual_y[:2])]
             thetas += [np.abs(pred_y[2] - actual_y[2])]
