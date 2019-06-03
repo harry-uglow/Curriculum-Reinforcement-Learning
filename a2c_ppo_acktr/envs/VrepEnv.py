@@ -6,7 +6,7 @@ import time
 
 import numpy as np
 from gym import Env
-from subprocess import Popen
+from subprocess import Popen, DEVNULL
 import vrep
 
 
@@ -77,7 +77,7 @@ class VrepEnv(Env):
             port_num += 16
         remote_api_string = '-gREMOTEAPISERVERSERVICE_' + str(port_num) + '_FALSE_TRUE'
         args = [*xvfb_args, vrep_path, '-h' if headless else '', remote_api_string]
-        self.process = Popen(args, preexec_fn=os.setsid)
+        self.process = Popen(args, preexec_fn=os.setsid, stdout=DEVNULL)
         time.sleep(6)
 
         self.cid = vrep.simxStart(host, port_num, True, True, 5000, 5)

@@ -30,15 +30,15 @@ try:
 except ImportError:
     pass
 
-try:
-    import pybullet_envs
-except ImportError:
-    pass
+# try:
+#     import pybullet_envs
+# except ImportError:
+#     pass
 
 
-def make_env(env_id, seed, rank, log_dir, add_timestep, allow_early_resets, vis):
+def make_env(scene_path, seed, rank, log_dir, add_timestep, allow_early_resets, vis):
     def _thunk():
-        env = DRNonRespondableEnv(rank, not vis)
+        env = DRSparseEnv(scene_path, rank, not vis)
 
         env.seed(seed + rank)
 

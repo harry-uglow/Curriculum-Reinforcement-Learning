@@ -7,7 +7,7 @@ def get_args():
     parser = argparse.ArgumentParser(description='RL')
     parser.add_argument('--algo', default='ppo',
                         help='algorithm to use: a2c | ppo | acktr')
-    parser.add_argument('--lr', type=float, default=3e-4,
+    parser.add_argument('--lr', type=float, default=1e-4,
                         help='learning rate (default: 7e-4)')
     parser.add_argument('--eps', type=float, default=1e-5,
                         help='RMSprop optimizer epsilon (default: 1e-5)')

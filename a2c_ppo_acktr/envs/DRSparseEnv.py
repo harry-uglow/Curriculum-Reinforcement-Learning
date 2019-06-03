@@ -15,7 +15,6 @@ max_rot = 0.1  # ~5.7 deg
 
 
 class DRSparseEnv(DishRackEnv):
-    scene_path = 'dish_rack_nr'
 
     def step(self, a):
         self.target_velocities = a
@@ -31,3 +30,8 @@ class DRSparseEnv(DishRackEnv):
         done = (self.timestep == self.ep_len)
 
         return ob, rew_success, done, dict(rew_success=rew_success)
+
+    def __init__(self, scene_path, *args):
+        self.scene_path = scene_path
+        super().__init__(*args)
+

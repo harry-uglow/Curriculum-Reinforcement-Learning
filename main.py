@@ -50,7 +50,7 @@ except OSError:
         os.remove(f)
 
 
-def main():
+def main(scene_path):
     torch.set_num_threads(1)
     device = torch.device("cuda:0" if args.cuda else "cpu")
 
@@ -62,7 +62,7 @@ def main():
                                              args.pose_estimator + ".pt")) \
         if args.pose_estimator else None
 
-    envs = make_vec_envs(args.env_name, args.seed, args.num_processes, args.gamma, args.log_dir,
+    envs = make_vec_envs(scene_path, args.seed, args.num_processes, args.gamma, args.log_dir,
                          args.add_timestep, device, False, initial_policies,
                          pose_estimator=pose_estimator, e2e=args.e2e)
 
@@ -73,17 +73,14 @@ def main():
     actor_critic.to(device)
 
     if args.algo == 'a2c':
-        agent = algo.A2C_ACKTR(actor_critic, args.value_loss_coef,
-                               args.entropy_coef, lr=args.lr,
-                               eps=args.eps, alpha=args.alpha,
-                               max_grad_norm=args.max_grad_norm)
+        agent = algo.A2C_ACKTR(actor_critic, args.value_loss_coef, args.entropy_coef, lr=args.lr,
+                               eps=args.eps, alpha=args.alpha, max_grad_norm=args.max_grad_norm)
     elif args.algo == 'ppo':
         agent = algo.PPO(actor_critic, args.clip_param, args.ppo_epoch, args.num_mini_batch,
                          args.value_loss_coef, args.entropy_coef, lr=args.lr, eps=args.eps,
                          max_grad_norm=args.max_grad_norm, burn_in=initial_policies is not None)
     elif args.algo == 'acktr':
-        agent = algo.A2C_ACKTR(actor_critic, args.value_loss_coef,
-                               args.entropy_coef, acktr=True)
+        agent = algo.A2C_ACKTR(actor_critic, args.value_loss_coef, args.entropy_coef, acktr=True)
 
     rollouts = RolloutStorage(args.num_steps, args.num_processes,
                               envs.observation_space.shape, envs.action_space,
@@ -228,7 +225,24 @@ def main():
                 pass
     # Copy logs to permanent location so new graphs can be drawn.
     copy_tree(args.log_dir, os.path.join('logs', args.env_name))
+    envs.close()
 
+
+scene_names = [
+    'dish_rack_nr',
+    'dish_rack_pr_14',
+    'dish_rack_pr_16',
+    'dish_rack_pr_18',
+    'dish_rack_pr_20',
+    'dish_rack_pr_22',
+    'dish_rack',
+]
 
 if __name__ == "__main__":
-    main()
+    base_name = args.env_name
+    base_ip = args.initial_policy
+    for scene in scene_names:
+        print(f"Training {scene} for {args.num_env_steps} timesteps")
+        args.env_name = f'{base_name}_{scene}'
+        main(scene)
+        args.initial_policy = args.env_name
