@@ -6,17 +6,25 @@ from a2c_ppo_acktr.envs.VrepEnv import catch_errors
 
 max_rot = 0.1  # ~5.7 deg
 
+
+# Static target with waypoints
 class DRWaypointEnv(DishRackEnv):
     reached_waypoint = False
 
     def __init__(self, *args):
-        super().__init__(*args)
+        super().__init__('dish_rack', *args)
+        self.ep_len = 64
         self.waypoint_handle = catch_errors(vrep.simxGetObjectHandle(self.cid, "Waypoint",
                                                                      vrep.simx_opmode_blocking))
 
     def reset(self):
         self.reached_waypoint = False
-        return super(DRWaypointEnv, self).reset()
+        self.call_lua_function('set_joint_angles', ints=self.init_config_tree,
+                               floats=self.init_joint_angles)
+        self.target_velocities = np.array([0., 0., 0., 0., 0., 0., 0.])
+        self.timestep = 0
+
+        return self._get_obs()
 
     def step(self, a):
         self.target_velocities = a
