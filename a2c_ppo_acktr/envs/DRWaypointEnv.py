@@ -11,7 +11,7 @@ max_rot = 0.1  # ~5.7 deg
 class DRWaypointEnv(DishRackEnv):
     reached_waypoint = False
 
-    def __init__(self, *args):
+    def __init__(self, scene_path, *args):
         super().__init__('dish_rack', *args)
         self.ep_len = 64
         self.waypoint_handle = catch_errors(vrep.simxGetObjectHandle(self.cid, "Waypoint",
