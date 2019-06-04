@@ -42,8 +42,7 @@ class PoseEstimatorVecEnvWrapper(VecEnvWrapper):
 
     def step_async(self, actions):
         with torch.no_grad():
-            estimation = unnormalise_y(self.estimator(self.curr_image).cpu().numpy(),
-                                       self.low, self.high)
+            estimation = self.estimator(self.curr_image).cpu().numpy()
             obs = self.image_obs_wrapper.curr_state_obs
             obs[:, self.estimator.state_to_estimate] = estimation
             for policy in self.policy_layers:
