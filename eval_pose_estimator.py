@@ -9,8 +9,6 @@ parser = argparse.ArgumentParser(description='RL')
 parser.add_argument('--model-name', default='rel_new_angle')
 parser.add_argument('--dataset', default='rel_dish_rack_nr_128_8192')
 parser.add_argument('--num-examples', type=int, default=256)
-args = parser.parse_args()
-args.cuda = torch.cuda.is_available()
 
 
 def eval_pose_estimator(load_path, x, y):
@@ -34,6 +32,8 @@ def eval_pose_estimator(load_path, x, y):
 
 
 if __name__ == '__main__':
+    args = parser.parse_args()
+    args.cuda = torch.cuda.is_available()
     images, positions, state_to_estimate, low, high = torch.load(
         os.path.join('./training_data', args.dataset + ".pt"))
     images = np.transpose([np.array(img) for img in images], (0, 3, 1, 2))
