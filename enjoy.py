@@ -114,7 +114,7 @@ def main():
         if render_func is not None:
             render_func('human')
 
-    print(f"{total_successes / num_trials}% successful")
+    print(f"{100 * total_successes / num_trials}% successful")
 
 
 if __name__ == "__main__":

@@ -16,9 +16,7 @@ from a2c_ppo_acktr.storage import RolloutStorage
 from a2c_ppo_acktr.utils import update_linear_schedule
 from a2c_ppo_acktr.visualize import visdom_plot
 
-
 args = get_args()
-
 assert args.algo in ['a2c', 'ppo', 'acktr']
 if args.recurrent_policy:
     assert args.algo in ['a2c', 'ppo'], \
@@ -33,24 +31,24 @@ if args.cuda and torch.cuda.is_available() and args.cuda_deterministic:
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
 
-try:
-    os.makedirs(args.log_dir)
-except OSError:
-    files = glob.glob(os.path.join(args.log_dir, '*.monitor.csv'))
-    for f in files:
-        os.remove(f)
-
-eval_log_dir = args.log_dir + "_eval"
-
-try:
-    os.makedirs(eval_log_dir)
-except OSError:
-    files = glob.glob(os.path.join(eval_log_dir, '*.monitor.csv'))
-    for f in files:
-        os.remove(f)
-
 
 def main(scene_path):
+    try:
+        os.makedirs(args.log_dir)
+    except OSError:
+        files = glob.glob(os.path.join(args.log_dir, '*.monitor.csv'))
+        for f in files:
+            os.remove(f)
+
+    eval_log_dir = args.log_dir + "_eval"
+
+    try:
+        os.makedirs(eval_log_dir)
+    except OSError:
+        files = glob.glob(os.path.join(eval_log_dir, '*.monitor.csv'))
+        for f in files:
+            os.remove(f)
+
     torch.set_num_threads(1)
     device = torch.device("cuda:0" if args.cuda else "cpu")
 
