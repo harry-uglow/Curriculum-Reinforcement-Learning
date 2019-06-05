@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 from a2c_ppo_acktr.arguments import get_args
+from eval_pose_estimator import eval_pose_estimator
 from im2state.model import PoseEstimator
 
 from im2state.utils import normalise_coords, unnormalise_y, custom_loss
@@ -103,21 +104,7 @@ def main():
             print(f"Training epoch {epochs} - validation loss: {test_loss[-1]}")
 
     print("Finished training")
-    print("Evaluating")
-    net = torch.load(os.path.join(save_path, args.save_as + ".pt"))
-    net.to(device)
-    net.eval()
-    with torch.no_grad():
-        distances = []
-        thetas = []
-        for x, y in zip(test_x, test_y.cpu().numpy()):
-            actual_y = net(x.unsqueeze(0)).squeeze().cpu().numpy()
-            pred_y = y
-            distances += [np.linalg.norm(pred_y[:3] - actual_y[:3])]
-            thetas += [np.abs(pred_y[3] - actual_y[3])]
-        print(f"Mean distance error: {(1000 * sum(distances) / len(distances))}mm")
-        print(f"Mean rotational error: {(sum(thetas) / len(thetas))} radians")
-        print(f"Final test loss: {criterion(net(test_x), test_y).item()}")
+    eval_pose_estimator(os.path.join(save_path, args.save_as + ".pt"), test_x, test_y)
 
 
 if __name__ == "__main__":

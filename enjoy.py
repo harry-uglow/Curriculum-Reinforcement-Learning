@@ -86,7 +86,8 @@ def main():
 
     i = 0
     total_successes = 0
-    while i < 100:
+    num_trials = 50
+    while i < num_trials:
         with torch.no_grad():
             if rip:
                 value, action, _, recurrent_hidden_states = rip.act(
@@ -113,7 +114,7 @@ def main():
         if render_func is not None:
             render_func('human')
 
-    print(f"In 100 episodes: {total_successes} successes")
+    print(f"{total_successes / num_trials}% successful")
 
 
 if __name__ == "__main__":
