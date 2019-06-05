@@ -1,8 +1,8 @@
 import numpy as np
 
 import vrep
-from a2c_ppo_acktr.envs.DishRackEnv import DishRackEnv
-from a2c_ppo_acktr.envs.VrepEnv import catch_errors
+from envs.DishRackEnv import DishRackEnv
+from envs.VrepEnv import catch_errors
 
 max_rot = 0.1  # ~5.7 deg
 

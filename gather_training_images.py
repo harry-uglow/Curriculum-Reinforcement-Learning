@@ -6,7 +6,7 @@ import torch
 from PIL import Image
 
 from a2c_ppo_acktr.arguments import get_args
-from a2c_ppo_acktr.envs.envs import make_vec_envs
+from envs.envs import make_vec_envs
 
 from tqdm import tqdm
 

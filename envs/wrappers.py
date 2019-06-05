@@ -3,7 +3,7 @@ import torch
 from baselines.common.vec_env import VecEnvWrapper
 from gym import spaces, ActionWrapper
 
-from a2c_ppo_acktr.envs.ResidualVecEnvWrapper import get_residual_layers
+from envs.ResidualVecEnvWrapper import get_residual_layers
 from im2state.utils import unnormalise_y
 
 

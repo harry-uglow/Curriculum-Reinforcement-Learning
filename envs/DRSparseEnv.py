@@ -1,11 +1,7 @@
 import os
 
 import numpy as np
-from gym import spaces
-import vrep
-from a2c_ppo_acktr.envs.DishRackEnv import DishRackEnv
-from a2c_ppo_acktr.envs.SawyerEnv import SawyerEnv
-from a2c_ppo_acktr.envs.VrepEnv import catch_errors
+from envs.DishRackEnv import DishRackEnv
 
 np.set_printoptions(precision=2, linewidth=200)  # DEBUG
 dir_path = os.getcwd()

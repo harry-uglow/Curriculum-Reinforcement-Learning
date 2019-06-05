@@ -1,10 +1,8 @@
-import os
-
 import numpy as np
 from gym import spaces
 import vrep
-from a2c_ppo_acktr.envs.SawyerEnv import SawyerEnv
-from a2c_ppo_acktr.envs.VrepEnv import catch_errors
+from envs.SawyerEnv import SawyerEnv
+from envs.VrepEnv import catch_errors
 import math
 
 np.set_printoptions(precision=2, linewidth=200)  # DEBUG

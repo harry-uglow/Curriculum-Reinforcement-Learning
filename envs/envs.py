@@ -11,12 +11,10 @@ from baselines.common.vec_env.subproc_vec_env import SubprocVecEnv
 from baselines.common.vec_env.dummy_vec_env import DummyVecEnv
 from baselines.common.vec_env.vec_normalize import VecNormalize as VecNormalize_
 
-from a2c_ppo_acktr.envs.DRNoWaypointEnv import DRNoWaypointEnv, DRNonRespondableEnv
-from a2c_ppo_acktr.envs.DRWaypointEnv import DRWaypointEnv
-from a2c_ppo_acktr.envs.DRSparseEnv import DRSparseEnv
-from a2c_ppo_acktr.envs.ResidualVecEnvWrapper import ResidualVecEnvWrapper
-from a2c_ppo_acktr.envs.SawyerReacherEnv import SawyerReacherEnv
-from a2c_ppo_acktr.envs.wrappers import ImageObsVecEnvWrapper, PoseEstimatorVecEnvWrapper, \
+from envs.DRWaypointEnv import DRWaypointEnv
+from envs.DRSparseEnv import DRSparseEnv
+from envs.ResidualVecEnvWrapper import ResidualVecEnvWrapper
+from envs.wrappers import ImageObsVecEnvWrapper, PoseEstimatorVecEnvWrapper, \
     ClipActions, E2EVecEnvWrapper
 from a2c_ppo_acktr.tuple_tensor import TupleTensor
 

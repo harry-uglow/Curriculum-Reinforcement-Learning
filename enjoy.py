@@ -5,8 +5,8 @@ import numpy as np
 import torch
 from torch import nn
 
-from a2c_ppo_acktr.envs.ResidualVecEnvWrapper import get_residual_layers
-from a2c_ppo_acktr.envs.envs import make_vec_envs, get_vec_normalize
+from envs.ResidualVecEnvWrapper import get_residual_layers
+from envs.envs import make_vec_envs, get_vec_normalize
 from a2c_ppo_acktr.utils import get_render_func
 
 

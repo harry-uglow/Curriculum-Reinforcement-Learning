@@ -1,7 +1,7 @@
 import numpy as np
 import vrep
-from a2c_ppo_acktr.envs.DishRackEnv import DishRackEnv
-from a2c_ppo_acktr.envs.VrepEnv import catch_errors
+from envs.DishRackEnv import DishRackEnv
+from envs.VrepEnv import catch_errors
 
 rack_lower = [-0.05, (-0.6), -0.25]  # x, y, rotation
 rack_upper = [0.15, (-0.45), 0.25]

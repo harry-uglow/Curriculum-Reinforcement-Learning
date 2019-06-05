@@ -2,7 +2,7 @@ import numpy as np
 from gym import spaces
 import vrep
 
-from a2c_ppo_acktr.envs.VrepEnv import catch_errors, VrepEnv
+from envs.VrepEnv import catch_errors, VrepEnv
 
 
 class SawyerEnv(VrepEnv):

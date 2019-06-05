@@ -3,9 +3,9 @@ import os
 import numpy as np
 from gym import spaces
 import vrep
-from a2c_ppo_acktr.envs.SawyerEnv import SawyerEnv
+from envs.SawyerEnv import SawyerEnv
 
-from a2c_ppo_acktr.envs.VrepEnv import check_for_errors
+from envs.VrepEnv import check_for_errors
 
 np.set_printoptions(precision=2, linewidth=200)  # DEBUG
 dir_path = os.getcwd()
