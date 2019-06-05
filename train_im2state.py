@@ -41,7 +41,7 @@ def main():
     net = PoseEstimator(3, positions.shape[1], state_to_estimate)
     net.to(device)
 
-    optimizer = optim.Adam(net.parameters(), lr=0.00001)
+    optimizer = optim.Adam(net.parameters(), lr=0.00003)
     criterion = custom_loss
 
     p = np.random.permutation(len(images))
@@ -113,8 +113,8 @@ def main():
         for x, y in zip(test_x, test_y.cpu().numpy()):
             actual_y = net(x.unsqueeze(0)).squeeze().cpu().numpy()
             pred_y = y
-            distances += [np.linalg.norm(pred_y[:2] - actual_y[:2])]
-            thetas += [np.abs(pred_y[2] - actual_y[2])]
+            distances += [np.linalg.norm(pred_y[:3] - actual_y[:3])]
+            thetas += [np.abs(pred_y[3] - actual_y[3])]
         print(f"Mean distance error: {(1000 * sum(distances) / len(distances))}mm")
         print(f"Mean rotational error: {(sum(thetas) / len(thetas))} radians")
         print(f"Final test loss: {criterion(net(test_x), test_y).item()}")
