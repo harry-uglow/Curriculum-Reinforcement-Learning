@@ -29,6 +29,8 @@ import intera_interface
 
 from intera_interface import CHECK_VERSION
 
+from reality.CameraConnection import CameraConnection
+
 
 def get_image_from_vision_sensor():
     # TODO: Stream images
@@ -116,18 +118,19 @@ class Wobbler(object):
                          for i, joint in enumerate(joint_names)])
 
         print("Wobbling. Press Ctrl-C to stop...")
-        while not rospy.is_shutdown():
-            self._pub_rate.publish(self._rate)
-            elapsed = rospy.Time.now() - start
-            curr_joint_angles = get_joint_angles()
-            image = get_image_from_vision_sensor()
-            estimation = self.estimator(image)
-            obs = torch.cat((curr_joint_angles, estimation))
-            with torch.no_grad():
-                _, action, _, _ = self.policy.act(obs, None, None, deterministic=True)
-            cmd = make_cmd(self._right_joint_names, action)
-            self._right_arm.set_joint_velocities(cmd)
-            rate.sleep()
+        with CameraConnection((128, 128)) as camera:
+            while not rospy.is_shutdown():
+                self._pub_rate.publish(self._rate)
+                elapsed = rospy.Time.now() - start
+                curr_joint_angles = get_joint_angles()
+                image = camera.get_image()
+                estimation = self.estimator(image)
+                obs = torch.cat((curr_joint_angles, estimation))
+                with torch.no_grad():
+                    _, action, _, _ = self.policy.act(obs, None, None, deterministic=True)
+                cmd = make_cmd(self._right_joint_names, action)
+                self._right_arm.set_joint_velocities(cmd)
+                rate.sleep()
 
 
 def main():
