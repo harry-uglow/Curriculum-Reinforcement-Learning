@@ -28,7 +28,7 @@ def main():
     torch.set_num_threads(1)
     device = torch.device("cuda:0" if args.cuda else "cpu")
 
-    images, positions, state_to_estimate, low, high = torch.load(
+    images, abs_positions, rel_positions, low, high = torch.load(
         os.path.join(args.load_dir, args.env_name + ".pt"))
     print("Loaded")
     images = np.transpose([np.array(img) for img in images], (0, 3, 1, 2))
@@ -39,11 +39,15 @@ def main():
     except OSError:
         pass
 
+    positions = rel_positions if args.rel else abs_positions
+    state_to_estimate = [7, 8, 9, 10] if args.rel else [7, 8, 9]
+
     net = PoseEstimator(3, positions.shape[1], state_to_estimate)
+    net.load_state_dict(torch.load('trained_models/pretrained/vgg16.pt'))
     net.to(device)
 
     optimizer = optim.Adam(net.parameters(), lr=0.00003)
-    criterion = custom_loss
+    criterion = nn.MSELoss()
 
     p = np.random.permutation(len(images))
     x = images[p]
@@ -69,7 +73,8 @@ def main():
         epochs += 1
         losses = []
         for batch_idx in tqdm(range(0, len(train_x), batch_size)):
-            pred_y = net(train_x[batch_idx:batch_idx + batch_size])
+            output = net(train_x[batch_idx:batch_idx + batch_size])
+            pred_y = output if args.rel else unnormalise_y(output, low, high)
             loss = criterion(pred_y, train_y[batch_idx:batch_idx + batch_size])
             losses += [loss.item()]
 
@@ -104,7 +109,8 @@ def main():
             print(f"Training epoch {epochs} - validation loss: {test_loss[-1]}")
 
     print("Finished training")
-    eval_pose_estimator(os.path.join(save_path, args.save_as + ".pt"), test_x, test_y)
+    eval_pose_estimator(os.path.join(save_path, args.save_as + ".pt"), device, test_x, test_y,
+                        low, high)
 
 
 if __name__ == "__main__":

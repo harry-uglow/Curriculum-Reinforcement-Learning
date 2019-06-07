@@ -41,7 +41,7 @@ class DishRackEnv(SawyerEnv):
     def __init__(self, *args):
         super().__init__(self.scene_path, *args)
 
-        self.ep_len = 32
+        self.ep_len = 48
 
         self.plate_handle = catch_errors(vrep.simxGetObjectHandle(self.cid,
                 "Plate_center", vrep.simx_opmode_blocking))
@@ -87,6 +87,9 @@ class DishRackEnv(SawyerEnv):
     def render(self, mode='rgb_array'):
         if mode == 'rgb_array':
             return self._read_vision_sensor()
+        elif mode == 'target':
+            pos = self.get_position(self.target_handle)
+            return np.append(pos[:-1], self.rack_rot[:1])
         elif mode == 'mask':
             mask = self._read_vision_sensor(grayscale=True)
             mask[mask > 0] = 255

@@ -28,22 +28,28 @@ def main():
 
     policies = torch.load(os.path.join(args.load_dir, 'ppo', args.env_name + ".pt"))
 
-    envs = make_vec_envs('dish_rack_nr', args.seed, args.num_processes, args.gamma, args.log_dir,
+    envs = make_vec_envs('dish_rack', args.seed, args.num_processes, args.gamma, args.log_dir,
                          args.add_timestep, device, False, policies, no_norm=True)
 
     null_action = torch.zeros((args.num_processes, envs.action_space.shape[0]))
 
     envs.get_images(mode='activate')
-    obs = envs.reset()
+    rel_obs = envs.reset()[:, args.state_indices]
+    abs_obs = np.array(envs.get_images(mode="target"))
     images = [Image.fromarray(img, 'RGB') for img in envs.get_images()]
-    positions = np.zeros((args.num_steps, len(args.state_indices)))
-    positions[0: args.num_processes] = obs[:, args.state_indices]
+    rel_positions = np.zeros((args.num_steps, len(args.state_indices)))
+    rel_positions[:args.num_processes] = rel_obs
+    abs_positions = np.zeros((args.num_steps, len(args.state_indices) - 1))
+    abs_positions[:args.num_processes] = abs_obs
+
 
     for i in tqdm(range(1, args.num_steps // args.num_processes)):
 
-        obs, _, done, _ = envs.step(null_action)
+        rel_obs = envs.step(null_action)[0][:, args.state_indices]
+        abs_obs = np.array(envs.get_images(mode="target"))
         start_index = args.num_processes * i
-        positions[start_index:start_index + args.num_processes] = obs[:, args.state_indices]
+        rel_positions[start_index:start_index + args.num_processes] = rel_obs
+        abs_positions[start_index:start_index + args.num_processes] = abs_obs
 
         images += [Image.fromarray(img, 'RGB') for img in envs.get_images()]
 
@@ -59,7 +65,7 @@ def main():
     high = envs.observation_space.high[args.state_indices]
     res = images[0].size[0]
 
-    torch.save([images, positions, args.state_indices, low, high],
+    torch.save([images, abs_positions, rel_positions, low, high],
                os.path.join(save_path, f'{args.env_name}_{res}_{args.num_steps}.pt'))
 
 

@@ -1,5 +1,6 @@
 import torch.nn as nn
 import torch.nn.functional as F
+from torchvision import transforms
 
 
 def init(module, weight_init, bias_init, gain=1):
@@ -26,36 +27,39 @@ class PoseEstimator(nn.Module):
 
         self.main = nn.Sequential(  # 128 x 128
             (nn.Conv2d(num_inputs, 64, 3, padding=1)),
-            nn.ReLU(),
+            nn.ReLU(inplace=True),
             (nn.Conv2d(64, 64, 3, padding=1)),
-            nn.ReLU(),
+            nn.ReLU(inplace=True),
             nn.MaxPool2d(2),  # 64
             (nn.Conv2d(64, 128, 3, padding=1)),
-            nn.ReLU(),
+            nn.ReLU(inplace=True),
             (nn.Conv2d(128, 128, 3, padding=1)),
-            nn.ReLU(),
+            nn.ReLU(inplace=True),
             nn.MaxPool2d(2),  # 32
             (nn.Conv2d(128, 256, 3, padding=1)),
-            nn.ReLU(),
+            nn.ReLU(inplace=True),
             (nn.Conv2d(256, 256, 3, padding=1)),
-            nn.ReLU(),
+            nn.ReLU(inplace=True),
             (nn.Conv2d(256, 256, 3, padding=1)),
-            nn.ReLU(),
+            nn.ReLU(inplace=True),
             nn.MaxPool2d(2),  # 16
             (nn.Conv2d(256, 512, 3, padding=1)),
-            nn.ReLU(),
+            nn.ReLU(inplace=True),
             (nn.Conv2d(512, 512, 3, padding=1)),
-            nn.ReLU(),
+            nn.ReLU(inplace=True),
             (nn.Conv2d(512, 512, 3)),  # 14
-            nn.ReLU(),
+            nn.ReLU(inplace=True),
             nn.MaxPool2d(2),  # 7
             Flatten(),
             (nn.Linear(7 * 7 * 512, 256)),
-            nn.ReLU(),
+            nn.ReLU(inplace=True),
             (nn.Linear(256, 64)),
-            nn.ReLU(),
+            nn.ReLU(inplace=True),
             (nn.Linear(64, num_outputs))
         )
+
+        self.normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                              std=[0.229, 0.224, 0.225])
 
         self.train()
 
@@ -65,5 +69,6 @@ class PoseEstimator(nn.Module):
 
     def forward(self, x):
         # Normalise inputs
-        x = self.main(x / 255.0)
+        x = self.normalize(x / 255.0)
+        x = self.main(x)
         return x
