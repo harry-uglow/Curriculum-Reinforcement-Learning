@@ -12,7 +12,8 @@ class Flatten(nn.Module):
 
 
 class Policy(nn.Module):
-    def __init__(self, obs_shape, action_space, zero_last_layer=False, base=None, base_kwargs=None):
+    def __init__(self, obs_shape, action_space, zero_last_layer=False, base=None,
+                 base_kwargs=None, dist=None):
         super(Policy, self).__init__()
         if base_kwargs is None:
             base_kwargs = {}
@@ -41,6 +42,8 @@ class Policy(nn.Module):
             self.dist = Bernoulli(self.base.output_size, num_outputs)
         else:
             raise NotImplementedError
+        if dist is not None:
+            self.dist = dist
 
     @property
     def is_recurrent(self):

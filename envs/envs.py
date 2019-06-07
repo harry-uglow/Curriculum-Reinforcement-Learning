@@ -128,7 +128,7 @@ def make_vec_envs(env_name, seed, num_processes, gamma, log_dir, add_timestep, d
     envs = VecPyTorch(envs, device)
 
     if pose_estimator is not None:
-        envs = PoseEstimatorVecEnvWrapper(envs, pose_estimator, device)
+        envs = PoseEstimatorVecEnvWrapper(envs, pose_estimator, device, abs_to_rel=True)
         envs = wrap_initial_policies(envs, device, image_ips)
     if e2e:
         envs = wrap_initial_policies(envs, device, initial_policies)

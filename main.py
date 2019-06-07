@@ -52,8 +52,8 @@ def main(scene_path):
     torch.set_num_threads(1)
     device = torch.device("cuda:0" if args.cuda else "cpu")
 
-    initial_policies = torch.load(os.path.join(args.load_dir, args.algo,
-                                               args.initial_policy + ".pt")) \
+    residual, ob_rms, initial_policies = torch.load(os.path.join(args.load_dir, args.algo,
+                                                    args.initial_policy + ".pt")) \
         if args.initial_policy else None
 
     pose_estimator = torch.load(os.path.join(args.load_dir, "im2state",
@@ -62,13 +62,17 @@ def main(scene_path):
 
     envs = make_vec_envs(scene_path, args.seed, args.num_processes, args.gamma, args.log_dir,
                          args.add_timestep, device, False, initial_policies,
-                         pose_estimator=pose_estimator, e2e=args.e2e)
+                         pose_estimator=pose_estimator, e2e=args.e2e, show=True)
 
     base_kwargs = {'recurrent': args.recurrent_policy}
-    base = initial_policies[0].base if initial_policies else None
     actor_critic = Policy(envs.observation_space.shape, envs.action_space, base_kwargs=base_kwargs,
-                          zero_last_layer=initial_policies is not None)
+                          base=residual.base, dist=residual.dist)
     actor_critic.to(device)
+
+    vec_norm = get_vec_normalize(envs)
+    if vec_norm is not None:
+        vec_norm.eval()
+        vec_norm.ob_rms = ob_rms
 
     if args.algo == 'a2c':
         agent = algo.A2C_ACKTR(actor_critic, args.value_loss_coef, args.entropy_coef, lr=args.lr,
@@ -227,9 +231,6 @@ def main(scene_path):
 
 
 scene_names = [
-    'dish_rack_nr',
-    'dish_rack_pr_14',
-    'dish_rack_pr_16',
     'dish_rack_pr_18',
     'dish_rack_pr_20',
     'dish_rack_pr_22',

@@ -4,6 +4,7 @@ import os
 import numpy as np
 import torch
 from torch import nn
+from tqdm import tqdm
 
 from envs.ResidualVecEnvWrapper import get_residual_layers
 from envs.envs import make_vec_envs, get_vec_normalize
@@ -98,8 +99,7 @@ def main():
         # Obser reward and next obs
         obs, rews, dones, _ = env.step(action)
         if np.all(dones):
-            if i % 10 == 0:
-                print(rews)
+            print(rews)
             i += args.num_processes
             rew = sum([int(rew > 0) for rew in rews])
             total_successes += rew

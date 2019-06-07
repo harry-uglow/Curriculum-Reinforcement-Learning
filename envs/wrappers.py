@@ -3,6 +3,7 @@ import torch
 from baselines.common.vec_env import VecEnvWrapper
 from gym import spaces, ActionWrapper
 
+from envs.DishRackEnv import rack_lower, rack_upper
 from envs.ResidualVecEnvWrapper import get_residual_layers
 from im2state.utils import unnormalise_y
 
@@ -27,7 +28,7 @@ class ImageObsVecEnvWrapper(VecEnvWrapper):
 
 
 class PoseEstimatorVecEnvWrapper(VecEnvWrapper):
-    def __init__(self, venv, pose_estimator, device):
+    def __init__(self, venv, pose_estimator, device, abs_to_rel=False):
         super().__init__(venv)
         self.image_obs_wrapper = get_image_obs_wrapper(venv)
         assert self.image_obs_wrapper is not None
@@ -36,14 +37,26 @@ class PoseEstimatorVecEnvWrapper(VecEnvWrapper):
         self.estimator.to(device)
         self.policy_layers = get_residual_layers(venv)
         self.state_obs_space = self.policy_layers[0].observation_space
-        self.low = self.state_obs_space.low[pose_estimator.state_to_estimate]
-        self.high = self.state_obs_space.high[pose_estimator.state_to_estimate]
+        self.low = rack_lower
+        self.high = rack_upper
         self.curr_image = None
+        self.pos_to_rel = abs_to_rel
+        self.base_env = venv.unwrapped.envs[0] if abs_to_rel else None
+        self.target_z = self.base_env.get_position(self.base_env.rack_handle)[2]
 
     def step_async(self, actions):
         with torch.no_grad():
-            estimation = self.estimator(self.curr_image).cpu().numpy()
+            estimation = unnormalise_y(self.estimator(self.curr_image).cpu().numpy(),
+                                       self.low, self.high)
             obs = self.image_obs_wrapper.curr_state_obs
+            if self.pos_to_rel:
+                full_pos_estimation = np.append(estimation[0, :2], self.target_z)
+                rack_to_trg = self.base_env.get_position(self.base_env.target_handle) - \
+                              self.base_env.get_position(self.base_env.rack_handle)
+                full_pos_estimation += rack_to_trg
+                actual_plate_pos = self.base_env.get_position(self.base_env.plate_handle)
+                relative_estimation = full_pos_estimation - actual_plate_pos
+                estimation = np.expand_dims(np.append(relative_estimation, estimation[0, 2]), 0)
             obs[:, self.estimator.state_to_estimate] = estimation
             for policy in self.policy_layers:
                 policy.curr_obs = policy.normalize_obs(obs)
