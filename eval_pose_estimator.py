@@ -24,7 +24,7 @@ def eval_pose_estimator(load_path, device, x, y, low, high):
         distances = []
         thetas = []
         for x_, y_ in tqdm(zip(x, y)):
-            actual_y = unnormalise_y(net(x_.unsqueeze(0)).squeeze().cpu().numpy(), low, high)
+            actual_y = unnormalise_y(net(x_.unsqueeze(0)), low, high).squeeze().cpu().numpy()
             pred_y = y_
             distances += [np.linalg.norm(pred_y[:2] - actual_y[:2])]
             thetas += [np.abs(pred_y[2] - actual_y[2])]
@@ -46,4 +46,4 @@ if __name__ == '__main__':
 
     x = torch.Tensor(images[p][:args.num_examples])
     y = torch.Tensor(positions[p][:args.num_examples])
-    eval_pose_estimator(load_path, device, x, y, low, high)
+    eval_pose_estimator(load_path, device, x, y, torch.Tensor(low), torch.Tensor(high))

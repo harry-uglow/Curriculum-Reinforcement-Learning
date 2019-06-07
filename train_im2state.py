@@ -31,6 +31,8 @@ def main():
     images, abs_positions, rel_positions, low, high = torch.load(
         os.path.join(args.load_dir, args.env_name + ".pt"))
     print("Loaded")
+    low = torch.Tensor(low)
+    high = torch.Tensor(high)
     images = np.transpose([np.array(img) for img in images], (0, 3, 1, 2))
 
     save_path = os.path.join('trained_models', 'im2state')
@@ -84,7 +86,9 @@ def main():
 
         train_loss += [np.mean(losses)]
         with torch.no_grad():
-            test_loss += [criterion(net(test_x), test_y).item()]
+            test_output = net(test_x)
+            test_output = test_output if args.rel else unnormalise_y(test_output, low, high)
+            test_loss += [criterion(test_output, test_y).item()]
         if test_loss[-1] < min_test_loss:
             updates_with_no_improvement = 0
             min_test_loss = test_loss[-1]
