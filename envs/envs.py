@@ -11,6 +11,7 @@ from baselines.common.vec_env.subproc_vec_env import SubprocVecEnv
 from baselines.common.vec_env.dummy_vec_env import DummyVecEnv
 from baselines.common.vec_env.vec_normalize import VecNormalize as VecNormalize_
 
+from envs.DRNoWaypointEnv import DRNonRespondableEnv
 from envs.DRWaypointEnv import DRWaypointEnv
 from envs.DRSparseEnv import DRSparseEnv
 from envs.ResidualVecEnvWrapper import ResidualVecEnvWrapper

@@ -52,9 +52,15 @@ def main(scene_path):
     torch.set_num_threads(1)
     device = torch.device("cuda:0" if args.cuda else "cpu")
 
-    residual, ob_rms, initial_policies = torch.load(os.path.join(args.load_dir, args.algo,
-                                                    args.initial_policy + ".pt")) \
+    initial_policies = torch.load(os.path.join(args.load_dir, args.algo,
+                                               args.initial_policy + ".pt")) \
         if args.initial_policy else None
+
+    if args.reuse_residual:
+        residual, ob_rms, initial_policies = initial_policies
+    else:
+        residual = None
+        ob_rms = None
 
     pose_estimator = torch.load(os.path.join(args.load_dir, "im2state",
                                              args.pose_estimator + ".pt")) \
@@ -63,16 +69,18 @@ def main(scene_path):
     envs = make_vec_envs(scene_path, args.seed, args.num_processes, args.gamma, args.log_dir,
                          args.add_timestep, device, False, initial_policies,
                          pose_estimator=pose_estimator, e2e=args.e2e, show=True)
+    if args.reuse_residual:
+        vec_norm = get_vec_normalize(envs)
+        if vec_norm is not None:
+            vec_norm.eval()
+            vec_norm.ob_rms = ob_rms
 
     base_kwargs = {'recurrent': args.recurrent_policy}
+    base = residual.base if args.reuse_residual else None
+    dist = residual.dist if args.reuse_residual else None
     actor_critic = Policy(envs.observation_space.shape, envs.action_space, base_kwargs=base_kwargs,
-                          base=residual.base, dist=residual.dist)
+                          zero_last_layer=initial_policies is not None, base=base, dist=dist)
     actor_critic.to(device)
-
-    vec_norm = get_vec_normalize(envs)
-    if vec_norm is not None:
-        vec_norm.eval()
-        vec_norm.ob_rms = ob_rms
 
     if args.algo == 'a2c':
         agent = algo.A2C_ACKTR(actor_critic, args.value_loss_coef, args.entropy_coef, lr=args.lr,
@@ -80,7 +88,8 @@ def main(scene_path):
     elif args.algo == 'ppo':
         agent = algo.PPO(actor_critic, args.clip_param, args.ppo_epoch, args.num_mini_batch,
                          args.value_loss_coef, args.entropy_coef, lr=args.lr, eps=args.eps,
-                         max_grad_norm=args.max_grad_norm, burn_in=initial_policies is not None)
+                         max_grad_norm=args.max_grad_norm,
+                         burn_in=initial_policies is not None and not args.reuse_residual)
     elif args.algo == 'acktr':
         agent = algo.A2C_ACKTR(actor_critic, args.value_loss_coef, args.entropy_coef, acktr=True)
 
@@ -238,10 +247,13 @@ scene_names = [
 ]
 
 if __name__ == "__main__":
-    base_name = args.env_name
-    base_ip = args.initial_policy
-    for scene in scene_names:
-        print(f"Training {scene} for {args.num_env_steps} timesteps")
-        args.env_name = f'{base_name}_{scene}'
-        main(scene)
-        args.initial_policy = args.env_name
+    if args.reuse_residual:
+        base_name = args.env_name
+        base_ip = args.initial_policy
+        for scene in scene_names:
+            print(f"Training {scene} for {args.num_env_steps} timesteps")
+            args.env_name = f'{base_name}_{scene}'
+            main(scene)
+            args.initial_policy = args.env_name
+    else:
+        main('dish_rack_nr')

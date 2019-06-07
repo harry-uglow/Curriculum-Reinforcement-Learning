@@ -12,7 +12,6 @@ rack_upper = np.array([0.15, (-0.45), 0.25])
 
 
 class DishRackEnv(SawyerEnv):
-    scene_path = 'dish_rack'
     observation_space = spaces.Box(np.array([-3.]*7 + [-math.inf]*3 + [rack_lower[2]]),
                                    np.array([3.]*7 + [math.inf]*3 + [rack_upper[2]]),
                                    dtype=np.float32)
@@ -39,7 +38,7 @@ class DishRackEnv(SawyerEnv):
     light_poss = None
 
     def __init__(self, *args):
-        super().__init__(self.scene_path, *args)
+        super().__init__(*args)
 
         self.ep_len = 48
 

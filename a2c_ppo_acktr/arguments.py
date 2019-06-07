@@ -81,6 +81,7 @@ def get_args():
     parser.add_argument('--save-as', default='i2s', help='Name to save im2state model under')
     parser.add_argument('--state-indices', nargs='+', type=int)
     parser.add_argument('--rel', action='store_true', default=False)
+    parser.add_argument('--reuse-residual', action='store_true', default=False)
     args = parser.parse_args()
 
     args.cuda = not args.no_cuda and torch.cuda.is_available()

@@ -29,9 +29,4 @@ class DRSparseEnv(DishRackEnv):
         ob = self._get_obs()
         done = (self.timestep == self.ep_len)
 
-        return ob, rew , done, dict(rew_success=rew_success)
-
-    def __init__(self, scene_path, *args):
-        self.scene_path = scene_path
-        super().__init__(*args)
-
+        return ob, rew, done, dict(rew_success=rew_success)

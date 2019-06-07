@@ -30,7 +30,6 @@ class Policy(nn.Module):
         else:
             self.base = base
 
-
         if action_space.__class__.__name__ == "Discrete":
             num_outputs = action_space.n
             self.dist = Categorical(self.base.output_size, num_outputs)
