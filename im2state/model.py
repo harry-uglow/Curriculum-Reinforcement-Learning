@@ -70,7 +70,7 @@ class PoseEstimator(nn.Module):
 
     def forward(self, x):
         # Normalise inputs
-        for i in range(x.size(0)):
-            x[i] = self.normalize(x[i] / 255.0)
-        x = self.main(x)
+        # for i in range(x.size(0)):
+        #     x[i] = self.normalize(x[i] / 255.0)
+        x = self.main(x / 255.0)
         return x

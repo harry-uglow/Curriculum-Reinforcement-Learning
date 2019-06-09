@@ -40,16 +40,17 @@ class PoseEstimatorVecEnvWrapper(VecEnvWrapper):
         self.low = rack_lower
         self.high = rack_upper
         self.curr_image = None
-        self.pos_to_rel = abs_to_rel
-        self.base_env = venv.unwrapped.envs[0] if abs_to_rel else None
-        self.target_z = self.base_env.get_position(self.base_env.rack_handle)[2]
+        self.abs_to_rel = abs_to_rel
+        self.base_env = venv.unwrapped.envs[0]
+        self.target_z = self.base_env.get_position(self.base_env.rack_handle)[2] if abs_to_rel \
+            else None
 
     def step_async(self, actions):
         with torch.no_grad():
             estimation = unnormalise_y(self.estimator(self.curr_image).cpu().numpy(),
                                        self.low, self.high)
             obs = self.image_obs_wrapper.curr_state_obs
-            if self.pos_to_rel:
+            if self.abs_to_rel:
                 full_pos_estimation = np.append(estimation[0, :2], self.target_z)
                 rack_to_trg = self.base_env.get_position(self.base_env.target_handle) - \
                               self.base_env.get_position(self.base_env.rack_handle)
@@ -57,6 +58,10 @@ class PoseEstimatorVecEnvWrapper(VecEnvWrapper):
                 actual_plate_pos = self.base_env.get_position(self.base_env.plate_handle)
                 relative_estimation = full_pos_estimation - actual_plate_pos
                 estimation = np.expand_dims(np.append(relative_estimation, estimation[0, 2]), 0)
+            # FOR ADJUSTING FROM RACK ESTIMATION TO TARGET OBSERVATIONS
+            # rack_to_trg = self.base_env.get_position(self.base_env.target_handle) - \
+            #               self.base_env.get_position(self.base_env.rack_handle)
+            # estimation[:, :-1] += rack_to_trg[:-1]
             obs[:, self.estimator.state_to_estimate] = estimation
             for policy in self.policy_layers:
                 policy.curr_obs = policy.normalize_obs(obs)
