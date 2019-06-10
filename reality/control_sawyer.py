@@ -1,157 +1,85 @@
-#!/usr/bin/env python
-
-# Copyright (c) 2013-2018, Rethink Robotics Inc.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import argparse
-import math
-import random
+import os
 
 import rospy
 import torch
+from baselines.common.vec_env import DummyVecEnv
 
-from std_msgs.msg import (
-    UInt16,
-)
-
-import intera_interface
-
-from intera_interface import CHECK_VERSION
-
+from envs.ImageObsVecEnvWrapper import ImageObsVecEnvWrapper, RealImageObsVecEnvWrapper
+from envs.envs import wrap_initial_policies, VecPyTorch
+from envs.wrappers import ClipActions, PoseEstimatorVecEnvWrapper
 from reality.CameraConnection import CameraConnection
+from reality.RealDishRackEnv import RealDishRackEnv
 
 
-def get_image_from_vision_sensor():
-    # TODO: Stream images
-    return torch.zeros((1, 3, 128, 128))
+parser = argparse.ArgumentParser(description='Demonstrate Policy on Real Robot')
+parser.add_argument('--policy-name', default=None,
+                    help='trained policy to use')
+parser.add_argument('--pose-est', default=None,
+                    help='network taking images as input and giving state as output')
+parser.add_argument('--load-dir', default='./trained_models/ppo/',
+                    help='directory to save agent logs (default: ./trained_models/)')
+parser.add_argument('--pe-load-dir', default='./trained_models/im2state/',
+                    help='directory to save agent logs (default: ./trained_models/)')
+
+parser.add_argument('--abs-to-rel', action='store_true', default=False)
+parser.add_argument('--device-num', type=int, default=0, help='select CUDA device')
+args = parser.parse_args()
+
+args.cuda = not args.no_cuda and torch.cuda.is_available()
 
 
-# TODO: Build as a Gym env with wrappers for policies
-class Wobbler(object):
+def make_env_fn():
+    def _thunk():
+        env = RealDishRackEnv()
+        env = ClipActions(env)
 
-    def __init__(self):
-        """
-        'Wobbles' both arms by commanding joint velocities sinusoidally.
-        """
-        self._pub_rate = rospy.Publisher('robot/joint_state_publish_rate',
-                                         UInt16, queue_size=10)
-        self._right_arm = intera_interface.limb.Limb("right")
-        self._right_joint_names = self._right_arm.joint_names()
+        return env
 
-        # control parameters
-        self._rate = 500.0  # Hz
-
-        print("Getting robot state... ")
-        self._rs = intera_interface.RobotEnable(CHECK_VERSION)
-        self._init_state = self._rs.state().enabled
-        print("Enabling robot... ")
-        self._rs.enable()
-
-        # set joint state publishing to 500Hz
-        self._pub_rate.publish(self._rate)
-
-    def _reset_control_modes(self):
-        rate = rospy.Rate(self._rate)
-        for _ in range(100):
-            if rospy.is_shutdown():
-                return False
-            self._right_arm.exit_control_mode()
-            self._pub_rate.publish(100)  # 100Hz default joint state rate
-            rate.sleep()
-        return True
-
-    def set_neutral(self):
-        """
-        Sets both arms back into a neutral pose.
-        """
-        print("Moving to neutral pose...")
-        self._right_arm.move_to_neutral()
-
-    def clean_shutdown(self):
-        print("\nExiting example...")
-        #return to normal
-        self._reset_control_modes()
-        self.set_neutral()
-        return True
-
-    def wobble(self):
-        self.set_neutral()
-        """
-        Performs the wobbling of both arms.
-        """
-        rate = rospy.Rate(self._rate)
-        start = rospy.Time.now()
-
-        def get_joint_angles():
-            return torch.Tensor([self._right_arm.joint_angle(joint_name)
-                                 for joint_name in self._right_joint_names])
-
-        def make_v_func():
-            """
-            returns a randomly parameterized cosine function to control a
-            specific joint.
-            """
-            period_factor = random.uniform(0.3, 0.5)
-            amplitude_factor = random.uniform(0.1, 0.2)
-
-            def v_func(elapsed):
-                w = period_factor * elapsed.to_sec()
-                return amplitude_factor * math.cos(w * 2 * math.pi)
-            return v_func
-
-        v_funcs = [make_v_func() for _ in self._right_joint_names]
+    return _thunk
 
 
-        def make_cmd(joint_names, elapsed):
-            return dict([(joint, v_funcs[i](elapsed))
-                         for i, joint in enumerate(joint_names)])
+def make_env(device, camera, policies, pose_estimator):
+    env_fn = [make_env_fn()]
+    vec_env = DummyVecEnv(env_fn)
 
-        print("Wobbling. Press Ctrl-C to stop...")
-        with CameraConnection((128, 128)) as camera:
-            while not rospy.is_shutdown():
-                self._pub_rate.publish(self._rate)
-                elapsed = rospy.Time.now() - start
-                curr_joint_angles = get_joint_angles()
-                image = camera.get_image()
-                estimation = self.estimator(image)
-                obs = torch.cat((curr_joint_angles, estimation))
-                with torch.no_grad():
-                    _, action, _, _ = self.policy.act(obs, None, None, deterministic=True)
-                cmd = make_cmd(self._right_joint_names, action)
-                self._right_arm.set_joint_velocities(cmd)
-                rate.sleep()
+    base_env = vec_env.envs[0]
+    low = base_env.normalize_low
+    high = base_env.normalize_high
+    state_to_est = base_env.state_to_estimate
+
+    vec_env = wrap_initial_policies(vec_env, device, policies)
+
+    vec_env = RealImageObsVecEnvWrapper(vec_env, (128, 128), camera)
+
+    vec_env = VecPyTorch(vec_env, device)
+
+    vec_env = PoseEstimatorVecEnvWrapper(vec_env, device, pose_estimator, state_to_est,
+                                         low, high, abs_to_rel=True)
+
+    return vec_env
 
 
 def main():
-    """Intera RSDK Joint Velocity Example: Wobbler
+    torch.set_num_threads(1)
+    device = torch.device(f"cuda:{args.device_num}" if args.cuda else "cpu")
 
-    Commands joint velocities of randomly parameterized cosine waves
-    to each joint. Demonstrates Joint Velocity Control Mode.
-    """
-    arg_fmt = argparse.RawDescriptionHelpFormatter
-    parser = argparse.ArgumentParser(formatter_class=arg_fmt,
-                                     description=main.__doc__)
-    parser.parse_args(rospy.myargv()[1:])
+    policies = torch.load(os.path.join(args.load_dir, args.env_name + ".pt"),
+                          map_location=torch.device('cpu'))
 
-    print("Initializing node... ")
-    rospy.init_node("rsdk_joint_velocity_wobbler")
+    pose_estimator = torch.load(os.path.join(args.i2s_load_dir, args.image_layer + ".pt")) if \
+        args.image_layer else None
 
-    wobbler = Wobbler()
-    rospy.on_shutdown(wobbler.clean_shutdown)
-    wobbler.wobble()
+    with CameraConnection((128, 128)) as camera:
+        env = make_env(device, camera, policies, pose_estimator)
+        null_action = torch.zeros((1, env.action_space.shape[0]))
+        print("Executing policy on real robot. Press Ctrl-C to stop...")
+
+        while not rospy.is_shutdown():
+            env.step(null_action)
 
     print("Done.")
+
 
 if __name__ == '__main__':
     main()

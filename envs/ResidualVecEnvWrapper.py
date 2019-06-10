@@ -23,8 +23,6 @@ class ResidualVecEnvWrapper(VecEnvWrapper):
         self.clipob = clipob
         self.epsilon = epsilon
         self.curr_obs = None
-        self.rnn_hxs = torch.zeros(venv.num_envs, initial_policy.recurrent_hidden_state_size)
-        self.masks = torch.zeros(venv.num_envs, 1)
 
     def normalize_obs(self, obs):
         if self.ob_rms:
@@ -36,16 +34,14 @@ class ResidualVecEnvWrapper(VecEnvWrapper):
 
     def step_wait(self):
         obs, rew, done, info = self.venv.step_wait()
-        self.masks = torch.FloatTensor([[0.0] if done_ else [1.0]
-                                   for done_ in done])
 
-        self.curr_obs = self.normalize_obs(obs)
+        self.curr_obs = obs
         return obs, rew, done, info
 
     def step_async(self, action):
         with torch.no_grad():
-            _, ip_action, _, self.rnn_hxs = self.ip.act(self.curr_obs, self.rnn_hxs, self.masks,
-                                                        deterministic=True)
+            _, ip_action, _, _ = self.ip.act(self.normalize_obs(self.curr_obs), None, None,
+                                             deterministic=True)
         if self.ob_rms:
             ip_action = ip_action.squeeze(1).cpu().numpy()
         whole_action = ip_action + action
@@ -53,5 +49,5 @@ class ResidualVecEnvWrapper(VecEnvWrapper):
 
     def reset(self):
         obs = self.venv.reset()
-        self.curr_obs = self.normalize_obs(obs)
+        self.curr_obs = obs
         return obs

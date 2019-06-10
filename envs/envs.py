@@ -14,8 +14,9 @@ from baselines.common.vec_env.vec_normalize import VecNormalize as VecNormalize_
 from envs.DRNoWaypointEnv import DRNonRespondableEnv
 from envs.DRWaypointEnv import DRWaypointEnv
 from envs.DRSparseEnv import DRSparseEnv
+from envs.ImageObsVecEnvWrapper import SimImageObsVecEnvWrapper
 from envs.ResidualVecEnvWrapper import ResidualVecEnvWrapper
-from envs.wrappers import ImageObsVecEnvWrapper, PoseEstimatorVecEnvWrapper, \
+from envs.wrappers import PoseEstimatorVecEnvWrapper, \
     ClipActions, E2EVecEnvWrapper
 from a2c_ppo_acktr.tuple_tensor import TupleTensor
 
@@ -117,7 +118,7 @@ def make_vec_envs(env_name, seed, num_processes, gamma, log_dir, add_timestep, d
 
     if pose_estimator is not None or e2e:
         # Two separate layers as they may have their uses separately
-        envs = ImageObsVecEnvWrapper(envs)
+        envs = SimImageObsVecEnvWrapper(envs)
 
     if len(envs.observation_space.shape) == 1 and not no_norm:
         if gamma is None:
@@ -128,7 +129,8 @@ def make_vec_envs(env_name, seed, num_processes, gamma, log_dir, add_timestep, d
     envs = VecPyTorch(envs, device)
 
     if pose_estimator is not None:
-        envs = PoseEstimatorVecEnvWrapper(envs, pose_estimator, device, abs_to_rel=True)
+        estimator, state_to_estimate, low, high = pose_estimator
+        envs = PoseEstimatorVecEnvWrapper(envs, device, *pose_estimator, abs_to_rel=True)
         envs = wrap_initial_policies(envs, device, image_ips)
     if e2e:
         envs = wrap_initial_policies(envs, device, initial_policies)
