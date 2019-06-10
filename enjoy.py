@@ -45,12 +45,14 @@ parser.add_argument('--e2e', action='store_true', default=False)
 args = parser.parse_args()
 
 args.det = not args.non_det
+args.cuda = torch.cuda.is_available()
 
 
 def main():
+    device = torch.device("cuda:0" if args.cuda else "cpu")
     # We need to use the same statistics for normalization as used in training
     policies = torch.load(os.path.join(args.load_dir, args.env_name + ".pt"),
-                          map_location=torch.device('cpu'))
+                          map_location=device)
 
     if args.rip:
         rip, estimator, policies = policies
@@ -64,7 +66,7 @@ def main():
     pose_estimator_info = (estimator, args.state_indices, rack_lower, rack_upper)
 
     env = make_vec_envs('dish_rack', args.seed + 1000, args.num_processes, None, None,
-                        args.add_timestep, 'cpu', False, policies, show=(args.num_processes == 1),
+                        args.add_timestep, device, False, policies, show=(args.num_processes == 1),
                         no_norm=True, pose_estimator=pose_estimator_info, e2e=args.e2e)
     null_action = torch.zeros((1, env.action_space.shape[0]))
 
