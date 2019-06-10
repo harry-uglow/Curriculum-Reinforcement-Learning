@@ -10,7 +10,6 @@ from torchvision import transforms
 from tqdm import tqdm
 
 from a2c_ppo_acktr.arguments import get_args
-from envs.DishRackEnv import rack_lower, rack_upper
 from eval_pose_estimator import eval_pose_estimator
 from im2state.model import PoseEstimator
 
@@ -79,6 +78,7 @@ def main():
     for i in range(num_test_examples):
         test_x[i] = normalize(test_x[i] / 255.0)
 
+    train_loss_x_axis = []
     train_loss = []
     test_loss = []
     min_test_loss = math.inf
@@ -88,19 +88,18 @@ def main():
     # run the main training loop
     epochs = 0
     while updates_with_no_improvement < 5:
-        epochs += 1
-        losses = []
         for batch_idx in tqdm(range(0, num_train_examples, batch_size)):
             output = net(train_x[batch_idx:batch_idx + batch_size])
             pred_y = output if args.rel else unnormalise_y(output, low, high)
             loss = criterion(pred_y, train_y[batch_idx:batch_idx + batch_size])
-            losses += [loss.item()]
+            train_loss += [loss.item()]
+            train_loss_x_axis = [epochs + (batch_idx + batch_size) / num_train_examples]
 
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+        epochs += 1
 
-        train_loss += [np.mean(losses)]
         with torch.no_grad():
             test_output = net(test_x)
             test_output = test_output if args.rel else unnormalise_y(test_output, low, high)
@@ -119,7 +118,7 @@ def main():
 
         if epochs % args.log_interval == 0 or updates_with_no_improvement == 5:
             fig = plt.figure()
-            plt.plot(range(epochs), train_loss, label="Training Loss")
+            plt.plot(train_loss_x_axis, train_loss, label="Training Loss")
             plt.plot(range(1, epochs + 1), test_loss,  label="Test Loss")
             plt.legend()
             plt.savefig(f'imgs/{args.save_as}.png')
