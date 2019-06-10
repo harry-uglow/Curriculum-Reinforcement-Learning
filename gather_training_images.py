@@ -42,9 +42,7 @@ def main():
     abs_positions = np.zeros((args.num_steps, len(args.state_indices) - 1))
     abs_positions[:args.num_processes] = abs_obs
 
-
     for i in tqdm(range(1, args.num_steps // args.num_processes)):
-
         rel_obs = envs.step(null_action)[0][:, args.state_indices]
         abs_obs = np.array(envs.get_images(mode="target"))
         start_index = args.num_processes * i

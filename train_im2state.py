@@ -6,6 +6,7 @@ import numpy as np
 import torch
 from torch import optim, nn
 import matplotlib.pyplot as plt
+from torchvision import transforms
 from tqdm import tqdm
 
 from a2c_ppo_acktr.arguments import get_args
@@ -31,8 +32,8 @@ def main():
     images, abs_positions, rel_positions, low, high = torch.load(
         os.path.join(args.load_dir, args.env_name + ".pt"))
     print("Loaded")
-    low = torch.Tensor(low)
-    high = torch.Tensor(high)
+    low = torch.Tensor(low).to(device)
+    high = torch.Tensor(high).to(device)
     images = np.transpose([np.array(img) for img in images], (0, 3, 1, 2))
 
     save_path = os.path.join('trained_models', 'im2state')
@@ -42,11 +43,11 @@ def main():
         pass
 
     positions = rel_positions if args.rel else abs_positions
-    state_to_estimate = [7, 8, 9, 10] if args.rel else [7, 8, 9]
+    pretrained_name = 'vgg16_4out.pt' if args.rel else 'vgg16_3out.pt'
 
-    net = PoseEstimator(3, positions.shape[1], state_to_estimate)
-    net.load_state_dict(torch.load('trained_models/pretrained/vgg16.pt'))
-    net.to(device)
+    net = PoseEstimator(3, positions.shape[1])
+    net.load_state_dict(torch.load(os.path.join('trained_models/pretrained/', pretrained_name)))
+    net = net.to(device)
 
     optimizer = optim.Adam(net.parameters(), lr=0.00003)
     criterion = nn.MSELoss()
@@ -63,6 +64,15 @@ def main():
     test_x = torch.Tensor(x[:num_test_examples]).to(device)
     test_y = torch.Tensor(y[:num_test_examples]).to(device)
 
+    num_train_examples = train_x.size(0)
+    print("Normalising")
+    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                     std=[0.229, 0.224, 0.225])
+    for i in range(num_train_examples):
+        train_x[i] = normalize(train_x[i] / 255.0)
+    for i in range(num_test_examples):
+        test_x[i] = normalize(test_x[i] / 255.0)
+
     train_loss = []
     test_loss = []
     min_test_loss = math.inf
@@ -74,7 +84,7 @@ def main():
     while updates_with_no_improvement < 5:
         epochs += 1
         losses = []
-        for batch_idx in tqdm(range(0, len(train_x), batch_size)):
+        for batch_idx in tqdm(range(0, num_train_examples, batch_size)):
             output = net(train_x[batch_idx:batch_idx + batch_size])
             pred_y = output if args.rel else unnormalise_y(output, low, high)
             loss = criterion(pred_y, train_y[batch_idx:batch_idx + batch_size])

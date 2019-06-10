@@ -16,17 +16,16 @@ class Flatten(nn.Module):
 
 
 class PoseEstimator(nn.Module):
-    def __init__(self, num_inputs, num_outputs, state_to_estimate):
+    def __init__(self, num_inputs, num_outputs):
         super(PoseEstimator, self).__init__()
         self._output_size = num_outputs
-        self.state_to_estimate = state_to_estimate
 
         init_ = lambda m: init(m,
                                nn.init.orthogonal_,
                                lambda x: nn.init.constant_(x, 0),
                                nn.init.calculate_gain('relu'))
 
-        self.main = nn.Sequential(  # 128 x 128
+        self.conv_layers = nn.Sequential(  # 128 x 128
             (nn.Conv2d(num_inputs, 64, 3, padding=1)),
             nn.ReLU(inplace=True),
             (nn.Conv2d(64, 64, 3, padding=1)),
@@ -48,19 +47,26 @@ class PoseEstimator(nn.Module):
             nn.ReLU(inplace=True),
             (nn.Conv2d(512, 512, 3, padding=1)),
             nn.ReLU(inplace=True),
-            (nn.Conv2d(512, 512, 3)),  # 14
+            (nn.Conv2d(512, 512, 3, padding=1)),
             nn.ReLU(inplace=True),
-            nn.MaxPool2d(2),  # 7
-            Flatten(),
-            (nn.Linear(7 * 7 * 512, 256)),
+            nn.MaxPool2d(2),  # 8
+            (nn.Conv2d(512, 512, 3, padding=1)),
+            nn.ReLU(inplace=True),
+            (nn.Conv2d(512, 512, 3, padding=1)),
+            nn.ReLU(inplace=True),
+            (nn.Conv2d(512, 512, 3, padding=1)),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),  # 4
+        )
+
+        self.fc_layers = nn.Sequential(
+            Flatten(),  # Perhaps add joint angles here
+            (nn.Linear(4 * 4 * 512, 256)),
             nn.ReLU(inplace=True),
             (nn.Linear(256, 64)),
             nn.ReLU(inplace=True),
             (nn.Linear(64, num_outputs))
         )
-
-        self.normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                              std=[0.229, 0.224, 0.225])
 
         self.train()
 
@@ -69,8 +75,6 @@ class PoseEstimator(nn.Module):
         return self._output_size
 
     def forward(self, x):
-        # Normalise inputs
-        # for i in range(x.size(0)):
-        #     x[i] = self.normalize(x[i] / 255.0)
-        x = self.main(x / 255.0)
+        x = self.conv_layers(x)
+        x = self.fc_layers(x)
         return x

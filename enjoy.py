@@ -88,6 +88,8 @@ def main():
     i = 0
     total_successes = 0
     num_trials = 50
+    # init_rews = np.zeros((args.num_processes, 1))
+    # rews = init_rews.copy()
     while i < num_trials:
         with torch.no_grad():
             if rip:
@@ -98,11 +100,14 @@ def main():
 
         # Obser reward and next obs
         obs, rews, dones, _ = env.step(action)
+        # obs, step_rews, dones, _ = env.step(action)
+        # rews += step_rews.cpu().numpy()
         if np.all(dones):
             print(rews)
             i += args.num_processes
             rew = sum([int(rew > 0) for rew in rews])
             total_successes += rew
+            # rews = init_rews.copy()
 
         if args.env_name.find('Bullet') > -1:
             if torsoId > -1:
