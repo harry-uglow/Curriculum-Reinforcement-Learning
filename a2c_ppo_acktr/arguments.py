@@ -63,6 +63,8 @@ def get_args():
                         help='directory to load initial policy from (default: ./trained_models/)')
     parser.add_argument('--no-cuda', action='store_true', default=False,
                         help='disables CUDA training')
+    parser.add_argument('--device-num', type=int, default=0,
+                        help='select CUDA device')
     parser.add_argument('--add-timestep', action='store_true', default=False,
                         help='add timestep to observations')
     parser.add_argument('--recurrent-policy', action='store_true', default=False,

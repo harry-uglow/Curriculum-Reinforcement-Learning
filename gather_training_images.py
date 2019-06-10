@@ -6,6 +6,7 @@ import torch
 from PIL import Image
 
 from a2c_ppo_acktr.arguments import get_args
+from envs.DishRackEnv import rack_lower, rack_upper
 from envs.envs import make_vec_envs
 
 from tqdm import tqdm
@@ -59,12 +60,12 @@ def main():
     except OSError:
         pass
 
-    low = envs.observation_space.low[args.state_indices]
-    high = envs.observation_space.high[args.state_indices]
+    low = rack_lower
+    high = rack_upper
     res = images[0].size[0]
 
     torch.save([images, abs_positions, rel_positions, low, high],
-               os.path.join(save_path, f'{args.env_name}_{res}_{args.num_steps}.pt'))
+               os.path.join(save_path, f'{args.env_name}_{args.num_steps}.pt'))
 
 
 if __name__ == "__main__":

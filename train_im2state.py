@@ -10,6 +10,7 @@ from torchvision import transforms
 from tqdm import tqdm
 
 from a2c_ppo_acktr.arguments import get_args
+from envs.DishRackEnv import rack_lower, rack_upper
 from eval_pose_estimator import eval_pose_estimator
 from im2state.model import PoseEstimator
 
@@ -27,7 +28,7 @@ if args.cuda and torch.cuda.is_available() and args.cuda_deterministic:
 
 def main():
     torch.set_num_threads(1)
-    device = torch.device("cuda:0" if args.cuda else "cpu")
+    device = torch.device(f"cuda:{args.device_num}" if args.cuda else "cpu")
 
     images, abs_positions, rel_positions, low, high = torch.load(
         os.path.join(args.load_dir, args.env_name + ".pt"))
@@ -49,20 +50,25 @@ def main():
     net.load_state_dict(torch.load(os.path.join('trained_models/pretrained/', pretrained_name)))
     net = net.to(device)
 
-    optimizer = optim.Adam(net.parameters(), lr=0.00003)
+    optimizer = optim.Adam(net.parameters(), lr=args.lr)
     criterion = nn.MSELoss()
 
-    p = np.random.permutation(len(images))
+    np_random = np.random.RandomState()
+    np_random.seed(1053831)
+    p = np_random.permutation(len(images))
     x = images[p]
     y = positions[p]
 
     num_test_examples = 256
     batch_size = 50
 
-    train_x = torch.Tensor(x[num_test_examples:]).to(device)
+    train_x = torch.Tensor(x[num_test_examples:])
     train_y = torch.Tensor(y[num_test_examples:]).to(device)
-    test_x = torch.Tensor(x[:num_test_examples]).to(device)
+    test_x = torch.Tensor(x[:num_test_examples])
     test_y = torch.Tensor(y[:num_test_examples]).to(device)
+
+    train_x = train_x.to(device)
+    test_x = test_x.to(device)
 
     num_train_examples = train_x.size(0)
     print("Normalising")
@@ -102,16 +108,14 @@ def main():
         if test_loss[-1] < min_test_loss:
             updates_with_no_improvement = 0
             min_test_loss = test_loss[-1]
-        else:
-            updates_with_no_improvement += 1
 
-        if epochs % args.save_interval == 0 or updates_with_no_improvement == 1:
             save_model = net
             if args.cuda:
                 save_model = copy.deepcopy(net).cpu()
-
-            if updates_with_no_improvement <= 1:
-                torch.save(save_model, os.path.join(save_path, args.save_as + ".pt"))
+            torch.save(save_model, os.path.join(save_path, args.save_as + ".pt"))
+            print("Saved")
+        else:
+            updates_with_no_improvement += 1
 
         if epochs % args.log_interval == 0 or updates_with_no_improvement == 5:
             fig = plt.figure()
@@ -124,7 +128,7 @@ def main():
 
     print("Finished training")
     eval_pose_estimator(os.path.join(save_path, args.save_as + ".pt"), device, test_x, test_y,
-                        low, high)
+                        low if not args.rel else None, high if not args.rel else None)
 
 
 if __name__ == "__main__":
