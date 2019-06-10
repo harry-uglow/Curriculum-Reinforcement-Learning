@@ -70,6 +70,9 @@ class PoseEstimator(nn.Module):
 
         self.train()
 
+        self.normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                              std=[0.229, 0.224, 0.225])
+
     @property
     def output_size(self):
         return self._output_size
@@ -78,3 +81,9 @@ class PoseEstimator(nn.Module):
         x = self.conv_layers(x)
         x = self.fc_layers(x)
         return x
+
+    def predict(self, images):
+        assert not self.training
+        for i in range(images.size(0)):
+            images[i] = self.normalize(images[i] / 255.0)
+        return self.forward(images)

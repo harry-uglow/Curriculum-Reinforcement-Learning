@@ -4,8 +4,10 @@ import os
 import numpy as np
 import torch
 from torch import nn
+from torchvision import transforms
 from tqdm import tqdm
 
+from envs.DishRackEnv import rack_lower, rack_upper
 from envs.ResidualVecEnvWrapper import get_residual_layers
 from envs.envs import make_vec_envs, get_vec_normalize
 from a2c_ppo_acktr.utils import get_render_func
@@ -51,18 +53,19 @@ def main():
                           map_location=torch.device('cpu'))
 
     if args.rip:
-        rip, im2state, policies = policies
+        rip, estimator, policies = policies
     else:
-        im2state = torch.load(os.path.join(args.i2s_load_dir, args.image_layer + ".pt")) if \
+        estimator = torch.load(os.path.join(args.i2s_load_dir, args.image_layer + ".pt")) if \
             args.image_layer else None
         rip = None
-    if im2state:
-        im2state.eval()
-        im2state.state_to_estimate = args.state_indices
+    if estimator:
+        estimator.eval()
 
-    env = make_vec_envs('dish_rack_nr', args.seed + 1000, args.num_processes, None, None,
+    pose_estimator_info = (estimator, args.state_indices, rack_lower, rack_upper)
+
+    env = make_vec_envs('dish_rack', args.seed + 1000, args.num_processes, None, None,
                         args.add_timestep, 'cpu', False, policies, show=(args.num_processes == 1),
-                        no_norm=True, pose_estimator=im2state, e2e=args.e2e)
+                        no_norm=True, pose_estimator=pose_estimator_info, e2e=args.e2e)
     null_action = torch.zeros((1, env.action_space.shape[0]))
 
     # Get a render function
