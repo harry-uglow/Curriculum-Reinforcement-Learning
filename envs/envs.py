@@ -98,8 +98,7 @@ def wrap_initial_policies(envs, device, initial_policies):
         curr_ip, ob_rms, more_ips = initial_policies
         envs = wrap_initial_policies(envs, device, more_ips)
         return ResidualVecEnvWrapper(envs, curr_ip, ob_rms, device)
-    else:
-        return envs
+    return envs
 
 
 def make_vec_envs(env_name, seed, num_processes, gamma, log_dir, add_timestep, device,
