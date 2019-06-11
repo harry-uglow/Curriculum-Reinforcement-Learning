@@ -14,8 +14,8 @@ In order to install requirements, follow:
 # Pytorch and other requirements
 pip install -r requirements.txt
 
-# Baselines for Atari preprocessing
-git clone https://github.com/openai/baselines.git
+# Baselines (with some personal edits)
+git clone https://github.com/harry-uglow/baselines.git
 cd baselines
 pip install -e .
 ```
