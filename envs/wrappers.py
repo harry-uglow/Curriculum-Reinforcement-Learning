@@ -26,25 +26,26 @@ class PoseEstimatorVecEnvWrapper(VecEnvWrapper):
         self.high = high
         self.curr_image = None
         self.abs_to_rel = abs_to_rel
-        self.base_env = venv.unwrapped.envs[0]
-        self.target_z = self.base_env.get_position(self.base_env.target_handle)[2] if abs_to_rel \
-            else None
+        self.target_z = np.array(self.get_images(mode="target_height"))
+        self.junk = None
+        # self.abs_estimations = SORTED LISTS --- USE MEDIAN ESTIMATION
 
     def step_async(self, actions):
         with torch.no_grad():
             net_output = self.estimator.predict(self.curr_image).cpu().numpy()
             estimation = net_output if self.low is None else unnormalise_y(net_output,
                                                                            self.low, self.high)
+            # self.abs_estimations
             obs = np.zeros((self.num_envs, *self.state_obs_space.shape))
             obs[:, self.state_to_use] = self.image_obs_wrapper.curr_state_obs[:, self.state_to_use]
             if self.abs_to_rel:
-                full_pos_estimation = np.append(estimation[0, :2], self.target_z)
+                full_pos_estimation = np.append(estimation[:, :2], self.target_z, axis=1)
                 # rack_to_trg = self.base_env.get_position(self.base_env.target_handle) - \
                 #               self.base_env.get_position(self.base_env.rack_handle)
                 # full_pos_estimation += rack_to_trg
-                actual_plate_pos = self.base_env.get_position(self.base_env.plate_handle)
+                actual_plate_pos = np.array(self.get_images(mode='plate'))
                 relative_estimation = full_pos_estimation - actual_plate_pos
-                estimation = np.expand_dims(np.append(relative_estimation, estimation[0, 2]), 0)
+                estimation = np.append(relative_estimation, estimation[:, 2:], axis=1)
             # FOR ADJUSTING FROM RACK ESTIMATION TO TARGET OBSERVATIONS
             # rack_to_trg = self.base_env.get_position(self.base_env.target_handle) - \
             #               self.base_env.get_position(self.base_env.rack_handle)
@@ -60,6 +61,7 @@ class PoseEstimatorVecEnvWrapper(VecEnvWrapper):
 
     def reset(self):
         self.curr_image = self.venv.reset()
+        self.abs_estimations = np.array([])
         return self.curr_image
 
 
