@@ -63,7 +63,8 @@ def main():
     if estimator:
         estimator.eval()
 
-    pose_estimator_info = (estimator, args.state_indices, rack_lower, rack_upper)
+    pose_estimator_info = (estimator, args.state_indices, rack_lower, rack_upper) if \
+        args.image_layer else None
 
     env = make_vec_envs('dish_rack', args.seed + 1000, args.num_processes, None, None,
                         args.add_timestep, device, False, policies, show=(args.num_processes == 1),

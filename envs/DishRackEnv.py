@@ -12,8 +12,8 @@ rack_upper = np.array([0.15, (-0.45), 0.25])
 
 
 class DishRackEnv(SawyerEnv):
-    observation_space = spaces.Box(np.append([-3.]*7, rack_lower),
-                                   np.append([3.]*7, rack_upper),
+    observation_space = spaces.Box(np.array([-3.]*7 + [-math.inf]*3 + [rack_lower[2]]),
+                                   np.array([3.]*7 + [math.inf]*3 + [rack_upper[2]]),
                                    dtype=np.float32)
     timestep = 0
     metadata = {'render.modes': ['human', 'rgb_array', 'activate']}
@@ -76,8 +76,7 @@ class DishRackEnv(SawyerEnv):
         joint_obs = super(DishRackEnv, self)._get_obs()
         pos_vector = self.get_position(self.target_handle) - self.get_position(self.plate_handle)
 
-        return np.concatenate((joint_obs, self.get_position(self.target_handle)[:-1], self.rack_rot[
-                                                                                  :1]))
+        return np.concatenate((joint_obs, pos_vector, self.rack_rot[:1]))
 
     def get_plate_orientation(self):
         orientation = catch_errors(vrep.simxGetObjectOrientation(
@@ -90,6 +89,10 @@ class DishRackEnv(SawyerEnv):
         elif mode == 'target':
             pos = self.get_position(self.target_handle)
             return np.append(pos[:-1], self.rack_rot[:1])
+        elif mode == 'plate':
+            return self.get_position(self.plate_handle)
+        elif mode == 'target_height':
+            return self.get_position(self.target_handle)[-1:]
         elif mode == 'mask':
             mask = self._read_vision_sensor(grayscale=True)
             mask[mask > 0] = 255
