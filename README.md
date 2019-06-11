@@ -19,3 +19,5 @@ git clone https://github.com/harry-uglow/baselines.git
 cd baselines
 pip install -e .
 ```
+
+Install V-REP, move remoteApi.so/.dylib to root folder.
