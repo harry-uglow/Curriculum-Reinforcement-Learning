@@ -14,9 +14,8 @@ class PoseEstimatorVecEnvWrapper(VecEnvWrapper):
         super().__init__(venv)
         self.image_obs_wrapper = get_image_obs_wrapper(venv)
         assert self.image_obs_wrapper is not None
-        self.estimator = pose_estimator
+        self.estimator = pose_estimator.to(device)
         self.estimator.eval()
-        self.estimator.to(device)
         self.policy_layers = get_residual_layers(venv)
         self.state_obs_space = self.policy_layers[0].observation_space
         self.state_to_estimate = state_to_estimate
