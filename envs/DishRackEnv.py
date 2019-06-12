@@ -1,3 +1,6 @@
+import glob
+import os
+
 import numpy as np
 from gym import spaces
 import vrep
@@ -36,6 +39,7 @@ class DishRackEnv(SawyerEnv):
     init_wall_color = None
     light_handles = None
     light_poss = None
+    textures = None
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -139,17 +143,24 @@ class DishRackEnv(SawyerEnv):
         self.light_poss = [catch_errors(vrep.simxGetObjectPosition(self.cid, handle, -1,
                                                                    vrep.simx_opmode_blocking))
                            for handle in self.light_handles]
+        self.textures = glob.glob(os.path.join(os.getcwd(), 'block/*.png'))
 
     def randomise_domain(self):
         # VARY COLORS
         plate_color = self.np_random.normal(loc=self.init_plate_color, scale=0.05)
         rack_color = self.np_random.normal(loc=self.init_rack_color, scale=0.05)
-        cloth_color = self.np_random.normal(loc=self.init_cloth_color, scale=0.05)
-        wall_color = self.np_random.normal(loc=self.init_wall_color, scale=0.02)
+        # cloth_color = self.np_random.normal(loc=self.init_cloth_color, scale=0.05)
+        # wall_color = self.np_random.normal(loc=self.init_wall_color, scale=0.02)
         self.call_lua_function('set_color', ints=[self.plate_obj_handle], floats=plate_color)
         self.call_lua_function('set_color', ints=[self.rack_handle], floats=rack_color)
-        self.call_lua_function('set_color', ints=[self.cloth_handle], floats=cloth_color)
-        self.call_lua_function('set_color', ints=[self.wall_handle], floats=wall_color)
+        # self.call_lua_function('set_color', ints=[self.cloth_handle], floats=cloth_color)
+        # self.call_lua_function('set_color', ints=[self.wall_handle], floats=wall_color)
+        # SET TEXTURES
+        self.call_lua_function('set_texture', ints=[self.cloth_handle],
+                               strings=[self.np_random.choice(self.textures)])
+        self.call_lua_function('set_texture', ints=[self.wall_handle],
+                               strings=[self.np_random.choice(self.textures)])
+
         # VARY CAMERA POSE
         cam_displacement = self.np_random.uniform(-self.max_cam_displace,
                                                   self.max_cam_displace, 3)

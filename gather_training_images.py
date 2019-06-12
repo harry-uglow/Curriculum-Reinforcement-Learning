@@ -65,7 +65,7 @@ def main():
     res = images[0].size[0]
 
     torch.save([images, abs_positions, rel_positions, low, high],
-               os.path.join(save_path, f'{args.env_name}_{args.num_steps}.pt'))
+               os.path.join(save_path, f'{args.env_name}_{args.num_steps}_tex.pt'))
 
 
 if __name__ == "__main__":
