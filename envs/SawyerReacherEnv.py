@@ -1,3 +1,5 @@
+from __future__ import division
+from __future__ import absolute_import
 import os
 
 import numpy as np
@@ -8,7 +10,7 @@ from envs.SawyerEnv import SawyerEnv
 from envs.VrepEnv import check_for_errors
 
 np.set_printoptions(precision=2, linewidth=200)  # DEBUG
-dir_path = os.getcwd()
+dir_path = os.getcwdu()
 
 cube_lower = np.array([0.125, -0.125])
 cube_upper = np.array([0.7, -0.7])
@@ -19,20 +21,20 @@ class SawyerReacherEnv(SawyerEnv):
     observation_space = spaces.Box(np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
                                    np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1]),
                                    dtype=np.float32)
-    scene_path = dir_path + '/reacher.ttt'
+    scene_path = dir_path + u'/reacher.ttt'
     target_pose = np.array([0.3, -0.3, 0.025])
     timestep = 0
 
     def __init__(self, seed, rank, headless, ep_len=64):
-        super().__init__(seed, rank, self.scene_path, headless)
+        super(SawyerReacherEnv, self).__init__(seed, rank, self.scene_path, headless)
 
         self.ep_len = ep_len
 
         return_code, self.end_handle = vrep.simxGetObjectHandle(self.cid,
-                "BaxterGripper_centerJoint", vrep.simx_opmode_blocking)
+                u"BaxterGripper_centerJoint", vrep.simx_opmode_blocking)
         check_for_errors(return_code)
         _, self.target_handle = vrep.simxGetObjectHandle(self.cid,
-                "Cube", vrep.simx_opmode_blocking)
+                u"Cube", vrep.simx_opmode_blocking)
 
     def reset(self):
         super(SawyerReacherEnv, self).reset()

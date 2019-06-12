@@ -1,3 +1,5 @@
+from __future__ import division
+from __future__ import absolute_import
 import os
 
 import gym
@@ -45,7 +47,7 @@ def make_env(scene_path, seed, rank, log_dir, add_timestep, allow_early_resets, 
         env = ClipActions(env)
 
         if log_dir is not None:
-            env = bench.Monitor(env, os.path.join(log_dir, str(rank)),
+            env = bench.Monitor(env, os.path.join(log_dir, unicode(rank)),
                                 allow_early_resets=allow_early_resets)
 
         return env
@@ -106,7 +108,7 @@ def make_vec_envs(env_name, seed, num_processes, gamma, log_dir, add_timestep, d
                   allow_early_resets, initial_policies, num_frame_stack=None, show=False,
                   no_norm=False, pose_estimator=None, image_ips=None, e2e=False):
     envs = [make_env(env_name, seed, i, log_dir, add_timestep, allow_early_resets, show)
-            for i in range(num_processes)]
+            for i in xrange(num_processes)]
 
     if len(envs) > 1:
         envs = SubprocVecEnv(envs)
@@ -166,7 +168,7 @@ class AddTimestep(gym.ObservationWrapper):
 
 class TransposeObs(gym.ObservationWrapper):
     def __init__(self, env=None):
-        """
+        u"""
         Transpose observation space (base class)
         """
         super(TransposeObs, self).__init__(env)
@@ -174,7 +176,7 @@ class TransposeObs(gym.ObservationWrapper):
 
 class TransposeImage(TransposeObs):
     def __init__(self, env=None, op=[2, 0, 1]):
-        """
+        u"""
         Transpose observation space for images
         """
         super(TransposeImage, self).__init__(env)
@@ -194,7 +196,7 @@ class TransposeImage(TransposeObs):
 
 class VecPyTorch(VecEnvWrapper):
     def __init__(self, venv, device):
-        """Return only every `skip`-th frame"""
+        u"""Return only every `skip`-th frame"""
         super(VecPyTorch, self).__init__(venv)
         self.device = device
         # TODO: Fix data types
@@ -248,7 +250,7 @@ class VecNormalize(VecNormalize_):
 def get_vec_normalize(venv):
     if isinstance(venv, VecNormalize):
         return venv
-    elif hasattr(venv, 'venv'):
+    elif hasattr(venv, u'venv'):
         return get_vec_normalize(venv.venv)
 
     return None
@@ -268,7 +270,7 @@ class VecPyTorchFrameStack(VecEnvWrapper):
         high = np.repeat(wos.high, self.nstack, axis=0)
 
         if device is None:
-            device = torch.device('cpu')
+            device = torch.device(u'cpu')
         self.stacked_obs = torch.zeros((venv.num_envs,) + low.shape).to(device)
 
         observation_space = gym.spaces.Box(

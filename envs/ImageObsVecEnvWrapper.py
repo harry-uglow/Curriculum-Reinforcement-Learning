@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import numpy as np
 from baselines.common.vec_env import VecEnvWrapper
 from gym import spaces
@@ -6,8 +7,8 @@ from gym import spaces
 # Swap out state observation for image
 class ImageObsVecEnvWrapper(VecEnvWrapper):
     def __init__(self, venv, res):
-        observation_space = spaces.Box(0, 255, [3, *res], dtype=venv.observation_space.dtype)
-        super().__init__(venv, observation_space)
+        observation_space = spaces.Box(0, 255, [3] + res, dtype=venv.observation_space.dtype)
+        super(ImageObsVecEnvWrapper, self).__init__(venv, observation_space)
         self.curr_state_obs = None
 
     def reset(self):
@@ -20,8 +21,8 @@ class ImageObsVecEnvWrapper(VecEnvWrapper):
 
 class SimImageObsVecEnvWrapper(ImageObsVecEnvWrapper):
     def __init__(self, venv):
-        res = venv.get_images(mode='activate')[0]
-        super().__init__(venv, res)
+        res = venv.get_images(mode=u'activate')[0]
+        super(SimImageObsVecEnvWrapper, self).__init__(venv, res)
 
     def reset(self):
         super(SimImageObsVecEnvWrapper, self).reset()
@@ -36,7 +37,7 @@ class SimImageObsVecEnvWrapper(ImageObsVecEnvWrapper):
 
 class RealImageObsVecEnvWrapper(ImageObsVecEnvWrapper):
     def __init__(self, venv, res, camera):
-        super().__init__(venv, res)
+        super(RealImageObsVecEnvWrapper, self).__init__(venv, res)
         self.cam = camera
 
     def reset(self):
@@ -53,6 +54,6 @@ class RealImageObsVecEnvWrapper(ImageObsVecEnvWrapper):
 def get_image_obs_wrapper(venv):
     if isinstance(venv, ImageObsVecEnvWrapper):
         return venv
-    elif hasattr(venv, 'venv'):
+    elif hasattr(venv, u'venv'):
         return get_image_obs_wrapper(venv.venv)
     return None

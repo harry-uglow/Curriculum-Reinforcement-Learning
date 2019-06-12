@@ -1,3 +1,5 @@
+from __future__ import division
+from __future__ import absolute_import
 import numpy as np
 
 import vrep
@@ -12,14 +14,14 @@ class DRWaypointEnv(DishRackEnv):
     reached_waypoint = False
 
     def __init__(self, scene_path, *args):
-        super().__init__('dish_rack', *args)
+        super(DRWaypointEnv, self).__init__(u'dish_rack', *args)
         self.ep_len = 64
-        self.waypoint_handle = catch_errors(vrep.simxGetObjectHandle(self.cid, "Waypoint",
+        self.waypoint_handle = catch_errors(vrep.simxGetObjectHandle(self.cid, u"Waypoint",
                                                                      vrep.simx_opmode_blocking))
 
     def reset(self):
         self.reached_waypoint = False
-        self.call_lua_function('set_joint_angles', ints=self.init_config_tree,
+        self.call_lua_function(u'set_joint_angles', ints=self.init_config_tree,
                                floats=self.init_joint_angles)
         self.target_velocities = np.array([0., 0., 0., 0., 0., 0., 0.])
         self.timestep = 0

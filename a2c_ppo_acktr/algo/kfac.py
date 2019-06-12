@@ -1,3 +1,5 @@
+from __future__ import division
+from __future__ import absolute_import
 import math
 
 import torch
@@ -29,7 +31,7 @@ def _extract_patches(x, kernel_size, stride, padding):
 def compute_cov_a(a, classname, layer_info, fast_cnn):
     batch_size = a.size(0)
 
-    if classname == 'Conv2d':
+    if classname == u'Conv2d':
         if fast_cnn:
             a = _extract_patches(a, *layer_info)
             a = a.view(a.size(0), -1, a.size(-1))
@@ -37,7 +39,7 @@ def compute_cov_a(a, classname, layer_info, fast_cnn):
         else:
             a = _extract_patches(a, *layer_info)
             a = a.view(-1, a.size(-1)).div_(a.size(1)).div_(a.size(2))
-    elif classname == 'AddBias':
+    elif classname == u'AddBias':
         is_cuda = a.is_cuda
         a = torch.ones(a.size(0), 1)
         if is_cuda:
@@ -49,14 +51,14 @@ def compute_cov_a(a, classname, layer_info, fast_cnn):
 def compute_cov_g(g, classname, layer_info, fast_cnn):
     batch_size = g.size(0)
 
-    if classname == 'Conv2d':
+    if classname == u'Conv2d':
         if fast_cnn:
             g = g.view(g.size(0), g.size(1), -1)
             g = g.sum(-1)
         else:
             g = g.transpose(1, 2).transpose(2, 3).contiguous()
             g = g.view(-1, g.size(-1)).mul_(g.size(1)).mul_(g.size(2))
-    elif classname == 'AddBias':
+    elif classname == u'AddBias':
         g = g.view(g.size(0), g.size(1), -1)
         g = g.sum(-1)
 
@@ -100,7 +102,7 @@ class KFACOptimizer(optim.Optimizer):
 
         def split_bias(module):
             for mname, child in module.named_children():
-                if hasattr(child, 'bias') and child.bias is not None:
+                if hasattr(child, u'bias') and child.bias is not None:
                     module._modules[mname] = SplitBias(child)
                 else:
                     split_bias(child)
@@ -109,7 +111,7 @@ class KFACOptimizer(optim.Optimizer):
 
         super(KFACOptimizer, self).__init__(model.parameters(), defaults)
 
-        self.known_modules = {'Linear', 'Conv2d', 'AddBias'}
+        self.known_modules = set([u'Linear', u'Conv2d', u'AddBias'])
 
         self.modules = []
         self.grad_outputs = {}
@@ -145,7 +147,7 @@ class KFACOptimizer(optim.Optimizer):
         if torch.is_grad_enabled() and self.steps % self.Ts == 0:
             classname = module.__class__.__name__
             layer_info = None
-            if classname == 'Conv2d':
+            if classname == u'Conv2d':
                 layer_info = (module.kernel_size, module.stride,
                               module.padding)
 
@@ -163,7 +165,7 @@ class KFACOptimizer(optim.Optimizer):
         if self.acc_stats:
             classname = module.__class__.__name__
             layer_info = None
-            if classname == 'Conv2d':
+            if classname == u'Conv2d':
                 layer_info = (module.kernel_size, module.stride,
                               module.padding)
 
@@ -180,8 +182,8 @@ class KFACOptimizer(optim.Optimizer):
         for module in self.model.modules():
             classname = module.__class__.__name__
             if classname in self.known_modules:
-                assert not ((classname in ['Linear', 'Conv2d']) and module.bias is not None), \
-                                    "You must have a bias as a separate layer"
+                assert not ((classname in [u'Linear', u'Conv2d']) and module.bias is not None), \
+                                    u"You must have a bias as a separate layer"
 
                 self.modules.append(module)
                 module.register_forward_pre_hook(self._save_input)
@@ -196,9 +198,9 @@ class KFACOptimizer(optim.Optimizer):
         updates = {}
         for i, m in enumerate(self.modules):
             assert len(list(m.parameters())
-                       ) == 1, "Can handle only one parameter at the moment"
+                       ) == 1, u"Can handle only one parameter at the moment"
             classname = m.__class__.__name__
-            p = next(m.parameters())
+            p = m.parameters().next()
 
             la = self.damping + self.weight_decay
 
@@ -213,7 +215,7 @@ class KFACOptimizer(optim.Optimizer):
                 self.d_a[m].mul_((self.d_a[m] > 1e-6).float())
                 self.d_g[m].mul_((self.d_g[m] > 1e-6).float())
 
-            if classname == 'Conv2d':
+            if classname == u'Conv2d':
                 p_grad_mat = p.grad.data.view(p.grad.data.size(0), -1)
             else:
                 p_grad_mat = p.grad.data

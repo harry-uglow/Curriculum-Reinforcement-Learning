@@ -1,3 +1,6 @@
+from __future__ import with_statement
+from __future__ import division
+from __future__ import absolute_import
 import numpy as np
 import torch
 from baselines.common.vec_env import VecEnvWrapper
@@ -6,7 +9,7 @@ from baselines.common.vec_env import VecEnvWrapper
 def get_residual_layers(venv):
     if isinstance(venv, ResidualVecEnvWrapper):
         return [venv] + get_residual_layers(venv.venv)
-    elif hasattr(venv, 'venv'):
+    elif hasattr(venv, u'venv'):
         return get_residual_layers(venv.venv)
     return []
 

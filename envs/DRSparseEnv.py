@@ -1,10 +1,12 @@
+from __future__ import division
+from __future__ import absolute_import
 import os
 
 import numpy as np
 from envs.DishRackEnv import DishRackEnv
 
 np.set_printoptions(precision=2, linewidth=200)  # DEBUG
-dir_path = os.getcwd()
+dir_path = os.getcwdu()
 
 max_displacement = 0.015  # 1.5cm
 max_dist = np.linalg.norm([max_displacement]*3)

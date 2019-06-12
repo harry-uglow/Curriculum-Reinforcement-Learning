@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import torch
 from torch.utils.data.sampler import BatchSampler, SubsetRandomSampler
 
@@ -20,12 +21,12 @@ class RolloutStorage(object):
         self.value_preds = torch.zeros(num_steps + 1, num_processes, 1)
         self.returns = torch.zeros(num_steps + 1, num_processes, 1)
         self.action_log_probs = torch.zeros(num_steps, num_processes, 1)
-        if action_space.__class__.__name__ == 'Discrete':
+        if action_space.__class__.__name__ == u'Discrete':
             action_shape = 1
         else:
             action_shape = action_space.shape[0]
         self.actions = torch.zeros(num_steps, num_processes, action_shape)
-        if action_space.__class__.__name__ == 'Discrete':
+        if action_space.__class__.__name__ == u'Discrete':
             self.actions = self.actions.long()
         self.masks = torch.ones(num_steps + 1, num_processes, 1)
 
@@ -62,13 +63,13 @@ class RolloutStorage(object):
         if use_gae:
             self.value_preds[-1] = next_value
             gae = 0
-            for step in reversed(range(self.rewards.size(0))):
+            for step in reversed(xrange(self.rewards.size(0))):
                 delta = self.rewards[step] + gamma * self.value_preds[step + 1] * self.masks[step + 1] - self.value_preds[step]
                 gae = delta + gamma * tau * self.masks[step + 1] * gae
                 self.returns[step] = gae + self.value_preds[step]
         else:
             self.returns[-1] = next_value
-            for step in reversed(range(self.rewards.size(0))):
+            for step in reversed(xrange(self.rewards.size(0))):
                 self.returns[step] = self.returns[step + 1] * \
                     gamma * self.masks[step + 1] + self.rewards[step]
 
@@ -77,12 +78,12 @@ class RolloutStorage(object):
         num_steps, num_processes = self.rewards.size()[0:2]
         batch_size = num_processes * num_steps
         assert batch_size >= num_mini_batch, (
-            "PPO requires the number of processes ({}) "
-            "* number of steps ({}) = {} "
-            "to be greater than or equal to the number of PPO mini batches ({})."
-            "".format(num_processes, num_steps, num_processes * num_steps, num_mini_batch))
+            u"PPO requires the number of processes ({}) "
+            u"* number of steps ({}) = {} "
+            u"to be greater than or equal to the number of PPO mini batches ({})."
+            u"".format(num_processes, num_steps, num_processes * num_steps, num_mini_batch))
         mini_batch_size = batch_size // num_mini_batch
-        sampler = BatchSampler(SubsetRandomSampler(range(batch_size)), mini_batch_size, drop_last=False)
+        sampler = BatchSampler(SubsetRandomSampler(xrange(batch_size)), mini_batch_size, drop_last=False)
         for indices in sampler:
             obs_batch = self.obs[:-1].view(-1, *self.obs.size()[2:])[indices]
             recurrent_hidden_states_batch = self.recurrent_hidden_states[:-1].view(-1,
@@ -100,12 +101,12 @@ class RolloutStorage(object):
     def recurrent_generator(self, advantages, num_mini_batch):
         num_processes = self.rewards.size(1)
         assert num_processes >= num_mini_batch, (
-            "PPO requires the number of processes ({}) "
-            "to be greater than or equal to the number of "
-            "PPO mini batches ({}).".format(num_processes, num_mini_batch))
+            u"PPO requires the number of processes ({}) "
+            u"to be greater than or equal to the number of "
+            u"PPO mini batches ({}).".format(num_processes, num_mini_batch))
         num_envs_per_batch = num_processes // num_mini_batch
         perm = torch.randperm(num_processes)
-        for start_ind in range(0, num_processes, num_envs_per_batch):
+        for start_ind in xrange(0, num_processes, num_envs_per_batch):
             obs_batch = []
             recurrent_hidden_states_batch = []
             actions_batch = []
@@ -115,7 +116,7 @@ class RolloutStorage(object):
             old_action_log_probs_batch = []
             adv_targ = []
 
-            for offset in range(num_envs_per_batch):
+            for offset in xrange(num_envs_per_batch):
                 ind = perm[start_ind + offset]
                 obs_batch.append(self.obs[:-1, ind])
                 recurrent_hidden_states_batch.append(self.recurrent_hidden_states[0:1, ind])

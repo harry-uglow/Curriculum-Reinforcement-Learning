@@ -6,9 +6,10 @@ import time
 
 import numpy as np
 from gym import Env
-from subprocess import Popen, DEVNULL
+from subprocess import Popen
 import vrep
 
+DEVNULL = open(os.devnull, 'wb')
 
 # Function to check for errors when calling a remote API function
 def check_for_errors(code):
@@ -54,8 +55,9 @@ vrep_path = '/Users/Harry/Applications/V-REP_PRO_EDU_V3_6_1_Mac/vrep.app' \
             '/Contents/MacOS/vrep' \
     if platform.system() == 'Darwin' else \
     os.path.expanduser('~/Desktop/V-REP_PRO_EDU_V3_6_1_Ubuntu18_04/vrep.sh')
-xvfb_args = ['xvfb-run', '--auto-servernum', '--server-num=1'] \
-    if not platform.system() == 'Darwin' else []
+xvfb_args = []
+# xvfb_args = ['xvfb-run', '--auto-servernum', '--server-num=1'] \
+#     if not platform.system() == 'Darwin' else []
 
 
 class VrepEnv(Env):
@@ -76,14 +78,14 @@ class VrepEnv(Env):
         if not headless:  # DEBUG: Helps run enjoy while Train is running
             port_num += 16
         remote_api_string = '-gREMOTEAPISERVERSERVICE_' + str(port_num) + '_FALSE_TRUE'
-        args = [*xvfb_args, vrep_path, '-h' if headless else '', remote_api_string]
+        args = xvfb_args + [vrep_path, '-h' if headless else '', remote_api_string]
         self.process = Popen(args, preexec_fn=os.setsid, stdout=DEVNULL)
         time.sleep(6)
 
         self.cid = vrep.simxStart(host, port_num, True, True, 5000, 5)
         catch_errors(vrep.simxSynchronous(self.cid, enable=True))
 
-        scene_path = os.path.join(scene_dir_path, f'{scene_name}.ttt')
+        scene_path = os.path.join(scene_dir_path, scene_name + '.ttt')
         catch_errors(vrep.simxLoadScene(self.cid, scene_path, 0, vrep.simx_opmode_blocking))
         atexit.register(self.close)
 

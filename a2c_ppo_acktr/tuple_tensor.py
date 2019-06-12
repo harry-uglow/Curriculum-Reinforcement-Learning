@@ -1,7 +1,9 @@
+from __future__ import absolute_import
 import torch
+from itertools import izip
 
 
-class TorchTuple:
+class TorchTuple(object):
     pass
 
 
@@ -12,12 +14,12 @@ class TupleTensor(TorchTuple):
         assert type(tensor1) is torch.Tensor
         self.items = [tensor0, tensor1]
 
-    def __getattribute__(self, name: str):
+    def __getattribute__(self, name):
         try:
             return object.__getattribute__(self, name)
         except AttributeError:
             attr = object.__getattribute__(self.items[0], name)
-            if hasattr(attr, '__call__'):
+            if hasattr(attr, u'__call__'):
                 def wrapper_func(*args, **kwargs):
                     args_lists = []
                     for i, item in enumerate(self.items):
@@ -28,7 +30,7 @@ class TupleTensor(TorchTuple):
                                 args_list += [to_add]
                         args_lists += [args_list]
                     ress = [object.__getattribute__(item, name)(*args_list, **kwargs)
-                            for args_list, item in zip(args_lists, self.items)]
+                            for args_list, item in izip(args_lists, self.items)]
                     if all([type(res) is torch.Size for res in ress]):
                         return TupleSize(*ress)
                     return TupleTensor(*ress)
@@ -50,8 +52,8 @@ class TupleSize(TorchTuple):
 
     def __iter__(self):
         if len(self.items[0]) > len(self.items[1]):
-            self.items[1] = [*self.items[1]] + [None]*(len(self.items[0]) - len(self.items[1]))
+            self.items[1] = self.items[1] + [None]*(len(self.items[0]) - len(self.items[1]))
         elif len(self.items[0]) < len(self.items[1]):
-            self.items[0] = [*self.items[0]] + [None]*(len(self.items[1]) - len(self.items[0]))
+            self.items[0] = self.items[0] + [None]*(len(self.items[1]) - len(self.items[0]))
 
-        return (TupleSize(a, b) for a, b in zip(self.items[0], self.items[1]))
+        return (TupleSize(a, b) for a, b in izip(self.items[0], self.items[1]))

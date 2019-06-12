@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import os
 
 import numpy as np
@@ -8,7 +9,7 @@ from envs.SawyerEnv import SawyerEnv
 from envs.VrepEnv import check_for_errors
 
 np.set_printoptions(precision=2, linewidth=200)  # DEBUG
-dir_path = os.getcwd()
+dir_path = os.getcwdu()
 
 cube_lower = np.array([0.15, (-0.35), 0.025])
 cube_upper = np.array([0.45, (-0.65), 0.5])
@@ -16,27 +17,27 @@ cube_upper = np.array([0.45, (-0.65), 0.5])
 
 class ReachOverWallEnv(SawyerEnv):
 
-    scene_path = dir_path + '/reach_over_wall.ttt'
+    scene_path = dir_path + u'/reach_over_wall.ttt'
     observation_space = spaces.Box(np.array([0] * 11), np.array([1] * 11), dtype=np.float32)
     timestep = 0
 
     def __init__(self, *args):
-        super().__init__(self.scene_path, *args)
+        super(ReachOverWallEnv, self).__init__(self.scene_path, *args)
 
         self.ep_len = 64
 
         return_code, self.end_handle = vrep.simxGetObjectHandle(self.cid,
-                "Waypoint_tip", vrep.simx_opmode_blocking)
+                u"Waypoint_tip", vrep.simx_opmode_blocking)
         check_for_errors(return_code)
         self.end_pose = self.get_end_pose()
         return_code, self.target_handle = vrep.simxGetObjectHandle(self.cid,
-                "Cube", vrep.simx_opmode_blocking)
+                u"Cube", vrep.simx_opmode_blocking)
         check_for_errors(return_code)
         return_code, self.target_pos = vrep.simxGetObjectPosition(self.cid, self.target_handle,
                 -1, vrep.simx_opmode_blocking)
         check_for_errors(return_code)
         return_code, self.wall_handle = vrep.simxGetObjectHandle(self.cid,
-                "Wall", vrep.simx_opmode_blocking)
+                u"Wall", vrep.simx_opmode_blocking)
         check_for_errors(return_code)
         self.wall_pos = vrep.simxGetObjectPosition(self.cid, self.wall_handle,
                                                    -1, vrep.simx_opmode_blocking)[1]
@@ -101,7 +102,7 @@ class ROWRandomTargetEnv(ReachOverWallEnv):
 class ReachNoWallEnv(ROWRandomTargetEnv):
 
     observation_space = spaces.Box(np.array([0] * 10), np.array([1] * 10), dtype=np.float32)
-    scene_path = dir_path + '/reach_no_wall.ttt'
+    scene_path = dir_path + u'/reach_no_wall.ttt'
 
     def step(self, a):
         self.target_velocities = a

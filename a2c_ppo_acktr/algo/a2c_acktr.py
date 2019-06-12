@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -5,7 +6,7 @@ import torch.optim as optim
 from a2c_ppo_acktr.algo.kfac import KFACOptimizer
 
 
-class A2C_ACKTR():
+class A2C_ACKTR(object):
     def __init__(self,
                  actor_critic,
                  value_loss_coef,

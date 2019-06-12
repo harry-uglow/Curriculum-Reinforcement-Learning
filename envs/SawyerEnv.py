@@ -1,8 +1,10 @@
+from __future__ import absolute_import
 import numpy as np
 from gym import spaces
 import vrep
 
 from envs.VrepEnv import catch_errors, VrepEnv
+from itertools import izip
 
 
 class SawyerEnv(VrepEnv):
@@ -14,17 +16,17 @@ class SawyerEnv(VrepEnv):
     identity = scale * np.identity(num_joints)
 
     def __init__(self, *args):
-        super().__init__(*args)
+        super(SawyerEnv, self).__init__(*args)
 
         self.np_random = np.random.RandomState()
 
         # Get the initial configuration of the robot (needed to later reset the robot's pose)
-        self.init_config_tree, _, _, _ = self.call_lua_function('get_configuration_tree')
-        _, self.init_joint_angles, _, _ = self.call_lua_function('get_joint_angles')
+        self.init_config_tree, _, _, _ = self.call_lua_function(u'get_configuration_tree')
+        _, self.init_joint_angles, _, _ = self.call_lua_function(u'get_joint_angles')
 
         self.joint_handles = np.array([None] * self.num_joints)
-        for i in range(self.num_joints):
-            handle = catch_errors(vrep.simxGetObjectHandle(self.cid, 'Sawyer_joint' + str(i + 1),
+        for i in xrange(self.num_joints):
+            handle = catch_errors(vrep.simxGetObjectHandle(self.cid, u'Sawyer_joint' + unicode(i + 1),
                                                            vrep.simx_opmode_blocking))
             self.joint_handles[i] = handle
 
@@ -36,17 +38,17 @@ class SawyerEnv(VrepEnv):
 
     def reset(self):
         initial_pose = self.np_random.multivariate_normal(self.init_joint_angles, self.identity)
-        self.call_lua_function('set_joint_angles', ints=self.init_config_tree, floats=initial_pose)
+        self.call_lua_function(u'set_joint_angles', ints=self.init_config_tree, floats=initial_pose)
         self.target_velocities = np.array([0., 0., 0., 0., 0., 0., 0.])
 
     def _get_obs(self):
-        _, joint_angles, _, _ = self.call_lua_function('get_joint_angles')
+        _, joint_angles, _, _ = self.call_lua_function(u'get_joint_angles')
         assert len(joint_angles) == self.num_joints
 
         return joint_angles
 
     def update_sim(self):
-        for handle, velocity in zip(self.joint_handles, self.target_velocities):
+        for handle, velocity in izip(self.joint_handles, self.target_velocities):
             catch_errors(vrep.simxSetJointTargetVelocity(self.cid,
                 int(handle), velocity, vrep.simx_opmode_oneshot))
         vrep.simxSynchronousTrigger(self.cid)

@@ -1,3 +1,5 @@
+from __future__ import division
+from __future__ import absolute_import
 import numpy as np
 import vrep
 from envs.DishRackEnv import DishRackEnv
@@ -32,7 +34,7 @@ class DRNoWaypointEnv(DishRackEnv):
 
 
 class DRNonRespondableEnv(DishRackEnv):
-    scene_path = 'dish_rack_nr'
+    scene_path = u'dish_rack_nr'
 
     def step(self, a):
         self.target_velocities = a

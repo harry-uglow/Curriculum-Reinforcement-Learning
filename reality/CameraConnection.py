@@ -2,7 +2,7 @@ import cv2
 
 
 class CameraConnection:
-    def __init__(self, resolution, location=0) -> None:
+    def __init__(self, resolution, location=0):
         self.cam = cv2.VideoCapture(location)
         self._location = location
         self.cam.set(cv2.CAP_PROP_FRAME_WIDTH, resolution[0])

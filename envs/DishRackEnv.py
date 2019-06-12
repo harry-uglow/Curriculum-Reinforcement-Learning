@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import numpy as np
 from gym import spaces
 import vrep
@@ -12,8 +13,8 @@ rack_upper = np.array([0.15, (-0.45), 0.25])
 
 
 class DishRackEnv(SawyerEnv):
-    observation_space = spaces.Box(np.array([-3.]*7 + [-math.inf]*3 + [rack_lower[2]]),
-                                   np.array([3.]*7 + [math.inf]*3 + [rack_upper[2]]),
+    observation_space = spaces.Box(np.array([-3.]*7 + [-float('inf')]*3 + [rack_lower[2]]),
+                                   np.array([3.]*7 + [float('inf')]*3 + [rack_upper[2]]),
                                    dtype=np.float32)
     timestep = 0
     metadata = {'render.modes': ['human', 'rgb_array', 'activate']}
@@ -136,7 +137,7 @@ class DishRackEnv(SawyerEnv):
         self.init_rack_color = self.call_lua_function('get_color', ints=[self.rack_handle])[1]
         self.init_cloth_color = self.call_lua_function('get_color', ints=[self.cloth_handle])[1]
         self.init_wall_color = self.call_lua_function('get_color', ints=[self.wall_handle])[1]
-        self.light_handles = [catch_errors(vrep.simxGetObjectHandle(self.cid, f'LocalLight{c}',
+        self.light_handles = [catch_errors(vrep.simxGetObjectHandle(self.cid, 'LocalLight' + c,
                                                                     vrep.simx_opmode_blocking))
                               for c in ['A', 'B', 'C', 'D']]
         self.light_poss = [catch_errors(vrep.simxGetObjectPosition(self.cid, handle, -1,

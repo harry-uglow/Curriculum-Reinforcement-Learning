@@ -1,3 +1,5 @@
+from __future__ import with_statement
+from __future__ import absolute_import
 import numpy as np
 import torch
 from baselines.common.vec_env import VecEnvWrapper
@@ -11,7 +13,7 @@ from im2state.utils import unnormalise_y
 class PoseEstimatorVecEnvWrapper(VecEnvWrapper):
     def __init__(self, venv, device, pose_estimator, state_to_estimate, low, high,
                  abs_to_rel=False):
-        super().__init__(venv)
+        super(PoseEstimatorVecEnvWrapper, self).__init__(venv)
         self.image_obs_wrapper = get_image_obs_wrapper(venv)
         assert self.image_obs_wrapper is not None
         self.estimator = pose_estimator.to(device)
@@ -19,13 +21,13 @@ class PoseEstimatorVecEnvWrapper(VecEnvWrapper):
         self.policy_layers = get_residual_layers(venv)
         self.state_obs_space = self.policy_layers[0].observation_space
         self.state_to_estimate = state_to_estimate
-        self.state_to_use = [i for i in range(self.state_obs_space.shape[0])
+        self.state_to_use = [i for i in xrange(self.state_obs_space.shape[0])
                              if i not in state_to_estimate]
         self.low = low
         self.high = high
         self.curr_image = None
         self.abs_to_rel = abs_to_rel
-        self.target_z = np.array(self.get_images(mode="target_height"))
+        self.target_z = np.array(self.get_images(mode=u"target_height"))
         self.junk = None
         # self.abs_estimations = SORTED LISTS --- USE MEDIAN ESTIMATION
 
@@ -35,14 +37,14 @@ class PoseEstimatorVecEnvWrapper(VecEnvWrapper):
             estimation = net_output if self.low is None else unnormalise_y(net_output,
                                                                            self.low, self.high)
             # self.abs_estimations
-            obs = np.zeros((self.num_envs, *self.state_obs_space.shape))
+            obs = np.zeros([self.num_envs] + self.state_obs_space.shape)
             obs[:, self.state_to_use] = self.image_obs_wrapper.curr_state_obs[:, self.state_to_use]
             if self.abs_to_rel:
                 full_pos_estimation = np.append(estimation[:, :2], self.target_z, axis=1)
                 # rack_to_trg = self.base_env.get_position(self.base_env.target_handle) - \
                 #               self.base_env.get_position(self.base_env.rack_handle)
                 # full_pos_estimation += rack_to_trg
-                actual_plate_pos = np.array(self.get_images(mode='plate'))
+                actual_plate_pos = np.array(self.get_images(mode=u'plate'))
                 relative_estimation = full_pos_estimation - actual_plate_pos
                 estimation = np.append(relative_estimation, estimation[:, 2:], axis=1)
             # FOR ADJUSTING FROM RACK ESTIMATION TO TARGET OBSERVATIONS
@@ -74,12 +76,12 @@ class ClipActions(ActionWrapper):
 
 class E2EVecEnvWrapper(VecEnvWrapper):
     def __init__(self, venv):
-        res = venv.get_images(mode='activate')[0]
-        image_obs_space = spaces.Box(0, 255, [3, *res], dtype=np.uint8)
+        res = venv.get_images(mode=u'activate')[0]
+        image_obs_space = spaces.Box(0, 255, [3] + res, dtype=np.uint8)
         state_obs_space = venv.observation_space
         observation_space = spaces.Tuple((image_obs_space, state_obs_space))
         observation_space.shape = (image_obs_space.shape, state_obs_space.shape)
-        super().__init__(venv, observation_space)
+        super(E2EVecEnvWrapper, self).__init__(venv, observation_space)
         self.curr_state_obs = None
         self.last_4_image_obs = None
 

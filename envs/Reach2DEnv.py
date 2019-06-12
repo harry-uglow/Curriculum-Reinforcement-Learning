@@ -1,11 +1,13 @@
 # Python imports
+from __future__ import division
+from __future__ import absolute_import
 import numpy as np
 import pygame
 from gym import spaces, Env
 
 
 class Reach2DEnv(Env):
-    def render(self, mode='human'):
+    def render(self, mode=u'human'):
         # Check for mouse events
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -31,7 +33,7 @@ class Reach2DEnv(Env):
         if not headless:
             self.screen = pygame.display.set_mode((self.screen_size,
                                                    self.screen_size))
-            pygame.display.set_caption("PPO Output Visualisation")
+            pygame.display.set_caption(u"PPO Output Visualisation")
 
     def normalise_target(self, lower=-0.5, upper=0.5):
         return (self.target_pose - lower) / (upper - lower)

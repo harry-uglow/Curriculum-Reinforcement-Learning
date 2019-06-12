@@ -4,9 +4,7 @@ from gym import Env
 
 from std_msgs.msg import UInt16
 
-import intera_interface
-
-from intera_interface import CHECK_VERSION
+from intera_interface import CHECK_VERSION, limb, RobotEnable
 
 
 # TODO: Build as a Gym env with wrappers for policies
@@ -51,7 +49,7 @@ class RealEnv(Env):
         """
         'Wobbles' both arms by commanding joint velocities sinusoidally.
         """
-        self._right_arm = intera_interface.limb.Limb("right")
+        self._right_arm = limb.Limb("right")
         self._right_joint_names = self._right_arm.joint_names()  # TODO: Select relevant
 
         # control parameters
@@ -60,14 +58,14 @@ class RealEnv(Env):
         self.control_rate = rospy.Rate(self._rate)
 
         print("Getting robot state... ")
-        self._rs = intera_interface.RobotEnable(CHECK_VERSION)
+        self._rs = RobotEnable(CHECK_VERSION)
         self._init_state = self._rs.state().enabled
         print("Enabling robot... ")
         self._rs.enable()
 
         self._init_joint_angles = [self._right_arm.joint_angle(joint_name)
                                    for joint_name in self._right_joint_names]
-        rospy.set_param('named_poses/right/poses/neutral', self._init_joint_angles)
+        #rospy.set_param('named_poses/right/poses/neutral', self._init_joint_angles)
 
         self._right_arm.set_command_timeout((1.0 / self._rate) * self._missed_cmds)
 

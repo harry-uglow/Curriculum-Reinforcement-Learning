@@ -8,8 +8,8 @@ from reality.RealEnv import RealEnv
 
 
 class RealDishRackEnv(RealEnv):
-    observation_space = spaces.Box(np.array([-3.] * 7 + [-math.inf] * 3 + [rack_lower[2]]),
-                                   np.array([3.] * 7 + [math.inf] * 3 + [rack_upper[2]]),
+    observation_space = spaces.Box(np.array([-3.] * 7 + [-float('inf')] * 3 + [rack_lower[2]]),
+                                   np.array([3.] * 7 + [float('inf')] * 3 + [rack_upper[2]]),
                                    dtype=np.float32)
     state_to_estimate = [7, 8, 9, 10]
     normalize_low = rack_lower

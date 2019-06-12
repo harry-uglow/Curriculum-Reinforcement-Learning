@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import math
 
 import torch
@@ -6,7 +7,7 @@ import torch.nn.functional as F
 
 from a2c_ppo_acktr.utils import AddBias, init
 
-"""
+u"""
 Modify standard PyTorch distributions so they are compatible with this code.
 """
 

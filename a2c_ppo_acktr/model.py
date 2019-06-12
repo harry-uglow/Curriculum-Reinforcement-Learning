@@ -1,3 +1,5 @@
+from __future__ import division
+from __future__ import absolute_import
 import torch
 import torch.nn as nn
 import numpy as np
@@ -30,13 +32,13 @@ class Policy(nn.Module):
         else:
             self.base = base
 
-        if action_space.__class__.__name__ == "Discrete":
+        if action_space.__class__.__name__ == u"Discrete":
             num_outputs = action_space.n
             self.dist = Categorical(self.base.output_size, num_outputs)
-        elif action_space.__class__.__name__ == "Box":
+        elif action_space.__class__.__name__ == u"Box":
             num_outputs = action_space.shape[0]
             self.dist = DiagGaussian(self.base.output_size, num_outputs, zll=zero_last_layer)
-        elif action_space.__class__.__name__ == "MultiBinary":
+        elif action_space.__class__.__name__ == u"MultiBinary":
             num_outputs = action_space.shape[0]
             self.dist = Bernoulli(self.base.output_size, num_outputs)
         else:
@@ -50,7 +52,7 @@ class Policy(nn.Module):
 
     @property
     def recurrent_hidden_state_size(self):
-        """Size of rnn_hx."""
+        u"""Size of rnn_hx."""
         return self.base.recurrent_hidden_state_size
 
     def forward(self, inputs, rnn_hxs, masks):
@@ -95,9 +97,9 @@ class NNBase(nn.Module):
         if recurrent:
             self.gru = nn.GRU(recurrent_input_size, hidden_size)
             for name, param in self.gru.named_parameters():
-                if 'bias' in name:
+                if u'bias' in name:
                     nn.init.constant_(param, 0)
-                elif 'weight' in name:
+                elif u'weight' in name:
                     nn.init.orthogonal_(param)
 
     @property
@@ -152,7 +154,7 @@ class NNBase(nn.Module):
 
             hxs = hxs.unsqueeze(0)
             outputs = []
-            for i in range(len(has_zeros) - 1):
+            for i in xrange(len(has_zeros) - 1):
                 # We can now process steps that don't have any zeros in masks together!
                 # This is much faster
                 start_idx = has_zeros[i]
@@ -183,7 +185,7 @@ class CNNBase(NNBase):
         init_ = lambda m: init(m,
             nn.init.orthogonal_,
             lambda x: nn.init.constant_(x, 0),
-            nn.init.calculate_gain('relu'))
+            nn.init.calculate_gain(u'relu'))
 
         self.main = nn.Sequential(  # 84 x 84  128
             init_(nn.Conv2d(num_inputs, 32, 3, stride=2)),  # 63 x 63
@@ -273,7 +275,7 @@ class E2EBase(NNBase):
         init_convs = lambda m: init(m,
             nn.init.orthogonal_,
             lambda x: nn.init.constant_(x, 0),
-            nn.init.calculate_gain('relu'))
+            nn.init.calculate_gain(u'relu'))
 
         self.conv_layers = nn.Sequential(  # 84 x 84  128
             init_convs(nn.Conv2d(image_obs_shape[0], 32, 3, stride=2)),  # 63 x 63

@@ -1,10 +1,12 @@
+from __future__ import division
+from __future__ import absolute_import
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
 
-class PPO():
+class PPO(object):
     def __init__(self,
                  actor_critic,
                  clip_param,
@@ -46,7 +48,7 @@ class PPO():
 
         actor_loss_coef = 0. if self.burn_in else 1.
 
-        for e in range(self.ppo_epoch):
+        for e in xrange(self.ppo_epoch):
             if self.actor_critic.is_recurrent:
                 data_generator = rollouts.recurrent_generator(
                     advantages, self.num_mini_batch)
@@ -97,7 +99,7 @@ class PPO():
         dist_entropy_epoch /= num_updates
 
         if self.burn_in and value_loss_epoch < self.bi_beta:
-            print("Burned in")
+            print u"Burned in"
             self.burn_in = False
 
         return value_loss_epoch, action_loss_epoch, dist_entropy_epoch
