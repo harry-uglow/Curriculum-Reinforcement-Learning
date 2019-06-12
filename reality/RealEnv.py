@@ -1,4 +1,5 @@
 import rospy
+import numpy as np
 
 from gym import Env
 
@@ -13,6 +14,11 @@ class RealEnv(Env):
     ep_len = 128
 
     def step(self, action):
+        action = np.zeros(self.num_joints)
+        if self.timestep < self.ep_len / 2:
+            action[0] = 0.2
+        else:
+            action[0] = -0.2
         cmd = dict([(joint, action) for joint, action in zip(self._right_joint_names, action)])
         self._right_arm.set_joint_velocities(cmd)
 
@@ -25,8 +31,8 @@ class RealEnv(Env):
         return ob, 0, done, dict()
 
     def _get_obs(self):
-        return [self._right_arm.joint_angle(joint_name)
-                for joint_name in self._right_joint_names]
+        return np.array([self._right_arm.joint_angle(joint_name)
+                         for joint_name in self._right_joint_names])
 
     def reset(self):
         stop_action = [0.] * len(self._right_joint_names)
@@ -34,7 +40,7 @@ class RealEnv(Env):
         self._right_arm.set_joint_velocities(cmd)
         self.timestep = 0
 
-        input("Move the arm into open space and press Enter to continue.")
+        raw_input("Move the arm into open space and press Enter to continue.")
 
         # SETS TO A NEUTRAL POSITION. Remove from dish rack first.
         # TODO: Does this return once done or immediately?
@@ -49,8 +55,13 @@ class RealEnv(Env):
         """
         'Wobbles' both arms by commanding joint velocities sinusoidally.
         """
+        print("Initializing node... ")
+        rospy.init_node("rsdk_dish_rack")
+        rospy.on_shutdown(self.clean_shutdown)
+
         self._right_arm = limb.Limb("right")
         self._right_joint_names = self._right_arm.joint_names()  # TODO: Select relevant
+        self.num_joints = len(self._right_joint_names) 
 
         # control parameters
         self._rate = 20.0  # Hz
@@ -69,10 +80,6 @@ class RealEnv(Env):
 
         self._right_arm.set_command_timeout((1.0 / self._rate) * self._missed_cmds)
 
-        print("Initializing node... ")
-        rospy.init_node("rsdk_dish_rack")
-        rospy.on_shutdown(self.clean_shutdown)
-
     def set_neutral(self):
         """
         Sets both arms back into a neutral pose.
@@ -86,7 +93,7 @@ class RealEnv(Env):
         """
         print("\nExiting example...")
         self._right_arm.exit_control_mode()
-        if not self._init_state and self._rs.state().enabled:
+        if self._rs.state().enabled:
             print("Disabling robot...")
             self._rs.disable()
 

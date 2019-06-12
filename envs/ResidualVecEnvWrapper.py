@@ -31,9 +31,7 @@ class ResidualVecEnvWrapper(VecEnvWrapper):
         if self.ob_rms:
             obs = obs[:, :self.ob_size]
             obs = np.clip((obs - self.ob_rms.mean) / np.sqrt(self.ob_rms.var + self.epsilon), -self.clipob, self.clipob)
-            return torch.from_numpy(obs).float().to(self.device)
-        else:
-            return obs
+        return torch.from_numpy(obs).float().to(self.device)
 
     def step_wait(self):
         obs, rew, done, info = self.venv.step_wait()

@@ -50,14 +50,14 @@ def make_env(device, camera, policies, pose_estimator):
     high = base_env.normalize_high
     state_to_est = base_env.state_to_estimate
 
-    vec_env = wrap_initial_policies(vec_env, device, policies)
+#    vec_env = wrap_initial_policies(vec_env, device, policies)
 
-    vec_env = RealImageObsVecEnvWrapper(vec_env, (128, 128), camera)
+#    vec_env = RealImageObsVecEnvWrapper(vec_env, (128, 128), camera)
 
     vec_env = VecPyTorch(vec_env, device)
 
-    vec_env = PoseEstimatorVecEnvWrapper(vec_env, device, pose_estimator, state_to_est,
-                                         low, high, abs_to_rel=True)
+#    vec_env = PoseEstimatorVecEnvWrapper(vec_env, device, pose_estimator, state_to_est,
+#                                         low, high, abs_to_rel=True)
 
     return vec_env
 
@@ -72,14 +72,21 @@ def main():
     pose_estimator = torch.load(os.path.join(args.pe_load_dir, args.pose_est + u".pt")) if \
         args.pose_est else None
 
-    with CameraConnection((128, 128)) as camera:
-        env = make_env(device, camera, policies, pose_estimator)
-        null_action = torch.zeros((1, env.action_space.shape[0]))
-        print u"Executing policy on real robot. Press Ctrl-C to stop..."
+    def run():
+        with CameraConnection((128, 128)) as camera:
+            im = camera.get_image()
+            im.show()
+            raw_input("E to C")
+            return
+            env = make_env(device, camera, policies, pose_estimator)
+            null_action = torch.zeros((1, env.action_space.shape[0]))
+            print u"Executing policy on real robot. Press Ctrl-C to stop..."
 
-        while not rospy.is_shutdown():
-            env.step(null_action)
+            env.reset()
+            while not rospy.is_shutdown():
+                env.step(null_action)
 
+    run()
     print u"Done."
 
 
