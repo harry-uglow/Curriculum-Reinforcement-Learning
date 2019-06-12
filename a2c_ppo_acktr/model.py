@@ -341,7 +341,7 @@ class E2EBase(NNBase):
         joint_angles = state[:, :7]
 
         for i in range(images.size(0)):
-            images[i] = self.normalize(images[i].cpu() / 255.0).to(self.conv_layers[0].bias.device)
+            images[i] = self.normalize(images[i].cpu() / 255.0).to(images.device)
 
         conv_output = self.flatten(self.conv_layers(images))
 
