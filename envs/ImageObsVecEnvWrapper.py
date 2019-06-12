@@ -2,11 +2,13 @@ from __future__ import absolute_import
 import numpy as np
 from baselines.common.vec_env import VecEnvWrapper
 from gym import spaces
+import cv2
 
 
 # Swap out state observation for image
 class ImageObsVecEnvWrapper(VecEnvWrapper):
     def __init__(self, venv, res):
+        print [3] + res
         observation_space = spaces.Box(0, 255, [3] + res, dtype=venv.observation_space.dtype)
         super(ImageObsVecEnvWrapper, self).__init__(venv, observation_space)
         self.curr_state_obs = None
@@ -22,6 +24,8 @@ class ImageObsVecEnvWrapper(VecEnvWrapper):
 class SimImageObsVecEnvWrapper(ImageObsVecEnvWrapper):
     def __init__(self, venv):
         res = venv.get_images(mode=u'activate')[0]
+        print "act"
+        print res
         super(SimImageObsVecEnvWrapper, self).__init__(venv, res)
 
     def reset(self):
@@ -42,7 +46,8 @@ class RealImageObsVecEnvWrapper(ImageObsVecEnvWrapper):
 
     def reset(self):
         super(RealImageObsVecEnvWrapper, self).reset()
-        image_obs = self.cam.get_image()
+        image_obs = np.transpose(self.cam.get_image(), (2, 0, 1))
+        #cv2.imwrite('im1.png', image_obs)
         return image_obs
 
     def step_wait(self):

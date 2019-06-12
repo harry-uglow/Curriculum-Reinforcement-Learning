@@ -39,7 +39,7 @@ class DishRackEnv(SawyerEnv):
     light_poss = None
 
     def __init__(self, *args):
-        super().__init__(*args)
+        super(DishRackEnv, self).__init__(*args)
 
         self.ep_len = 48
 
@@ -93,7 +93,7 @@ class DishRackEnv(SawyerEnv):
         elif mode == 'plate':
             return self.get_position(self.plate_handle)
         elif mode == 'target_height':
-            return self.get_position(self.target_handle)[-1:]
+            return self.get_position(self.target_handle)[-1:] + 0.05
         elif mode == 'mask':
             mask = self._read_vision_sensor(grayscale=True)
             mask[mask > 0] = 255

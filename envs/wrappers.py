@@ -3,10 +3,11 @@ from __future__ import absolute_import
 import numpy as np
 import torch
 from baselines.common.vec_env import VecEnvWrapper
-from gym import spaces, ActionWrapper
+from gym import spaces, ActionWrapper, Wrapper
 
 from envs.ImageObsVecEnvWrapper import get_image_obs_wrapper
 from envs.ResidualVecEnvWrapper import get_residual_layers
+from envs.DishRackEnv import DishRackEnv
 from im2state.utils import unnormalise_y
 
 
@@ -37,20 +38,25 @@ class PoseEstimatorVecEnvWrapper(VecEnvWrapper):
             estimation = net_output if self.low is None else unnormalise_y(net_output,
                                                                            self.low, self.high)
             # self.abs_estimations
-            obs = np.zeros([self.num_envs] + self.state_obs_space.shape)
+            print(estimation[0, 0])
+            obs = np.zeros([self.num_envs] + list(self.state_obs_space.shape))
             obs[:, self.state_to_use] = self.image_obs_wrapper.curr_state_obs[:, self.state_to_use]
+            print estimation
             if self.abs_to_rel:
                 full_pos_estimation = np.append(estimation[:, :2], self.target_z, axis=1)
+                print full_pos_estimation
                 # rack_to_trg = self.base_env.get_position(self.base_env.target_handle) - \
                 #               self.base_env.get_position(self.base_env.rack_handle)
                 # full_pos_estimation += rack_to_trg
                 actual_plate_pos = np.array(self.get_images(mode=u'plate'))
+                print actual_plate_pos
                 relative_estimation = full_pos_estimation - actual_plate_pos
                 estimation = np.append(relative_estimation, estimation[:, 2:], axis=1)
             # FOR ADJUSTING FROM RACK ESTIMATION TO TARGET OBSERVATIONS
             # rack_to_trg = self.base_env.get_position(self.base_env.target_handle) - \
             #               self.base_env.get_position(self.base_env.rack_handle)
             # estimation[:, :-1] += rack_to_trg[:-1]
+            print estimation
             obs[:, self.state_to_estimate] = estimation
             for policy in self.policy_layers:
                 policy.curr_obs = obs
@@ -72,6 +78,32 @@ class ClipActions(ActionWrapper):
 
     def action(self, action):
         return np.clip(action, self.action_space.low, self.action_space.high)
+
+class ReferenceEnv(Wrapper):
+    def __init__(self, env):
+        super(ReferenceEnv, self).__init__(env)
+        print "Starting vrep"
+        self.ref_env = DishRackEnv('dish_rack', 0, True)
+        print "vrep started"
+
+    def render(self, mode):
+        if mode == 'plate' or mode == 'target_height':
+            return self.ref_env.render(mode)
+        else:
+            return self.env.render(mode)
+
+    def step(self, action):
+        ob, rew, done, info = super(ReferenceEnv, self).step(action)
+        self.ref_env.call_lua_function('set_joint_angles', ints=self.ref_env.init_config_tree, 
+                                       floats=ob[:7]) 
+        return ob, rew, done, info
+
+    def reset(self):
+        ob = super(ReferenceEnv, self).reset()
+        self.ref_env.call_lua_function('set_joint_angles', ints=self.ref_env.init_config_tree, 
+                                       floats=ob[:7]) 
+        return ob
+
 
 
 class E2EVecEnvWrapper(VecEnvWrapper):
