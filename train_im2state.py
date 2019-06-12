@@ -50,7 +50,7 @@ def main():
     net = net.to(device)
 
     optimizer = optim.Adam(net.parameters(), lr=args.lr)
-    criterion = nn.MSELoss()
+    criterion = custom_loss
 
     np_random = np.random.RandomState()
     np_random.seed(1053831)
@@ -66,9 +66,6 @@ def main():
     test_x = torch.Tensor(x[:num_test_examples])
     test_y = torch.Tensor(y[:num_test_examples]).to(device)
 
-    train_x = train_x.to(device)
-    test_x = test_x.to(device)
-
     num_train_examples = train_x.size(0)
     print("Normalising")
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -77,6 +74,8 @@ def main():
         train_x[i] = normalize(train_x[i] / 255.0)
     for i in range(num_test_examples):
         test_x[i] = normalize(test_x[i] / 255.0)
+    train_x = train_x.to(device)
+    test_x = test_x.to(device)
 
     train_loss_x_axis = []
     train_loss = []
@@ -93,7 +92,7 @@ def main():
             pred_y = output if args.rel else unnormalise_y(output, low, high)
             loss = criterion(pred_y, train_y[batch_idx:batch_idx + batch_size])
             train_loss += [loss.item()]
-            train_loss_x_axis = [epochs + (batch_idx + batch_size) / num_train_examples]
+            train_loss_x_axis += [epochs + (batch_idx + batch_size) / num_train_examples]
 
             optimizer.zero_grad()
             loss.backward()

@@ -1,5 +1,5 @@
 import numpy as np
-from torch import nn
+from torch import nn, cos, ones_like
 
 
 def format_images(imgs):
@@ -24,6 +24,7 @@ def unnormalise_y(y, low, high):
 
 
 def custom_loss(pred, actual):
-    translation_loss = nn.MSELoss()(pred[:, :2], actual[:, :2])
-    orientation_loss = nn.MSELoss()(pred[:, 2], actual[:, 2])
+    translation_loss = nn.L1Loss()(pred[:, :-1], actual[:, :-1])
+    cos_diff = cos(pred[:, -1] - actual[:, -1])
+    orientation_loss = nn.MSELoss()(cos_diff, ones_like(cos_diff).to(cos_diff.device))
     return translation_loss + orientation_loss
