@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import numpy as np
+from torchvision import transforms
 
 from a2c_ppo_acktr.distributions import Categorical, DiagGaussian, Bernoulli
 from a2c_ppo_acktr.utils import init
@@ -270,49 +271,68 @@ class E2EBase(NNBase):
         super(E2EBase, self).__init__(False, hidden_size, hidden_size)
         image_obs_shape, state_obs_shape = obs_shape
 
-        init_convs = lambda m: init(m,
-            nn.init.orthogonal_,
-            lambda x: nn.init.constant_(x, 0),
-            nn.init.calculate_gain('relu'))
-
-        self.conv_layers = nn.Sequential(  # 84 x 84  128
-            init_convs(nn.Conv2d(image_obs_shape[0], 32, 3, stride=2)),  # 63 x 63
-            nn.ReLU(),
-            init_convs(nn.Conv2d(32, 32, 3, stride=2)),  # 31 * 31
-            nn.ReLU(),
-            init_convs(nn.Conv2d(32, 32, 3, stride=2)),  # 15 x 15
-            nn.ReLU(),
-            init_convs(nn.Conv2d(32, 32, 3, stride=2)),  # 7 x 7
-            nn.ReLU(),
-            init_convs(nn.Conv2d(32, 32, 3, stride=1)),  # 5 x 5
-            nn.ReLU(),
-            Flatten(),
-
+        self.conv_layers = nn.Sequential(  # 128 x 128
+            (nn.Conv2d(image_obs_shape[0], 64, 3, padding=1)),
+            nn.ReLU(inplace=True),
+            (nn.Conv2d(64, 64, 3, padding=1)),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),  # 64
+            (nn.Conv2d(64, 128, 3, padding=1)),
+            nn.ReLU(inplace=True),
+            (nn.Conv2d(128, 128, 3, padding=1)),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),  # 32
+            (nn.Conv2d(128, 256, 3, padding=1)),
+            nn.ReLU(inplace=True),
+            (nn.Conv2d(256, 256, 3, padding=1)),
+            nn.ReLU(inplace=True),
+            (nn.Conv2d(256, 256, 3, padding=1)),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),  # 16
+            (nn.Conv2d(256, 512, 3, padding=1)),
+            nn.ReLU(inplace=True),
+            (nn.Conv2d(512, 512, 3, padding=1)),
+            nn.ReLU(inplace=True),
+            (nn.Conv2d(512, 512, 3, padding=1)),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),  # 8
+            (nn.Conv2d(512, 512, 3, padding=1)),
+            nn.ReLU(inplace=True),
+            (nn.Conv2d(512, 512, 3, padding=1)),
+            nn.ReLU(inplace=True),
+            (nn.Conv2d(512, 512, 3, padding=1)),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),  # 4
         )
 
-        init_fcs = lambda m: init(m, nn.init.orthogonal_, lambda x: nn.init.constant_(x, 0),
-                               np.sqrt(2))
+        self.flatten = Flatten()
+
+        init_ = lambda m: init(m, nn.init.orthogonal_, lambda x: nn.init.constant_(x, 0),
+                                    np.sqrt(2))
 
         self.actor = nn.Sequential(
-            init_fcs(nn.Linear(32 * 5 * 5 + 7, 256)),
+            init_(nn.Linear(4 * 4 * 512 + 7, 256)),
             nn.Tanh(),
-            init_fcs(nn.Linear(256, 256)),
+            init_(nn.Linear(256, 256)),
             nn.Tanh(),
-            init_fcs(nn.Linear(256, 256)),
+            init_(nn.Linear(256, 256)),
             nn.Tanh(),
-            init_fcs(nn.Linear(256, hidden_size)),
+            init_(nn.Linear(256, hidden_size)),
             nn.Tanh(),
         )
 
         self.critic = nn.Sequential(
-            init_fcs(nn.Linear(64 + state_obs_shape[0], 256)),
+            init_(nn.Linear(64 + state_obs_shape[0], 256)),
             nn.Tanh(),
-            init_fcs(nn.Linear(256, 256)),
+            init_(nn.Linear(256, 256)),
             nn.Tanh(),
-            init_fcs(nn.Linear(256, 256)),
+            init_(nn.Linear(256, 256)),
             nn.Tanh(),
-            init_fcs(nn.Linear(256, 1)),
+            init_(nn.Linear(256, 1)),
         )
+
+        self.normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                              std=[0.229, 0.224, 0.225])
 
         self.train()
 
@@ -320,7 +340,10 @@ class E2EBase(NNBase):
         images, state = inputs.items
         joint_angles = state[:, :7]
 
-        conv_output = self.conv_layers(images / 255.0)
+        for i in range(images.size(0)):
+            images[i] = self.normalize(images[i].cpu() / 255.0).to(self.conv_layers[0].bias.device)
+
+        conv_output = self.flatten(self.conv_layers(images))
 
         x = torch.cat((conv_output, joint_angles), dim=1)
         actor_features = self.actor(x)

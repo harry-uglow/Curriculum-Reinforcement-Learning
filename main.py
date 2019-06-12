@@ -82,6 +82,12 @@ def main(scene_path):
                           zero_last_layer=initial_policies is not None, base=base, dist=dist)
     actor_critic.to(device)
 
+    if not args.reuse_residual:
+        pretrained_cnn = torch.load(os.path.join('trained_models/im2state',
+                                                 "full_vgg16_16_diag_ren_l1_rpt.pt"))
+        actor_critic.base.conv_layers.load_state_dict(pretrained_cnn.conv_layers.state_dict())
+        actor_critic.base.conv_layers.eval()
+
     if args.algo == 'a2c':
         agent = algo.A2C_ACKTR(actor_critic, args.value_loss_coef, args.entropy_coef, lr=args.lr,
                                eps=args.eps, alpha=args.alpha, max_grad_norm=args.max_grad_norm)
@@ -250,14 +256,13 @@ scene_names = [
 ]
 
 if __name__ == "__main__":
-    if True:
+    if args.reuse_residual:
         base_name = args.env_name
         base_ip = args.initial_policy
         for scene in scene_names:
             print(f"Training {scene} for {args.num_env_steps} timesteps")
             args.env_name = f'{base_name}_{scene}'
             main(scene)
-            args.reuse_residual = True
             args.initial_policy = args.env_name
     else:
         main('dish_rack_nr')

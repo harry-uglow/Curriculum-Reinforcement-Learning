@@ -116,9 +116,11 @@ def make_vec_envs(env_name, seed, num_processes, gamma, log_dir, add_timestep, d
     if not e2e:
         envs = wrap_initial_policies(envs, device, initial_policies)
 
-    if pose_estimator is not None or e2e:
+    if pose_estimator is not None:
         # Two separate layers as they may have their uses separately
         envs = SimImageObsVecEnvWrapper(envs)
+    if e2e:
+        envs = E2EVecEnvWrapper(envs)
 
     if len(envs.observation_space.shape) == 1 and not no_norm:
         if gamma is None:

@@ -20,11 +20,6 @@ class PoseEstimator(nn.Module):
         super(PoseEstimator, self).__init__()
         self._output_size = num_outputs
 
-        init_ = lambda m: init(m,
-                               nn.init.orthogonal_,
-                               lambda x: nn.init.constant_(x, 0),
-                               nn.init.calculate_gain('relu'))
-
         self.conv_layers = nn.Sequential(  # 128 x 128
             (nn.Conv2d(num_inputs, 64, 3, padding=1)),
             nn.ReLU(inplace=True),
