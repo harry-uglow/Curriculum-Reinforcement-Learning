@@ -38,7 +38,7 @@ except ImportError:
 
 def make_env(scene_path, seed, rank, log_dir, add_timestep, allow_early_resets, vis):
     def _thunk():
-        env = DRSparseEnv(scene_path, rank, not vis)
+        env = DRNonRespondableEnv(scene_path, rank, not vis)
 
         env.seed(seed + rank)
 

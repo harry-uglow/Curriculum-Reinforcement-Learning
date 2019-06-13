@@ -27,15 +27,20 @@ class PoseEstimatorVecEnvWrapper(VecEnvWrapper):
         self.abs_to_rel = abs_to_rel
         self.target_z = np.array(self.get_images(mode="target_height"))
         self.junk = None
-        # self.abs_estimations = SORTED LISTS --- USE MEDIAN ESTIMATION
+        self.abs_estimations = None
 
     def step_async(self, actions):
         with torch.no_grad():
             net_output = self.estimator.predict(self.curr_image).cpu().numpy()
             estimation = net_output if self.low is None else unnormalise_y(net_output,
                                                                            self.low, self.high)
-            # self.abs_estimations
+            if self.abs_estimations is None:
+                self.abs_estimations = np.array([estimation])
+            else:
+                self.abs_estimations = np.append(self.abs_estimations, [estimation], axis=0)
+
             obs = np.zeros((self.num_envs, *self.state_obs_space.shape))
+            estimation = np.median(self.abs_estimations, axis=0)
             obs[:, self.state_to_use] = self.image_obs_wrapper.curr_state_obs[:, self.state_to_use]
             if self.abs_to_rel:
                 full_pos_estimation = np.append(estimation[:, :2], self.target_z, axis=1)
