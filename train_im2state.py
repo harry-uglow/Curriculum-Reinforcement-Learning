@@ -55,17 +55,17 @@ def main():
     np_random = np.random.RandomState()
     np_random.seed(1053831)
     p = np_random.permutation(len(images))
-    train_x = images[p]
-    train_y = positions[p]
+    images = images[p]
+    positions = positions[p]
 
-    num_test_examples = train_x.shape[0] // 16
-    num_train_examples = train_x.shape[0] - num_test_examples
+    num_test_examples = images.shape[0] // 16
+    num_train_examples = images.shape[0] - num_test_examples
     batch_size = 64
 
-    test_x = torch.Tensor(train_x[:num_test_examples])
-    test_y = torch.Tensor(train_y[:num_test_examples])
-    train_x = train_x[num_test_examples:]
-    train_y = train_y[num_test_examples:]
+    test_x = torch.Tensor(images[:num_test_examples])
+    test_y = torch.Tensor(positions[:num_test_examples])
+    train_x = images[num_test_examples:]
+    train_y = positions[num_test_examples:]
 
     train_loss_x_axis = []
     train_loss = []
@@ -90,10 +90,15 @@ def main():
             optimizer.step()
         epochs += 1
 
+        loss = 0
         with torch.no_grad():
-            test_output = net.predict(test_x.to(device))
-            test_output = test_output if args.rel else unnormalise_y(test_output, low, high)
-            test_loss += [criterion(test_output, test_y.to(device)).item()]
+            for batch_idx in tqdm(range(0, num_test_examples, batch_size)):
+                test_output = net.predict(torch.Tensor(test_x[batch_idx:batch_idx + batch_size]).to(device))
+                test_output = test_output if args.rel else unnormalise_y(test_output, low, high)
+                loss += criterion(pred_y,
+                             torch.Tensor(test_y[batch_idx:batch_idx + batch_size]).to(device)).item()
+
+            test_loss += [loss / (num_test_examples // batch_size)]
         if test_loss[-1] < min_test_loss:
             updates_with_no_improvement = 0
             min_test_loss = test_loss[-1]

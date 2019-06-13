@@ -78,7 +78,7 @@ class PoseEstimator(nn.Module):
         return x
 
     def predict(self, images):
-        x = torch.Tensor(images)
+        x = torch.Tensor(images.cpu())
         for i in range(x.size(0)):
-            x[i] = self.normalize(x[i].cpu() / 255.0).to(images.device)
-        return self.forward(x)
+            x[i] = self.normalize(x[i] / 255.0)
+        return self.forward(x.to(images.device))
