@@ -28,8 +28,8 @@ def eval_pose_estimator(load_path, device, x, y, low, high):
             normed = output if low is None else unnormalise_y(output, low, high)
             pred_y = normed.squeeze().cpu().numpy()
             actual_y = y_
-            distances += [np.linalg.norm(pred_y[:2] - actual_y[:2])]
-            thetas += [np.abs(pred_y[2] - actual_y[2])]
+            distances += [np.linalg.norm(pred_y[:-1] - actual_y[:-1])]
+            thetas += [np.abs(pred_y[-1] - actual_y[-1])]
         print(f"Mean distance error: {(1000 * sum(distances) / len(distances))}mm")
         print(f"Mean rotational error: {(sum(thetas) / len(thetas))} radians")
 
