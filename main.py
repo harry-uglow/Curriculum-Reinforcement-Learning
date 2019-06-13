@@ -256,6 +256,7 @@ scene_names = [
 ]
 
 if __name__ == "__main__":
+    #if True:
     if args.reuse_residual:
         base_name = args.env_name
         base_ip = args.initial_policy

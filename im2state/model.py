@@ -80,5 +80,5 @@ class PoseEstimator(nn.Module):
     def predict(self, images):
         assert not self.training
         for i in range(images.size(0)):
-            images[i] = self.normalize(images[i] / 255.0)
+            images[i] = self.normalize(images[i].cpu() / 255.0).to(images.device)
         return self.forward(images)

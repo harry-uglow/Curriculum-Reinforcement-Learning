@@ -78,7 +78,7 @@ class VrepEnv(Env):
         remote_api_string = '-gREMOTEAPISERVERSERVICE_' + str(port_num) + '_FALSE_TRUE'
         args = [*xvfb_args, vrep_path, '-h' if headless else '', remote_api_string]
         self.process = Popen(args, preexec_fn=os.setsid, stdout=DEVNULL)
-        time.sleep(6)
+        time.sleep(12)
 
         self.cid = vrep.simxStart(host, port_num, True, True, 5000, 5)
         catch_errors(vrep.simxSynchronous(self.cid, enable=True))
