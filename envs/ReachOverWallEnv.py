@@ -56,7 +56,7 @@ class ReachOverWallEnv(SawyerEnv):
 
     def step(self, a):
         self.target_velocities = a  # Residual RL
-        vec = self.end_pose - self.target_pos
+        vec = self.get_end_pose() - self.target_pos
 
         self.timestep += 1
         self.update_sim()
