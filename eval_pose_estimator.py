@@ -24,13 +24,13 @@ def eval_pose_estimator(load_path, device, x, y, low, high):
         distances = []
         thetas = []
         for x_, y_ in tqdm(zip(x, y)):
-            output = net(x_.unsqueeze(0))
+            output = net.predict(x_.unsqueeze(0))
             normed = output if low is None else unnormalise_y(output, low, high)
             pred_y = normed.squeeze().cpu().numpy()
             actual_y = y_
             distances += [np.linalg.norm(pred_y[:-1] - actual_y[:-1])]
             thetas += [np.abs(pred_y[-1] - actual_y[-1])]
-        print(f"Mean distance error: {(1000 * sum(distances) / len(distances))}mm")
+        print(f"Mean distance error: {(1000 * sum(distances) / len(distances))} mm")
         print(f"Mean rotational error: {(sum(thetas) / len(thetas))} radians")
 
 

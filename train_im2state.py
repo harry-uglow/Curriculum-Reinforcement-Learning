@@ -34,7 +34,7 @@ def main():
     print("Loaded")
     low = torch.Tensor(low).to(device)
     high = torch.Tensor(high).to(device)
-    images = np.transpose([np.array(img) for img in images[:16384]], (0, 3, 1, 2))
+    images = np.transpose([np.array(img) for img in images], (0, 3, 1, 2))
 
     save_path = os.path.join('trained_models', 'im2state')
     try:
@@ -56,24 +56,16 @@ def main():
     np_random.seed(1053831)
     p = np_random.permutation(len(images))
     train_x = images[p]
-    train_y = positions[:16384][p]
+    train_y = positions[p]
 
-    num_test_examples = 256
-    batch_size = 50
+    num_test_examples = train_x.shape[0] // 16
+    num_train_examples = train_x.shape[0] - num_test_examples
+    batch_size = 64
 
     test_x = torch.Tensor(train_x[:num_test_examples])
     test_y = torch.Tensor(train_y[:num_test_examples])
-    train_x = torch.Tensor(train_x[num_test_examples:])
-    train_y = torch.Tensor(train_y[num_test_examples:])
-
-    num_train_examples = train_x.shape[0]
-    print("Normalising")
-    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                     std=[0.229, 0.224, 0.225])
-    for i in range(num_train_examples):
-        train_x[i] = normalize(train_x[i] / 255.0)
-    for i in range(num_test_examples):
-        test_x[i] = normalize(test_x[i] / 255.0)
+    train_x = train_x[num_test_examples:]
+    train_y = train_y[num_test_examples:]
 
     train_loss_x_axis = []
     train_loss = []
@@ -86,9 +78,10 @@ def main():
     epochs = 0
     while updates_with_no_improvement < 5:
         for batch_idx in tqdm(range(0, num_train_examples, batch_size)):
-            output = net(torch.Tensor(train_x[batch_idx:batch_idx + batch_size]).to(device))
+            output = net.predict(torch.Tensor(train_x[batch_idx:batch_idx + batch_size]).to(device))
             pred_y = output if args.rel else unnormalise_y(output, low, high)
-            loss = criterion(pred_y, train_y[batch_idx:batch_idx + batch_size].to(device))
+            loss = criterion(pred_y,
+                             torch.Tensor(train_y[batch_idx:batch_idx + batch_size]).to(device))
             train_loss += [loss.item()]
             train_loss_x_axis += [epochs + (batch_idx + batch_size) / num_train_examples]
 
@@ -98,9 +91,9 @@ def main():
         epochs += 1
 
         with torch.no_grad():
-            test_output = net(torch.Tensor(test_x).to(device))
+            test_output = net.predict(test_x.to(device))
             test_output = test_output if args.rel else unnormalise_y(test_output, low, high)
-            test_loss += [criterion(test_output, torch.Tensor(test_y).to(device)).item()]
+            test_loss += [criterion(test_output, test_y.to(device)).item()]
         if test_loss[-1] < min_test_loss:
             updates_with_no_improvement = 0
             min_test_loss = test_loss[-1]
