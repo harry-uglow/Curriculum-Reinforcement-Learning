@@ -46,10 +46,10 @@ class ReachOverWallEnv(SawyerEnv):
 
     def reset(self):
         super(ReachOverWallEnv, self).reset()
-        vrep.simxSetObjectPosition(self.cid, self.wall_handle, -1, self.wall_pos,
-                                   vrep.simx_opmode_blocking)
-        vrep.simxSetObjectOrientation(self.cid, self.wall_handle, -1, self.init_wall_rot,
-                                      vrep.simx_opmode_blocking)
+        #vrep.simxSetObjectPosition(self.cid, self.wall_handle, -1, self.wall_pos,
+        #                           vrep.simx_opmode_blocking)
+        #vrep.simxSetObjectOrientation(self.cid, self.wall_handle, -1, self.init_wall_rot,
+        #                              vrep.simx_opmode_blocking)
         self.timestep = 0
 
         return self._get_obs()
@@ -118,6 +118,3 @@ class ReachNoWallEnv(ROWRandomTargetEnv):
 
         return ob, reward, done, dict(reward_dist=reward_dist, reward_ctrl=reward_ctrl)
 
-    def _get_obs(self):
-        full_obs = super(ReachNoWallEnv, self)._get_obs()
-        return full_obs[:-1]

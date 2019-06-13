@@ -82,11 +82,13 @@ def main(scene_path):
                           zero_last_layer=initial_policies is not None, base=base, dist=dist)
     actor_critic.to(device)
 
-    if not args.reuse_residual:
+    print(args.e2e)
+    print(not args.reuse_residual and args.e2e)
+    if not args.reuse_residual and args.e2e:
         pretrained_cnn = torch.load(os.path.join('trained_models/im2state',
                                                  "full_vgg16_16_diag_ren_l1_rpt.pt"))
         actor_critic.base.conv_layers.load_state_dict(pretrained_cnn.conv_layers.state_dict())
-        actor_critic.base.conv_layers.eval()
+        #actor_critic.base.conv_layers.eval()
 
     if args.algo == 'a2c':
         agent = algo.A2C_ACKTR(actor_critic, args.value_loss_coef, args.entropy_coef, lr=args.lr,
@@ -244,9 +246,30 @@ def main(scene_path):
     copy_tree(args.log_dir, os.path.join('logs', args.env_name))
     envs.close()
 
+def full_pipeline():
+    main('reach_no_wall')
+    args.initial_policy = args.env_name
+    base_name = 'row'
+    scene_names = [
+        'reach_no_wall',
+        'row_13',
+        'row_19',
+        'row_25',
+        'row_31',
+        'row_37',
+        'reach_over_wall',
+    ]
+    args.num_steps = 200000
+    for scene in scene_names:
+        print(f"Training {scene} for {args.num_env_steps} timesteps")
+        args.env_name = f'{base_name}_{scene}'
+        if scene == 'reach_over_wall':
+            args.num_steps = 4000000
+        main(scene)
+        args.reuse_residual = True
+        args.initial_policy = args.env_name
 
 scene_names = [
-    'dish_rack_nr',
     'dish_rack_pr_14',
     'dish_rack_pr_16',
     'dish_rack_pr_18',
@@ -256,7 +279,8 @@ scene_names = [
 ]
 
 if __name__ == "__main__":
-    #if True:
+    full_pipeline()
+    exit(0)
     if args.reuse_residual:
         base_name = args.env_name
         base_ip = args.initial_policy
@@ -266,4 +290,4 @@ if __name__ == "__main__":
             main(scene)
             args.initial_policy = args.env_name
     else:
-        main('dish_rack_nr')
+        main('reach_no_wall')
