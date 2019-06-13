@@ -30,8 +30,8 @@ def main():
     policies = torch.load(os.path.join(args.load_dir, 'ppo', args.env_name + ".pt"))
 
     envs = make_vec_envs('dish_rack', args.seed + 1000, args.num_processes, args.gamma,
-                         args.log_dir,
-                         args.add_timestep, device, False, policies, no_norm=True)
+                         args.log_dir, args.add_timestep, device, False, policies,
+                         no_norm=True, show=(args.num_processes == 1))
 
     null_action = torch.zeros((args.num_processes, envs.action_space.shape[0]))
 
