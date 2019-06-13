@@ -15,7 +15,7 @@ from envs.DRNoWaypointEnv import DRNonRespondableEnv
 from envs.DRWaypointEnv import DRWaypointEnv
 from envs.DRSparseEnv import DRSparseEnv
 from envs.ImageObsVecEnvWrapper import SimImageObsVecEnvWrapper
-from envs.ReachOverWallEnv import ReachNoWallEnv
+from envs.ReachOverWallEnv import ReachNoWallEnv, ROWSparseEnv
 from envs.ResidualVecEnvWrapper import ResidualVecEnvWrapper
 from envs.wrappers import PoseEstimatorVecEnvWrapper, \
     ClipActions, E2EVecEnvWrapper
@@ -37,9 +37,12 @@ except ImportError:
 #     pass
 
 
-def make_env(scene_path, seed, rank, log_dir, add_timestep, allow_early_resets, vis):
+def make_env(scene_path, seed, rank, log_dir, add_timestep, allow_early_resets, vis, nr):
     def _thunk():
-        env = ReachNoWallEnv(scene_path, rank, not vis)
+        if nr:
+            env = ReachNoWallEnv(scene_path, rank, not vis)
+        else:
+            env = ROWSparseEnv(scene_path, rank, not vis)
 
         env.seed(seed + rank)
 
@@ -106,7 +109,7 @@ def wrap_initial_policies(envs, device, initial_policies):
 def make_vec_envs(env_name, seed, num_processes, gamma, log_dir, add_timestep, device,
                   allow_early_resets, initial_policies, num_frame_stack=None, show=False,
                   no_norm=False, pose_estimator=None, image_ips=None, e2e=False):
-    envs = [make_env(env_name, seed, i, log_dir, add_timestep, allow_early_resets, show)
+    envs = [make_env(env_name, seed, i, log_dir, add_timestep, allow_early_resets, show, initial_policies is None)
             for i in range(num_processes)]
 
     if len(envs) > 1:

@@ -22,7 +22,6 @@ if args.recurrent_policy:
     assert args.algo in ['a2c', 'ppo'], \
         'Recurrent policy is not implemented for ACKTR'
 
-num_updates = int(args.num_env_steps) // args.num_steps // args.num_processes
 
 torch.manual_seed(args.seed)
 torch.cuda.manual_seed_all(args.seed)
@@ -33,6 +32,12 @@ if args.cuda and torch.cuda.is_available() and args.cuda_deterministic:
 
 
 def main(scene_path):
+    print(f"Training {scene_path} for {args.num_env_steps} timesteps")
+    print(args.initial_policy)
+    print(args.env_name)
+    print(args.num_env_steps)
+    num_updates = int(args.num_env_steps) // args.num_steps // args.num_processes
+    print(num_updates)
     try:
         os.makedirs(args.log_dir)
     except OSError:
@@ -247,24 +252,13 @@ def main(scene_path):
     envs.close()
 
 def full_pipeline():
-    main('reach_no_wall')
     args.initial_policy = args.env_name
-    base_name = 'row'
-    scene_names = [
-        'reach_no_wall',
-        'row_13',
-        'row_19',
-        'row_25',
-        'row_31',
-        'row_37',
-        'reach_over_wall',
-    ]
-    args.num_steps = 200000
+    base_name = 'rel'
+    args.num_env_steps = 200000
     for scene in scene_names:
-        print(f"Training {scene} for {args.num_env_steps} timesteps")
         args.env_name = f'{base_name}_{scene}'
         if scene == 'reach_over_wall':
-            args.num_steps = 4000000
+            args.num_env_steps = 4000000
         main(scene)
         args.reuse_residual = True
         args.initial_policy = args.env_name
@@ -277,16 +271,25 @@ scene_names = [
     'dish_rack_pr_22',
     'dish_rack',
 ]
+scene_names = [
+        'row_7',
+        'row_13',
+        'row_19',
+        'row_25',
+        'row_31',
+        'row_37',
+        'reach_over_wall',
+]
 
 if __name__ == "__main__":
-    full_pipeline()
-    exit(0)
     if args.reuse_residual:
         base_name = args.env_name
         base_ip = args.initial_policy
         for scene in scene_names:
             print(f"Training {scene} for {args.num_env_steps} timesteps")
             args.env_name = f'{base_name}_{scene}'
+            if scene == 'reach_over_wall':
+                args.num_env_steps = 4000000
             main(scene)
             args.initial_policy = args.env_name
     else:
