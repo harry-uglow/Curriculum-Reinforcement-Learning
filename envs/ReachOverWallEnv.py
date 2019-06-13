@@ -21,7 +21,7 @@ class ReachOverWallEnv(SawyerEnv):
     timestep = 0
 
     def __init__(self, *args):
-        super().__init__(self.scene_path, *args)
+        super().__init__(*args)
 
         self.ep_len = 64
 
