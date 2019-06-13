@@ -15,6 +15,7 @@ from envs.DRNoWaypointEnv import DRNonRespondableEnv
 from envs.DRWaypointEnv import DRWaypointEnv
 from envs.DRSparseEnv import DRSparseEnv
 from envs.ImageObsVecEnvWrapper import SimImageObsVecEnvWrapper
+from envs.ReachOverWallEnv import ReachNoWallEnv
 from envs.ResidualVecEnvWrapper import ResidualVecEnvWrapper
 from envs.wrappers import PoseEstimatorVecEnvWrapper, \
     ClipActions, E2EVecEnvWrapper
@@ -38,7 +39,7 @@ except ImportError:
 
 def make_env(scene_path, seed, rank, log_dir, add_timestep, allow_early_resets, vis):
     def _thunk():
-        env = DRNonRespondableEnv(scene_path, rank, not vis)
+        env = ReachNoWallEnv(scene_path, rank, not vis)
 
         env.seed(seed + rank)
 

@@ -30,7 +30,7 @@ class ReachOverWallEnv(SawyerEnv):
         check_for_errors(return_code)
         self.end_pose = self.get_end_pose()
         return_code, self.target_handle = vrep.simxGetObjectHandle(self.cid,
-                "Cube", vrep.simx_opmode_blocking)
+                "Sphere", vrep.simx_opmode_blocking)
         check_for_errors(return_code)
         return_code, self.target_pos = vrep.simxGetObjectPosition(self.cid, self.target_handle,
                 -1, vrep.simx_opmode_blocking)
@@ -77,9 +77,9 @@ class ReachOverWallEnv(SawyerEnv):
 
     def _get_obs(self):
         joint_obs = super(ReachOverWallEnv, self)._get_obs()
-        self.end_pose = self.get_end_pose()
+        pos_vector = self.get_position(self.target_handle) - self.get_position(self.end_handle)
 
-        return np.concatenate((joint_obs, self.target_pos, [self.wall_pos[0]]))
+        return np.concatenate((joint_obs, pos_vector, [self.wall_pos[0]]))
 
     def get_end_pose(self):
         pose = vrep.simxGetObjectPosition(self.cid, self.end_handle, -1,
@@ -100,7 +100,6 @@ class ROWRandomTargetEnv(ReachOverWallEnv):
 
 class ReachNoWallEnv(ROWRandomTargetEnv):
 
-    observation_space = spaces.Box(np.array([0] * 10), np.array([1] * 10), dtype=np.float32)
     scene_path = dir_path + '/reach_no_wall.ttt'
 
     def step(self, a):
