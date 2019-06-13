@@ -1,6 +1,7 @@
 import numpy as np
 from baselines.common.vec_env import VecEnvWrapper
 from gym import spaces
+import cv2
 
 
 # Swap out state observation for image
@@ -26,6 +27,7 @@ class SimImageObsVecEnvWrapper(ImageObsVecEnvWrapper):
     def reset(self):
         super(SimImageObsVecEnvWrapper, self).reset()
         image_obs = np.transpose(self.venv.get_images(), (0, 3, 1, 2))
+        cv2.imwrite('im.png', image_obs[0].transpose(1, 2, 0))
         return image_obs
 
     def step_wait(self):
