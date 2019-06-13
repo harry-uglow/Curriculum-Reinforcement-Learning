@@ -104,7 +104,7 @@ class ReachNoWallEnv(ROWRandomTargetEnv):
 
     def step(self, a):
         self.target_velocities = a
-        vec = self.end_pose - self.target_pos
+        vec = self.get_end_pose() - self.target_pos
 
         self.timestep += 1
         self.update_sim()
