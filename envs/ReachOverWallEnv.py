@@ -13,6 +13,8 @@ dir_path = os.getcwd()
 cube_lower = np.array([0.15, (-0.35), 0.025])
 cube_upper = np.array([0.45, (-0.65), 0.5])
 
+max_displacement = 0.03  # 3cm
+
 
 class ReachOverWallEnv(SawyerEnv):
 
@@ -23,7 +25,7 @@ class ReachOverWallEnv(SawyerEnv):
     def __init__(self, *args):
         super().__init__(*args)
 
-        self.ep_len = 64
+        self.ep_len = 48
 
         return_code, self.end_handle = vrep.simxGetObjectHandle(self.cid,
                 "Waypoint_tip", vrep.simx_opmode_blocking)
@@ -46,6 +48,10 @@ class ReachOverWallEnv(SawyerEnv):
 
     def reset(self):
         super(ReachOverWallEnv, self).reset()
+        self.target_pos[0] = self.np_random.uniform(cube_lower[0], cube_upper[0])
+        self.target_pos[1] = self.np_random.uniform(cube_lower[1], cube_upper[1])
+        vrep.simxSetObjectPosition(self.cid, self.target_handle, -1, self.target_pos,
+                                   vrep.simx_opmode_blocking)
         #vrep.simxSetObjectPosition(self.cid, self.wall_handle, -1, self.wall_pos,
         #                           vrep.simx_opmode_blocking)
         #vrep.simxSetObjectOrientation(self.cid, self.wall_handle, -1, self.init_wall_rot,
@@ -87,20 +93,25 @@ class ReachOverWallEnv(SawyerEnv):
         return np.array(pose)
 
 
-class ROWRandomTargetEnv(ReachOverWallEnv):
+class ROWSparseEnv(ReachOverWallEnv):
 
-    def reset(self):
-        self.target_pos[0] = self.np_random.uniform(cube_lower[0], cube_upper[0])
-        self.target_pos[1] = self.np_random.uniform(cube_lower[1], cube_upper[1])
-        self.wall_pos[0] = self.np_random.uniform(-0.05, 0.05)
-        vrep.simxSetObjectPosition(self.cid, self.target_handle, -1, self.target_pos,
-                                   vrep.simx_opmode_blocking)
-        return super(ROWRandomTargetEnv, self).reset()
+    def step(self, a):
+        self.target_velocities = a  # Residual RL
+        displacement = np.abs(self.get_vector(self.target_handle, self.end_handle))
+
+        rew_success = 0.1 if np.all(displacement <= max_displacement) else 0
+        rew = rew_success
+
+        self.timestep += 1
+        self.update_sim()
+
+        ob = self._get_obs()
+        done = (self.timestep == self.ep_len)
+
+        return ob, rew, done, dict(rew_success=rew_success)
 
 
-class ReachNoWallEnv(ROWRandomTargetEnv):
-
-    scene_path = dir_path + '/reach_no_wall.ttt'
+class ReachNoWallEnv(ROWSparseEnv):
 
     def step(self, a):
         self.target_velocities = a
