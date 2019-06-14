@@ -22,8 +22,6 @@ if args.cuda and torch.cuda.is_available() and args.cuda_deterministic:
 
 save_root = '' if platform.system() == 'Darwin' else '/vol/bitbucket2/hu115/'
 
-low = rack_lower
-high = rack_upper
 
 def main():
     torch.set_num_threads(1)
@@ -37,39 +35,38 @@ def main():
 
     null_action = torch.zeros((args.num_processes, envs.action_space.shape[0]))
 
-    save_path = os.path.join(save_root, 'training_data')
-    try:
-        os.makedirs(save_path)
-    except OSError:
-        pass
-
     envs.get_images(mode='activate')
     rel_obs = envs.reset()[:, args.state_indices]
     abs_obs = np.array(envs.get_images(mode="target"))
-    for i, image in enumerate(envs.get_images()):
-        Image.fromarray(image, 'RGB').save(f'training_data/rcloth/{i}.png')
+    images = [Image.fromarray(img, 'RGB') for img in envs.get_images()]
     rel_positions = np.zeros((args.num_steps, len(args.state_indices)))
     rel_positions[:args.num_processes] = rel_obs
     abs_positions = np.zeros((args.num_steps, len(args.state_indices) - 1))
     abs_positions[:args.num_processes] = abs_obs
 
-    for i in tqdm(range(args.num_processes, args.num_steps, args.num_processes)):
+    for i in tqdm(range(1, args.num_steps // args.num_processes)):
         rel_obs = envs.step(null_action)[0][:, args.state_indices]
         abs_obs = np.array(envs.get_images(mode="target"))
         start_index = args.num_processes * i
         rel_positions[start_index:start_index + args.num_processes] = rel_obs
         abs_positions[start_index:start_index + args.num_processes] = abs_obs
 
-        for image in envs.get_images():
-            i += 1
-            Image.fromarray(image, 'RGB').save(f'training_data/rcloth/{i}.png')
-        torch.save([abs_positions, rel_positions, low, high],
-                   os.path.join(save_path, f'{args.env_name}_{args.num_steps}_cloth.pt'))
+        images += [Image.fromarray(img, 'RGB') for img in envs.get_images()]
 
     envs.close()
 
-    torch.save([abs_positions, rel_positions, low, high],
-               os.path.join(save_path, f'{args.env_name}_{args.num_steps}_cloth.pt'))
+    save_path = os.path.join(save_root, 'training_data')
+    try:
+        os.makedirs(save_path)
+    except OSError:
+        pass
+
+    low = rack_lower
+    high = rack_upper
+    res = images[0].size[0]
+
+    torch.save([images, abs_positions, rel_positions, low, high],
+               os.path.join(save_path, f'{args.env_name}_{args.num_steps}_rcloth.pt'))
 
 
 if __name__ == "__main__":
