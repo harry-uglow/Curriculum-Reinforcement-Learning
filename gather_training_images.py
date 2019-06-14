@@ -47,7 +47,7 @@ def main():
     rel_obs = envs.reset()[:, args.state_indices]
     abs_obs = np.array(envs.get_images(mode="target"))
     for i, image in enumerate(envs.get_images()):
-        Image.fromarray(image, 'RGB').save(f'training_data/rcloth/{i}.png')
+        Image.fromarray(image, 'RGB').save(f'{save_root}training_data/rcloth/{i}.png')
     rel_positions = np.zeros((args.num_steps, len(args.state_indices)))
     rel_positions[:args.num_processes] = rel_obs
     abs_positions = np.zeros((args.num_steps, len(args.state_indices) - 1))
@@ -62,7 +62,7 @@ def main():
 
         for image in envs.get_images():
             i += 1
-            Image.fromarray(image, 'RGB').save(f'training_data/rcloth/{i}.png')
+            Image.fromarray(image, 'RGB').save(f'{save_root}training_data/rcloth/{i}.png')
         torch.save([abs_positions, rel_positions, low, high],
                    os.path.join(save_path, f'{args.env_name}_{args.num_steps}_cloth.pt'))
 
