@@ -23,6 +23,7 @@ class DishRackEnv(SawyerEnv):
     max_cam_displace = 0.05
     max_cam_rotation = 0.05  # ~2.9 deg
     max_light_displace = 0.5
+    max_cloth_rotation = 0.05
 
     # VISION PLACEHOLDERS
     vis_mode = False
@@ -31,6 +32,8 @@ class DishRackEnv(SawyerEnv):
     plate_obj_handle = None
     cloth_handle = None
     wall_handle = None
+    init_cloth_pos = None
+    init_cloth_rot = None
     init_cam_pos = None
     init_cam_rot = None
     init_plate_color = None
@@ -40,6 +43,10 @@ class DishRackEnv(SawyerEnv):
     light_handles = None
     light_poss = None
     textures = None
+    next_cloth_textures = None
+    next_wall_textures = None
+    ep_num = 0
+    num_randomisation_eps = 8
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -73,7 +80,11 @@ class DishRackEnv(SawyerEnv):
         self.timestep = 0
 
         if self.vis_mode:
+            if self.ep_num == 0:
+                self.next_cloth_textures = np.random.choice(self.textures, self.ep_len)
+                self.next_wall_textures = np.random.choice(self.textures, self.ep_len)
             self.randomise_domain()
+            self.ep_num = (self.ep_num + 1) % self.num_randomisation_eps
         return self._get_obs()
 
     def _get_obs(self):
@@ -130,6 +141,10 @@ class DishRackEnv(SawyerEnv):
                                                                       vrep.simx_opmode_blocking))
         self.cloth_handle = catch_errors(vrep.simxGetObjectHandle(self.cid, "Cloth",
                                                                   vrep.simx_opmode_blocking))
+        self.init_cloth_pos = catch_errors(vrep.simxGetObjectPosition(
+            self.cid, self.cloth_handle, -1, vrep.simx_opmode_blocking))
+        self.init_cloth_rot = catch_errors(vrep.simxGetObjectOrientation(
+            self.cid, self.cloth_handle, -1, vrep.simx_opmode_blocking))
         self.wall_handle = catch_errors(vrep.simxGetObjectHandle(self.cid, "Wall",
                                                                  vrep.simx_opmode_blocking))
         self.init_cam_pos = catch_errors(vrep.simxGetObjectPosition(self.cid, self.vis_handle, -1,
@@ -160,9 +175,9 @@ class DishRackEnv(SawyerEnv):
         # self.call_lua_function('set_color', ints=[self.wall_handle], floats=wall_color)
         # SET TEXTURES
         self.call_lua_function('set_texture', ints=[self.cloth_handle],
-                               strings=[self.np_random.choice(self.textures)])
+                               strings=[self.next_cloth_textures[self.timestep % self.ep_len]])
         self.call_lua_function('set_texture', ints=[self.wall_handle],
-                               strings=[self.np_random.choice(self.textures)])
+                               strings=[self.next_wall_textures[self.timestep % self.ep_len]])
 
         # VARY CAMERA POSE
         cam_displacement = self.np_random.uniform(-self.max_cam_displace,
@@ -175,6 +190,16 @@ class DishRackEnv(SawyerEnv):
         vrep.simxSetObjectOrientation(self.cid, self.vis_handle, -1,
                                       self.init_cam_rot + orientation_displacement,
                                       vrep.simx_opmode_blocking)
+        # VARY CLOTH POSE
+        cloth_pos = self.init_cloth_pos.copy()
+        cloth_pos[1] += - np.abs(self.np_random.normal(0, 0.01))
+        vrep.simxSetObjectPosition(self.cid, self.cloth_handle, -1, cloth_pos,
+                                   vrep.simx_opmode_blocking)
+        cloth_rot = self.init_cloth_rot.copy()
+        cloth_rot[2] = self.np_random.uniform(-self.max_cloth_rotation, self.max_cloth_rotation)
+        vrep.simxSetObjectOrientation(self.cid, self.cloth_handle, -1, cloth_rot,
+                                      vrep.simx_opmode_blocking)
+
         # VARY LIGHTING
         # B and C are support lights and can be disabled.
         enabled = np.random.choice(a=[False, True], size=2)
