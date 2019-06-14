@@ -66,7 +66,7 @@ def main():
     pose_estimator_info = (estimator, args.state_indices, rack_lower, rack_upper) if \
         args.image_layer else None
 
-    env = make_vec_envs('row_25', args.seed + 1000, args.num_processes, None, None,
+    env = make_vec_envs('row_55', args.seed + 1000, args.num_processes, None, None,
                         args.add_timestep, device, False, policies, show=(args.num_processes == 1),
                         no_norm=True, pose_estimator=pose_estimator_info, e2e=args.e2e)
     null_action = torch.zeros((1, env.action_space.shape[0]))
