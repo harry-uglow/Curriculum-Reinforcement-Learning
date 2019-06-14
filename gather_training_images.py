@@ -34,6 +34,14 @@ def main():
                          no_norm=True, show=(args.num_processes == 1))
 
     null_action = torch.zeros((args.num_processes, envs.action_space.shape[0]))
+    save_path = os.path.join(save_root, 'training_data')
+    try:
+        os.makedirs(save_path)
+    except OSError:
+        pass
+
+    low = rack_lower
+    high = rack_upper
 
     envs.get_images(mode='activate')
     rel_obs = envs.reset()[:, args.state_indices]
@@ -52,21 +60,14 @@ def main():
         abs_positions[start_index:start_index + args.num_processes] = abs_obs
 
         images += [Image.fromarray(img, 'RGB') for img in envs.get_images()]
+        if i % 1000 == 999:
+            torch.save([images, abs_positions, rel_positions, low, high],
+                       os.path.join(save_path, f'{args.env_name}_{args.num_steps}_alll.pt'))
 
     envs.close()
 
-    save_path = os.path.join(save_root, 'training_data')
-    try:
-        os.makedirs(save_path)
-    except OSError:
-        pass
-
-    low = rack_lower
-    high = rack_upper
-    res = images[0].size[0]
-
     torch.save([images, abs_positions, rel_positions, low, high],
-               os.path.join(save_path, f'{args.env_name}_{args.num_steps}_rcloth.pt'))
+               os.path.join(save_path, f'{args.env_name}_{args.num_steps}_alll.pt'))
 
 
 if __name__ == "__main__":
