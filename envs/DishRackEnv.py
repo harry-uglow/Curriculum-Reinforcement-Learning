@@ -51,7 +51,7 @@ class DishRackEnv(SawyerEnv):
     def __init__(self, *args):
         super().__init__(*args)
 
-        self.ep_len = 48
+        self.ep_len = 32
 
         self.plate_handle = catch_errors(vrep.simxGetObjectHandle(self.cid,
                 "Plate_center", vrep.simx_opmode_blocking))
@@ -80,11 +80,7 @@ class DishRackEnv(SawyerEnv):
         self.timestep = 0
 
         if self.vis_mode:
-            if self.ep_num == 0:
-                self.next_cloth_textures = np.random.choice(self.textures, self.ep_len)
-                self.next_wall_textures = np.random.choice(self.textures, self.ep_len)
             self.randomise_domain()
-            self.ep_num = (self.ep_num + 1) % self.num_randomisation_eps
         return self._get_obs()
 
     def _get_obs(self):
@@ -175,9 +171,9 @@ class DishRackEnv(SawyerEnv):
         # self.call_lua_function('set_color', ints=[self.wall_handle], floats=wall_color)
         # SET TEXTURES
         self.call_lua_function('set_texture', ints=[self.cloth_handle],
-                               strings=[self.next_cloth_textures[self.timestep % self.ep_len]])
+                               strings=[self.np_random.choice(self.textures)])
         self.call_lua_function('set_texture', ints=[self.wall_handle],
-                               strings=[self.next_wall_textures[self.timestep % self.ep_len]])
+                               strings=[self.np_random.choice(self.textures)])
 
         # VARY CAMERA POSE
         cam_displacement = self.np_random.uniform(-self.max_cam_displace,
