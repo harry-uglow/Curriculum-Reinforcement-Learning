@@ -170,8 +170,6 @@ class DishRackEnv(SawyerEnv):
         # self.call_lua_function('set_color', ints=[self.cloth_handle], floats=cloth_color)
         # self.call_lua_function('set_color', ints=[self.wall_handle], floats=wall_color)
         # SET TEXTURES
-        print(f"Available textures: {self.textures}")
-
         self.call_lua_function('set_texture', ints=[self.cloth_handle],
                                strings=[self.np_random.choice(self.textures)])
         self.call_lua_function('set_texture', ints=[self.wall_handle],
