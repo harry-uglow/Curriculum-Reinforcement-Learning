@@ -191,11 +191,11 @@ class DishRackEnv(SawyerEnv):
                                       self.init_cam_rot + orientation_displacement,
                                       vrep.simx_opmode_blocking)
         # VARY CLOTH POSE
-        cloth_pos = self.init_cloth_pos
-        cloth_pos[1] = - np.abs(self.np_random.normal(self.init_cloth_pos[1], 0.05))
-        vrep.simxSetObjectPosition(self.cid, self.vis_handle, -1, cloth_pos,
+        cloth_pos = self.init_cloth_pos.copy()
+        cloth_pos[1] += - np.abs(self.np_random.normal(0, 0.01))
+        vrep.simxSetObjectPosition(self.cid, self.cloth_handle, -1, cloth_pos,
                                    vrep.simx_opmode_blocking)
-        cloth_rot = self.init_cloth_rot
+        cloth_rot = self.init_cloth_rot.copy()
         cloth_rot[2] = self.np_random.uniform(-self.max_cloth_rotation, self.max_cloth_rotation)
         vrep.simxSetObjectOrientation(self.cid, self.cloth_handle, -1, cloth_rot,
                                       vrep.simx_opmode_blocking)
