@@ -73,7 +73,7 @@ def main(scene_path):
 
     envs = make_vec_envs(scene_path, args.seed, args.num_processes, args.gamma, args.log_dir,
                          args.add_timestep, device, False, initial_policies,
-                         pose_estimator=pose_estimator, e2e=args.e2e)
+                         pose_estimator=pose_estimator, e2e=args.e2e, show=True)
     if args.reuse_residual:
         vec_norm = get_vec_normalize(envs)
         if vec_norm is not None:
@@ -272,12 +272,6 @@ scene_names = [
     'dish_rack',
 ]
 scene_names = [
-        'row_7',
-        'row_13',
-        'row_19',
-        'row_25',
-        'row_31',
-        'row_37',
         'reach_over_wall',
 ]
 

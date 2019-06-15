@@ -25,7 +25,7 @@ class ReachOverWallEnv(SawyerEnv):
     def __init__(self, *args):
         super().__init__(*args)
 
-        self.ep_len = 64
+        self.ep_len = 100
 
         return_code, self.end_handle = vrep.simxGetObjectHandle(self.cid,
                 "Waypoint_tip", vrep.simx_opmode_blocking)
@@ -52,10 +52,10 @@ class ReachOverWallEnv(SawyerEnv):
         self.target_pos[1] = self.np_random.uniform(cube_lower[1], cube_upper[1])
         vrep.simxSetObjectPosition(self.cid, self.target_handle, -1, self.target_pos,
                                    vrep.simx_opmode_blocking)
-        #vrep.simxSetObjectPosition(self.cid, self.wall_handle, -1, self.wall_pos,
-        #                           vrep.simx_opmode_blocking)
-        #vrep.simxSetObjectOrientation(self.cid, self.wall_handle, -1, self.init_wall_rot,
-        #                              vrep.simx_opmode_blocking)
+        vrep.simxSetObjectPosition(self.cid, self.wall_handle, -1, self.wall_pos,
+                                  vrep.simx_opmode_blocking)
+        vrep.simxSetObjectOrientation(self.cid, self.wall_handle, -1, self.init_wall_rot,
+                                     vrep.simx_opmode_blocking)
         self.timestep = 0
 
         return self._get_obs()
@@ -100,7 +100,10 @@ class ROWSparseEnv(ReachOverWallEnv):
         displacement = np.abs(self.get_vector(self.target_handle, self.end_handle))
 
         rew_success = 0.1 if np.all(displacement <= max_displacement) else 0
-        rew = rew_success
+        self.wall_orientation = vrep.simxGetObjectOrientation(self.cid, self.wall_handle, -1,
+                                                              vrep.simx_opmode_blocking)[1]
+        reward_obstacle = - 0.01 * np.abs(self.wall_orientation).sum()
+        rew = rew_success + reward_obstacle
 
         self.timestep += 1
         self.update_sim()
@@ -108,7 +111,7 @@ class ROWSparseEnv(ReachOverWallEnv):
         ob = self._get_obs()
         done = (self.timestep == self.ep_len)
 
-        return ob, rew, done, dict(rew_success=rew_success)
+        return ob, rew, done, dict(rew_success=rew_success, reward_obstacle=reward_obstacle)
 
 
 class ReachNoWallEnv(ROWSparseEnv):
