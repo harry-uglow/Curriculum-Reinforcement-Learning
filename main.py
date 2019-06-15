@@ -153,7 +153,7 @@ def main(scene_path):
 
         median_rew = np.median(episode_rewards)
         min_rew = np.min(episode_rewards)
-        max_median_rew = max((max_median_rew, median_rew)),
+        max_median_rew = max((max_median_rew, median_rew))
         max_min_rew = max((max_min_rew, min_rew))
 
         # save for every interval-th episode or for the last epoch
