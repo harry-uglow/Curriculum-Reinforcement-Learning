@@ -34,37 +34,42 @@ def main():
     print(len(images))
     low = torch.Tensor(low).to(device)
     high = torch.Tensor(high).to(device)
+    print("Low and high bounds on GPU.")
 
     save_path = os.path.join('trained_models', 'im2state')
     try:
         os.makedirs(save_path)
     except OSError:
         pass
+    print("dirs up.")
 
     positions = rel_positions if args.rel else abs_positions
+    print("positions")
+    print(positions.shape[1])
 
-    pretrained_name = 'vgg16_4out.pt' if args.rel else 'vgg16_3out.pt'
     net = PoseEstimator(3, positions.shape[1])
-    # net.load_state_dict(torch.load(os.path.join('trained_models/pretrained/', pretrained_name)))
     net = net.to(device)
-
+    print("Net created")
     optimizer = optim.Adam(net.parameters(), lr=args.lr)
     criterion = custom_loss
 
+    num_samples = len(images)
+
     np_random = np.random.RandomState()
     np_random.seed(1053831)
-    p = np_random.permutation(len(images))
+    p = np_random.permutation(num_samples)
     positions = positions[p]
 
-    num_test_examples = images.shape[0] // 10
-    num_train_examples = images.shape[0] - num_test_examples
+    num_test_examples = num_samples // 10
+    num_train_examples = num_samples - num_test_examples
     batch_size = 100
 
-    train_indices = p[:num_test_examples]
-    test_indices = p[num_test_examples:]
-    test_x = np.array((batch_size, 3, 128, 128))
+    print("Setting up data.")
+    test_indices = p[:num_test_examples]
+    train_indices = p[num_test_examples:]
+    test_x = np.zeros((num_test_examples, 3, 128, 128))
     for i, idx in enumerate(test_indices):
-        test_x[i] = np.transpose(images[i], (2, 0, 1))
+        test_x[i] = np.transpose(images[idx], (2, 0, 1))
 
     test_y = positions[:num_test_examples]
     train_y = positions[num_test_examples:]
@@ -81,9 +86,9 @@ def main():
     while updates_with_no_improvement < 5:
         for batch_idx in tqdm(range(0, num_train_examples, batch_size)):
             indices = train_indices[batch_idx:batch_idx + batch_size]
-            train_x = np.array((batch_size, 3, 128, 128))
+            train_x = np.zeros((batch_size, 3, 128, 128))
             for i, idx in enumerate(indices):
-                train_x[i] = np.transpose(images[i], (2, 0, 1))
+                train_x[i] = np.transpose(images[idx], (2, 0, 1))
 
             output = net.predict(torch.Tensor(train_x).to(device))
             pred_y = output if args.rel else unnormalise_y(output, low, high)
