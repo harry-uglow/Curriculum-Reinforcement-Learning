@@ -28,7 +28,7 @@ class BeadStackEnv(SawyerEnv):
     def __init__(self, *args):
         super().__init__(*args)
 
-        self.ep_len = 48
+        self.ep_len = 32
 
         self.bead_handle = catch_errors(vrep.simxGetObjectHandle(self.cid,
                 "Bead_center", vrep.simx_opmode_blocking))

@@ -267,4 +267,4 @@ if __name__ == "__main__":
             main(scene)
             args.initial_policy = args.env_name
     else:
-        main('bead_stack')
+        main('bead_stack_nr')
