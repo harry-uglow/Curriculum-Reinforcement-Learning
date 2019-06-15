@@ -102,7 +102,7 @@ class ROWSparseEnv(ReachOverWallEnv):
         rew_success = 0.1 if np.all(displacement <= max_displacement) else 0
         self.wall_orientation = vrep.simxGetObjectOrientation(self.cid, self.wall_handle, -1,
                                                               vrep.simx_opmode_blocking)[1]
-        reward_obstacle = - 0.01 * np.abs(self.wall_orientation).sum()
+        reward_obstacle = - 0.1 * np.abs(self.wall_orientation).sum()
         rew = rew_success + reward_obstacle
 
         self.timestep += 1
