@@ -25,7 +25,7 @@ class ReachOverWallEnv(SawyerEnv):
     def __init__(self, *args):
         super().__init__(*args)
 
-        self.ep_len = 64
+        self.ep_len = 100
 
         return_code, self.end_handle = vrep.simxGetObjectHandle(self.cid,
                 "Waypoint_tip", vrep.simx_opmode_blocking)
