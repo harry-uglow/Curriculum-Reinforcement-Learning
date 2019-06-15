@@ -272,12 +272,6 @@ scene_names = [
     'dish_rack',
 ]
 scene_names = [
-        'row_7',
-        'row_13',
-        'row_19',
-        'row_25',
-        'row_31',
-        'row_37',
         'reach_over_wall',
 ]
 
