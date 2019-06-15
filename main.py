@@ -82,12 +82,6 @@ def main(scene_path):
                           zero_last_layer=initial_policies is not None, base=base, dist=dist)
     actor_critic.to(device)
 
-    if not args.reuse_residual:
-        pretrained_cnn = torch.load(os.path.join('trained_models/im2state',
-                                                 "full_vgg16_16_diag_ren_l1_rpt.pt"))
-        actor_critic.base.conv_layers.load_state_dict(pretrained_cnn.conv_layers.state_dict())
-        actor_critic.base.conv_layers.eval()
-
     if args.algo == 'a2c':
         agent = algo.A2C_ACKTR(actor_critic, args.value_loss_coef, args.entropy_coef, lr=args.lr,
                                eps=args.eps, alpha=args.alpha, max_grad_norm=args.max_grad_norm)
@@ -107,7 +101,7 @@ def main(scene_path):
     rollouts.obs[0].copy_(obs)
     rollouts.to(device)
 
-    episode_rewards = deque(maxlen=args.num_processes * args.num_steps / 48)  # ep_len = 48
+    episode_rewards = deque(maxlen=args.num_processes * args.num_steps // 48)  # ep_len = 48
     max_min_rew = 0
     max_median_rew = 0
 
@@ -273,4 +267,4 @@ if __name__ == "__main__":
             main(scene)
             args.initial_policy = args.env_name
     else:
-        main('dish_rack_nr')
+        main('bead_stack')
