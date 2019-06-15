@@ -32,6 +32,7 @@ def main():
     images, abs_positions, rel_positions, low, high, _, _ = torch.load(
         os.path.join(args.load_dir, args.env_name + ".pt"))
     print("Loaded")
+    print(len(images))
     low = torch.Tensor(low).to(device)
     high = torch.Tensor(high).to(device)
     images = np.transpose([np.array(img) for img in images], (0, 3, 1, 2))
@@ -43,8 +44,8 @@ def main():
         pass
 
     positions = rel_positions if args.rel else abs_positions
-    pretrained_name = 'vgg16_4out.pt' if args.rel else 'vgg16_3out.pt'
 
+    pretrained_name = 'vgg16_4out.pt' if args.rel else 'vgg16_3out.pt'
     net = PoseEstimator(3, positions.shape[1])
     net.load_state_dict(torch.load(os.path.join('trained_models/pretrained/', pretrained_name)))
     net = net.to(device)
@@ -58,12 +59,12 @@ def main():
     images = images[p]
     positions = positions[p]
 
-    num_test_examples = images.shape[0] // 16
+    num_test_examples = images.shape[0] // 10
     num_train_examples = images.shape[0] - num_test_examples
-    batch_size = 64
+    batch_size = 100
 
-    test_x = torch.Tensor(images[:num_test_examples])
-    test_y = torch.Tensor(positions[:num_test_examples])
+    test_x = images[:num_test_examples]
+    test_y = positions[:num_test_examples]
     train_x = images[num_test_examples:]
     train_y = positions[num_test_examples:]
 
@@ -95,7 +96,7 @@ def main():
             for batch_idx in tqdm(range(0, num_test_examples, batch_size)):
                 test_output = net.predict(torch.Tensor(test_x[batch_idx:batch_idx + batch_size]).to(device))
                 test_output = test_output if args.rel else unnormalise_y(test_output, low, high)
-                loss += criterion(pred_y,
+                loss += criterion(test_output,
                              torch.Tensor(test_y[batch_idx:batch_idx + batch_size]).to(device)).item()
 
             test_loss += [loss / (num_test_examples // batch_size)]
