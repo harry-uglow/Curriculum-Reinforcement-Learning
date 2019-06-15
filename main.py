@@ -248,13 +248,12 @@ def main(scene_path):
 
 
 scene_names = [
-    'dish_rack_nr',
-    'dish_rack_pr_14',
-    'dish_rack_pr_16',
-    'dish_rack_pr_18',
-    'dish_rack_pr_20',
-    'dish_rack_pr_22',
-    'dish_rack',
+    'bead_stack_nr',
+    'bead_stack_1',
+    'bead_stack_2',
+    'bead_stack_3',
+    'bead_stack_4',
+    'bead_stack',
 ]
 
 if __name__ == "__main__":
