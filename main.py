@@ -164,6 +164,7 @@ def main(scene_path):
 
         # save for every interval-th episode or for the last epoch
         if min_rew == max_min_rew and args.save_dir != "":
+            print("Saving")
             save_path = os.path.join(args.save_dir, args.algo)
             try:
                 os.makedirs(save_path)
