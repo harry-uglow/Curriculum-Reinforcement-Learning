@@ -107,7 +107,9 @@ def main(scene_path):
     rollouts.obs[0].copy_(obs)
     rollouts.to(device)
 
-    episode_rewards = deque(maxlen=10)
+    episode_rewards = deque(maxlen=args.num_processes * args.num_steps / 48)  # ep_len = 48
+    max_min_rew = 0
+    max_median_rew = 0
 
     start = time.time()
     start_update = start
@@ -155,8 +157,13 @@ def main(scene_path):
 
         rollouts.after_update()
 
+        median_rew = np.median(episode_rewards)
+        min_rew = np.min(episode_rewards)
+        max_median_rew = max((max_median_rew, median_rew)),
+        max_min_rew = max((max_min_rew, min_rew))
+
         # save for every interval-th episode or for the last epoch
-        if (j % args.save_interval == 0 or j == num_updates - 1) and args.save_dir != "":
+        if min_rew == max_min_rew and args.save_dir != "":
             save_path = os.path.join(args.save_dir, args.algo)
             try:
                 os.makedirs(save_path)
@@ -256,7 +263,6 @@ scene_names = [
 ]
 
 if __name__ == "__main__":
-    #if True:
     if args.reuse_residual:
         base_name = args.env_name
         base_ip = args.initial_policy
