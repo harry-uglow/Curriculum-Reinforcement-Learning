@@ -31,22 +31,37 @@ class DishRackEnv(SawyerEnv):
     res = None
     plate_obj_handle = None
     cloth_handle = None
-    wall_handle = None
+    back_wall_h = None
     init_cloth_pos = None
     init_cloth_rot = None
     init_cam_pos = None
     init_cam_rot = None
+    init_colors = []
+    init_sawyer_colors = None
     init_plate_color = None
     init_rack_color = None
     init_cloth_color = None
     init_wall_color = None
     light_handles = None
     light_poss = None
-    textures = None
-    next_cloth_textures = None
-    next_wall_textures = None
     ep_num = 0
     num_randomisation_eps = 8
+    left_wall_h = None
+    button_base_b_h = None
+    button_base_y_h = None
+    button_h = None
+    stand_h = None
+    stand_height = None
+    button_pos = None
+    block_pos = None
+    block_h = None
+    sawyer_links = None
+    max_button_displacement = 0.03
+    init_button_pos = None
+    max_height_displacement = 0.01
+    init_stand_pos = None
+    init_block_pos = None
+    max_block_displacement = np.array([0.075, 0.05, 0.025])
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -80,16 +95,13 @@ class DishRackEnv(SawyerEnv):
         self.timestep = 0
 
         if self.vis_mode:
-            if self.ep_num == 0:
-                self.next_cloth_textures = np.random.choice(self.textures, self.ep_len)
-                self.next_wall_textures = np.random.choice(self.textures, self.ep_len)
             self.randomise_domain()
-            self.ep_num = (self.ep_num + 1) % self.num_randomisation_eps
         return self._get_obs()
 
     def _get_obs(self):
         joint_obs = super(DishRackEnv, self)._get_obs()
         pos_vector = self.get_position(self.target_handle) - self.get_position(self.plate_handle)
+        # pos_vector[2] += 0.05
 
         return np.concatenate((joint_obs, pos_vector, self.rack_rot[:1]))
 
@@ -108,6 +120,8 @@ class DishRackEnv(SawyerEnv):
             return self.get_position(self.plate_handle)
         elif mode == 'target_height':
             return self.get_position(self.target_handle)[-1:]
+        elif mode == 'action':
+            return self.target_velocities
         elif mode == 'mask':
             mask = self._read_vision_sensor(grayscale=True)
             mask[mask > 0] = 255
@@ -145,39 +159,102 @@ class DishRackEnv(SawyerEnv):
             self.cid, self.cloth_handle, -1, vrep.simx_opmode_blocking))
         self.init_cloth_rot = catch_errors(vrep.simxGetObjectOrientation(
             self.cid, self.cloth_handle, -1, vrep.simx_opmode_blocking))
-        self.wall_handle = catch_errors(vrep.simxGetObjectHandle(self.cid, "Wall",
+        self.back_wall_h = catch_errors(vrep.simxGetObjectHandle(self.cid, "WallB",
                                                                  vrep.simx_opmode_blocking))
+        self.left_wall_h = catch_errors(vrep.simxGetObjectHandle(self.cid, "WallL",
+                                                                 vrep.simx_opmode_blocking))
+        self.button_base_b_h = catch_errors(vrep.simxGetObjectHandle(self.cid, "ButtonBaseB",
+                                                                     vrep.simx_opmode_blocking))
+        self.button_base_y_h = catch_errors(vrep.simxGetObjectHandle(self.cid, "ButtonBaseY",
+                                                                     vrep.simx_opmode_blocking))
+        self.button_h = catch_errors(vrep.simxGetObjectHandle(self.cid, "Button",
+                                                              vrep.simx_opmode_blocking))
+        self.stand_h = catch_errors(vrep.simxGetObjectHandle(self.cid, "Stand",
+                                                             vrep.simx_opmode_blocking))
+        self.block_h = catch_errors(vrep.simxGetObjectHandle(self.cid, "Cuboid",
+                                                             vrep.simx_opmode_blocking))
+        self.sawyer_links = [
+            catch_errors(vrep.simxGetObjectHandle(self.cid, "Sawyer_link0_visible",
+                                                  vrep.simx_opmode_blocking)),
+            catch_errors(vrep.simxGetObjectHandle(self.cid, "Sawyer_link1_visible",
+                                                  vrep.simx_opmode_blocking)),
+            catch_errors(vrep.simxGetObjectHandle(self.cid, "Sawyer_link2_visible",
+                                                  vrep.simx_opmode_blocking)),
+            catch_errors(vrep.simxGetObjectHandle(self.cid, "Sawyer_link3_visible",
+                                                  vrep.simx_opmode_blocking)),
+            catch_errors(vrep.simxGetObjectHandle(self.cid, "Sawyer_link4_visible",
+                                                  vrep.simx_opmode_blocking)),
+            catch_errors(vrep.simxGetObjectHandle(self.cid, "Sawyer_link5_visible",
+                                                  vrep.simx_opmode_blocking)),
+            catch_errors(vrep.simxGetObjectHandle(self.cid, "Sawyer_link6_visible",
+                                                  vrep.simx_opmode_blocking)),
+            catch_errors(vrep.simxGetObjectHandle(self.cid, "Sawyer_head_visible",
+                                                  vrep.simx_opmode_blocking))
+        ]
+        self.gripper_h = catch_errors(vrep.simxGetObjectHandle(self.cid, "BaxterGripper_visible",
+                                                               vrep.simx_opmode_blocking))
+        self.gripper_links = [
+
+            catch_errors(vrep.simxGetObjectHandle(self.cid, "BaxterGripper_rightFinger_visible",
+                                                  vrep.simx_opmode_blocking)),
+            catch_errors(vrep.simxGetObjectHandle(self.cid, "BaxterGripper_leftFinger_visible",
+                                                  vrep.simx_opmode_blocking)),
+        ]
         self.init_cam_pos = catch_errors(vrep.simxGetObjectPosition(self.cid, self.vis_handle, -1,
                                                                     vrep.simx_opmode_blocking))
         self.init_cam_rot = catch_errors(
             vrep.simxGetObjectOrientation(self.cid, self.vis_handle, -1, vrep.simx_opmode_blocking))
-        self.init_plate_color = self.call_lua_function('get_color', ints=[self.plate_obj_handle])[1]
-        self.init_rack_color = self.call_lua_function('get_color', ints=[self.rack_handle])[1]
-        self.init_cloth_color = self.call_lua_function('get_color', ints=[self.cloth_handle])[1]
-        self.init_wall_color = self.call_lua_function('get_color', ints=[self.wall_handle])[1]
+        self.init_button_pos = catch_errors(
+            vrep.simxGetObjectPosition(self.cid, self.button_base_b_h, self.block_h,
+                                       vrep.simx_opmode_blocking))
+        self.init_stand_pos = catch_errors(
+            vrep.simxGetObjectPosition(self.cid, self.stand_h, -1, vrep.simx_opmode_blocking))
+        self.init_block_pos = catch_errors(
+            vrep.simxGetObjectPosition(self.cid, self.block_h, -1, vrep.simx_opmode_blocking))
+
+        def init_color(handle, scale):
+            return [(handle, self.call_lua_function('get_color', ints=[handle])[1], scale)]
+
+        def init_named_color(handle, scale, name='SAWYER_RED'):
+            return [(handle, self.call_lua_function('get_sawyer_color', ints=[handle],
+                                                    strings=[name])[1], scale)]
+
+        self.init_colors += init_color(self.plate_obj_handle, 0.05)
+        self.init_colors += init_color(self.rack_handle, 0.05)
+        self.init_colors += init_color(self.cloth_handle, 0.05)
+        self.init_colors += init_color(self.back_wall_h, 0.02)
+        self.init_colors += init_color(self.left_wall_h, 0.02)
+        self.init_colors += init_color(self.button_base_b_h, 0.02)
+        self.init_colors += init_color(self.button_base_y_h, 0.02)
+        self.init_colors += init_color(self.button_h, 0.02)
+        self.init_colors += init_color(self.stand_h, 0.02)
+        self.init_colors += init_color(self.block_h, 0.02)
+        self.init_colors += [init_color(handle, 0.02)[0] for handle in self.gripper_links]
+        self.init_sawyer_colors = [init_named_color(handle, 0.02)[0] for handle in
+                                   self.sawyer_links]
+        self.init_baxter_color = init_named_color(self.gripper_h, 0.02, name='BAXTER_RED')[0][1:]
+
         self.light_handles = [catch_errors(vrep.simxGetObjectHandle(self.cid, f'LocalLight{c}',
                                                                     vrep.simx_opmode_blocking))
                               for c in ['A', 'B', 'C', 'D']]
         self.light_poss = [catch_errors(vrep.simxGetObjectPosition(self.cid, handle, -1,
                                                                    vrep.simx_opmode_blocking))
                            for handle in self.light_handles]
-        self.textures = glob.glob(os.path.join(os.getcwd(), 'block/*.png'))
 
     def randomise_domain(self):
         # VARY COLORS
-        plate_color = self.np_random.normal(loc=self.init_plate_color, scale=0.05)
-        rack_color = self.np_random.normal(loc=self.init_rack_color, scale=0.05)
-        # cloth_color = self.np_random.normal(loc=self.init_cloth_color, scale=0.05)
-        # wall_color = self.np_random.normal(loc=self.init_wall_color, scale=0.02)
-        self.call_lua_function('set_color', ints=[self.plate_obj_handle], floats=plate_color)
-        self.call_lua_function('set_color', ints=[self.rack_handle], floats=rack_color)
-        # self.call_lua_function('set_color', ints=[self.cloth_handle], floats=cloth_color)
-        # self.call_lua_function('set_color', ints=[self.wall_handle], floats=wall_color)
-        # SET TEXTURES
-        self.call_lua_function('set_texture', ints=[self.cloth_handle],
-                               strings=[self.next_cloth_textures[self.timestep % self.ep_len]])
-        self.call_lua_function('set_texture', ints=[self.wall_handle],
-                               strings=[self.next_wall_textures[self.timestep % self.ep_len]])
+        colors = [(handle, self.np_random.normal(loc=color, scale=scale))
+                  for handle, color, scale in self.init_colors]
+        for handle, color in colors:
+            self.call_lua_function('set_color', ints=[handle], floats=color)
+        for handle, color in [(handle, self.np_random.normal(loc=color, scale=scale))
+                              for handle, color, scale in self.init_sawyer_colors]:
+            self.call_lua_function('set_color', ints=[handle], floats=color, strings=['SAWYER_RED'])
+
+        self.call_lua_function('set_color', ints=[self.gripper_h],
+                               floats=self.np_random.normal(loc=self.init_baxter_color[0],
+                                                            scale=self.init_baxter_color[1]),
+                               strings=['BAXTER_RED'])
 
         # VARY CAMERA POSE
         cam_displacement = self.np_random.uniform(-self.max_cam_displace,
@@ -212,3 +289,21 @@ class DishRackEnv(SawyerEnv):
                                          light_displacement):
             vrep.simxSetObjectPosition(self.cid, handle, -1, pos + displace,
                                        vrep.simx_opmode_blocking)
+        # OTHER POSES
+        block_displacement = self.np_random.uniform(-self.max_block_displacement,
+                                                    self.max_block_displacement)
+        vrep.simxSetObjectPosition(self.cid, self.block_h, -1,
+                                   self.init_block_pos + block_displacement,
+                                   vrep.simx_opmode_blocking)
+        button_displacement = np.append(self.np_random.uniform(-self.max_button_displacement,
+                                                               self.max_button_displacement, 2),
+                                        [0])
+        vrep.simxSetObjectPosition(self.cid, self.button_base_b_h, self.block_h,
+                                   self.init_button_pos + button_displacement,
+                                   vrep.simx_opmode_blocking)
+        stand_height_diff = np.append([0, 0], self.np_random.uniform(-self.max_height_displacement,
+                                                                     self.max_height_displacement,
+                                                                     1))
+        vrep.simxSetObjectPosition(self.cid, self.stand_h, -1,
+                                   self.init_stand_pos + stand_height_diff,
+                                   vrep.simx_opmode_blocking)

@@ -22,8 +22,6 @@ if args.cuda and torch.cuda.is_available() and args.cuda_deterministic:
 
 save_root = '' if platform.system() == 'Darwin' else '/vol/bitbucket2/hu115/'
 
-low = rack_lower
-high = rack_upper
 
 def main():
     torch.set_num_threads(1)
@@ -36,40 +34,48 @@ def main():
                          no_norm=True, show=(args.num_processes == 1))
 
     null_action = torch.zeros((args.num_processes, envs.action_space.shape[0]))
-
     save_path = os.path.join(save_root, 'training_data')
     try:
         os.makedirs(save_path)
     except OSError:
         pass
 
-    envs.get_images(mode='activate')
-    rel_obs = envs.reset()[:, args.state_indices]
-    abs_obs = np.array(envs.get_images(mode="target"))
-    for i, image in enumerate(envs.get_images()):
-        Image.fromarray(image, 'RGB').save(f'{save_root}training_data/rcloth/{i}.png')
-    rel_positions = np.zeros((args.num_steps, len(args.state_indices)))
-    rel_positions[:args.num_processes] = rel_obs
-    abs_positions = np.zeros((args.num_steps, len(args.state_indices) - 1))
-    abs_positions[:args.num_processes] = abs_obs
+    low = rack_lower
+    high = rack_upper
 
-    for i in tqdm(range(args.num_processes, args.num_steps, args.num_processes)):
-        rel_obs = envs.step(null_action)[0][:, args.state_indices]
-        abs_obs = np.array(envs.get_images(mode="target"))
+    envs.get_images(mode='activate')
+    images = []
+    rel_positions = np.zeros((args.num_steps, len(args.state_indices)))
+    abs_positions = np.zeros((args.num_steps, len(args.state_indices) - 1))
+    actions = np.zeros((args.num_steps, 7))
+    joint_angles = np.zeros((args.num_steps, 7))
+
+    obs = envs.reset()
+
+    for i in tqdm(range(args.num_steps // args.num_processes)):
         start_index = args.num_processes * i
+        rel_obs = obs[:, args.state_indices]
+        abs_obs = np.array(envs.get_images(mode="target"))
+        images += [Image.fromarray(img, 'RGB') for img in envs.get_images()]
         rel_positions[start_index:start_index + args.num_processes] = rel_obs
         abs_positions[start_index:start_index + args.num_processes] = abs_obs
+        joint_angles[start_index:start_index + args.num_processes] = obs[:, :7]
 
-        for image in envs.get_images():
-            i += 1
-            Image.fromarray(image, 'RGB').save(f'{save_root}training_data/rcloth/{i}.png')
-        torch.save([abs_positions, rel_positions, low, high],
-                   os.path.join(save_path, f'{args.env_name}_{args.num_steps}_cloth.pt'))
+        obs = envs.step(null_action)[0]
+
+        action = np.array(envs.get_images(mode="action"))
+        actions[start_index:start_index + args.num_processes] = action
+
+        if i % 1000 == 999:
+            j = start_index + args.num_processes
+            torch.save([images[:j], abs_positions[:j], rel_positions[:j], low, high,
+                        joint_angles[:j], actions[:j]],
+                       os.path.join(save_path, f'{args.env_name}_{args.num_steps}_e2e.pt'))
 
     envs.close()
 
-    torch.save([abs_positions, rel_positions, low, high],
-               os.path.join(save_path, f'{args.env_name}_{args.num_steps}_cloth.pt'))
+    torch.save([images, abs_positions, rel_positions, low, high],
+               os.path.join(save_path, f'{args.env_name}_{args.num_steps}_e2e.pt'))
 
 
 if __name__ == "__main__":
