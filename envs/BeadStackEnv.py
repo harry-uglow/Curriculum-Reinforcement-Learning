@@ -10,8 +10,8 @@ import math
 
 np.set_printoptions(precision=2, linewidth=200)  # DEBUG
 
-toy_lower = np.array([-0.05, (-0.6), -0.25])  # x, y, rotation
-toy_upper = np.array([0.15, (-0.45), 0.25])
+toy_lower = np.array([-0.1, (-0.75), -0.25])  # x, y, rotation
+toy_upper = np.array([0.1, (-0.55), 0.25])
 
 max_displacement = 0.007  # 1.5cm
 max_dist = np.linalg.norm([max_displacement]*3)
@@ -28,7 +28,7 @@ class BeadStackEnv(SawyerEnv):
     def __init__(self, *args):
         super().__init__(*args)
 
-        self.ep_len = 32
+        self.ep_len = 64
 
         self.bead_handle = catch_errors(vrep.simxGetObjectHandle(self.cid,
                 "Bead_center", vrep.simx_opmode_blocking))
