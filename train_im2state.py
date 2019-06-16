@@ -28,7 +28,7 @@ def main():
     torch.set_num_threads(1)
     device = torch.device(f"cuda:{args.device_num}" if args.cuda else "cpu")
 
-    images, abs_positions, rel_positions, low, high, _, _ = torch.load(
+    images, abs_positions, rel_positions, low, high= torch.load(
         os.path.join(args.load_dir, args.env_name + ".pt"))
     print("Loaded")
     print(len(images))
