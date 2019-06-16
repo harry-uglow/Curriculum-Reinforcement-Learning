@@ -257,13 +257,13 @@ scene_names = [
 ]
 
 if __name__ == "__main__":
-    if args.reuse_residual:
+    if True:
         base_name = args.env_name
-        base_ip = args.initial_policy
         for scene in scene_names:
             print(f"Training {scene} for {args.num_env_steps} timesteps")
             args.env_name = f'{base_name}_{scene}'
             main(scene)
+            args.reuse_residual=True
             args.initial_policy = args.env_name
     else:
         main('bead_stack_nr')
