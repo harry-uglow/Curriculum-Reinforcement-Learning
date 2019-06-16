@@ -116,12 +116,12 @@ def make_vec_envs(env_name, seed, num_processes, gamma, log_dir, add_timestep, d
     else:
         envs = DummyVecEnv(envs)
 
-    if not e2e:
-        envs = wrap_initial_policies(envs, device, initial_policies)
+    # if not e2e:
+    # envs = wrap_initial_policies(envs, device, initial_policies)
 
-    if pose_estimator is not None:
-        # Two separate layers as they may have their uses separately
-        envs = SimImageObsVecEnvWrapper(envs)
+    # if pose_estimator is not None:
+    # Two separate layers as they may have their uses separately
+    envs = SimImageObsVecEnvWrapper(envs)
     if e2e:
         envs = E2EVecEnvWrapper(envs)
 
@@ -135,8 +135,8 @@ def make_vec_envs(env_name, seed, num_processes, gamma, log_dir, add_timestep, d
 
     if pose_estimator is not None:
         estimator, state_to_estimate, low, high = pose_estimator
-        envs = PoseEstimatorVecEnvWrapper(envs, device, *pose_estimator, abs_to_rel=True)
         envs = wrap_initial_policies(envs, device, image_ips)
+    envs = PoseEstimatorVecEnvWrapper(envs, device, initial_policies, abs_to_rel=True)
     if e2e:
         envs = wrap_initial_policies(envs, device, initial_policies)
 
