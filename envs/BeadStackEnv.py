@@ -13,8 +13,7 @@ np.set_printoptions(precision=2, linewidth=200)  # DEBUG
 toy_lower = np.array([-0.1, (-0.75), -0.25])  # x, y, rotation
 toy_upper = np.array([0.1, (-0.55), 0.25])
 
-max_displacement = 0.007  # 1.5cm
-max_dist = np.linalg.norm([max_displacement]*3)
+max_displacement = 0.008  # 1.5cm
 max_rot = 0.1  # ~5.7 deg
 
 
@@ -77,8 +76,7 @@ class BSSparseEnv(BeadStackEnv):
 
         rew_success = 0.1 if np.all(orientation_diff <= max_rot) and \
                              np.all(displacement <= max_displacement) else 0
-        dist = np.linalg.norm(displacement)
-        rew = rew_success * (1 - dist / max_dist)
+        rew = rew_success
 
         self.timestep += 1
         self.update_sim()
