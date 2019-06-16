@@ -38,7 +38,7 @@ class RealEnv(Env):
     def _get_obs(self):
         angles = np.array([self._right_arm.joint_angle(joint_name)
                            for joint_name in self._right_joint_names])
-        angles[6] -= (math.pi / 2)
+        angles[6] += (math.pi / 2)
         return angles
 
     def reset(self):
@@ -104,7 +104,7 @@ class RealEnv(Env):
         print "enabled"
         self._init_joint_angles = [self._right_arm.joint_angle(joint_name)
                                    for joint_name in self._right_joint_names]
-        #rospy.set_param('named_poses/right/poses/neutral', self._init_joint_angles)
+        rospy.set_param('named_poses/right/poses/neutral', self._init_joint_angles)
 
         self._right_arm.set_command_timeout((1.0 / self._rate) * self._missed_cmds)
 

@@ -83,7 +83,7 @@ class ReferenceEnv(Wrapper):
     def __init__(self, env):
         super(ReferenceEnv, self).__init__(env)
         print "Starting vrep"
-        self.ref_env = DishRackEnv('dish_rack', 0, True)
+        self.ref_env = DishRackEnv('dish_rack', 0, False)
         print "vrep started"
 
     def render(self, mode):

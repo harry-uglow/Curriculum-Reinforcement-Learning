@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -19,11 +20,6 @@ class PoseEstimator(nn.Module):
     def __init__(self, num_inputs, num_outputs):
         super(PoseEstimator, self).__init__()
         self._output_size = num_outputs
-
-        init_ = lambda m: init(m,
-                               nn.init.orthogonal_,
-                               lambda x: nn.init.constant_(x, 0),
-                               nn.init.calculate_gain('relu'))
 
         self.conv_layers = nn.Sequential(  # 128 x 128
             (nn.Conv2d(num_inputs, 64, 3, padding=1)),
@@ -83,7 +79,7 @@ class PoseEstimator(nn.Module):
         return x
 
     def predict(self, images):
-        assert not self.training
-        for i in range(images.size(0)):
-            images[i] = self.normalize(images[i].cpu() / 255.0).to(images.device)
-        return self.forward(images)
+        x = torch.Tensor(images.cpu())
+        for i in range(x.size(0)):
+            x[i] = self.normalize(x[i] / 255.0)
+        return self.forward(x.to(images.device))
