@@ -10,8 +10,10 @@ from torchvision import transforms
 from tqdm import tqdm
 
 from a2c_ppo_acktr.arguments import get_args
+from e2e.model import E2ECNN
+from envs.DRNoWaypointEnv import rack_lower
+from envs.DishRackEnv import rack_upper
 from eval_pose_estimator import eval_pose_estimator
-from im2state.model import PoseEstimator
 
 from im2state.utils import normalise_coords, unnormalise_y, custom_loss
 
@@ -29,12 +31,11 @@ def main():
     torch.set_num_threads(1)
     device = torch.device(f"cuda:{args.device_num}" if args.cuda else "cpu")
 
-    images, _, _, _, _, joint_angles, actions = torch.load(
+    images, positions, _, _, _, joint_angles, actions = torch.load(
         os.path.join(args.load_dir, args.env_name + ".pt"))
     print("Loaded")
-    low = torch.Tensor([-0.3] * 7).to(device)
-    high = torch.Tensor([0.3] * 7).to(device)
-    images = np.transpose([np.array(img) for img in images], (0, 3, 1, 2))
+    low = np.array([-0.3] * 7)
+    high = np.array([0.3] * 7)
 
     save_path = os.path.join('trained_models', 'im2state')
     try:
@@ -42,31 +43,38 @@ def main():
     except OSError:
         pass
 
-    pretrained_name = 'vgg16_4out.pt' if args.rel else 'vgg16_3out.pt'
-
-    net = PoseEstimator(3, actions.shape[1])
+    net = E2ECNN(3, actions.shape[1] + positions.shape[1])
     net = net.to(device)
 
     optimizer = optim.Adam(net.parameters(), lr=args.lr)
-    criterion = custom_loss
+    criterion = nn.MSELoss()
+
+    num_samples = len(images)
+    print(num_samples)
 
     np_random = np.random.RandomState()
     np_random.seed(1053831)
-    p = np_random.permutation(len(images))
-    images = images[p]
+    p = np_random.permutation(num_samples)
+    images = np.transpose([np.array(img) for img in images], (0, 3, 1, 2))
     joint_angles = joint_angles[p]
-    actions = actions[p]
+    actions = normalise_coords(actions[p], low, high)
+    positions = normalise_coords(positions[p], rack_lower, rack_upper)
 
-    num_test_examples = images.shape[0] // 10
-    num_train_examples = images.shape[0] - num_test_examples
+    num_test_examples = num_samples // 10
+    num_train_examples = num_samples - num_test_examples
     batch_size = 100
 
-    test_x = images[:num_test_examples]
+    print("Setting up data.")
+    test_indices = p[:num_test_examples]
+    train_indices = p[num_test_examples:]
+    test_x = images[test_indices]
+
+    y = np.append(actions, positions, axis=1)
+
+    test_y = y[:num_test_examples]
+    train_y = y[num_test_examples:]
     aux_test_x = joint_angles[:num_test_examples]
-    test_y = actions[:num_test_examples]
-    train_x = images[num_test_examples:]
     aux_train_x = joint_angles[num_test_examples:]
-    train_y = actions[num_test_examples:]
 
     train_loss_x_axis = []
     train_loss = []
@@ -79,11 +87,11 @@ def main():
     epochs = 0
     while updates_with_no_improvement < 5:
         for batch_idx in tqdm(range(0, num_train_examples, batch_size)):
-            output = net.predict(
-                torch.Tensor(train_x[batch_idx:batch_idx + batch_size]).to(device),
-                torch.Tensor(aux_train_x[batch_idx:batch_idx + batch_size]).to(device),
-            )
-            pred_y = output if args.rel else unnormalise_y(output, low, high)
+            indices = train_indices[batch_idx:batch_idx + batch_size]
+            train_x = images[indices]
+            a = torch.Tensor(train_x).to(device)
+            b = torch.Tensor(aux_train_x[batch_idx:batch_idx + batch_size]).to(device)
+            pred_y = net.predict(a, b)
             loss = criterion(pred_y,
                              torch.Tensor(train_y[batch_idx:batch_idx + batch_size]).to(device))
             train_loss += [loss.item()]
@@ -101,7 +109,6 @@ def main():
                     torch.Tensor(test_x[batch_idx:batch_idx + batch_size]).to(device),
                     torch.Tensor(aux_test_x[batch_idx:batch_idx + batch_size]).to(device),
                 )
-                test_output = test_output if args.rel else unnormalise_y(test_output, low, high)
                 loss += criterion(
                     test_output,
                     torch.Tensor(test_y[batch_idx:batch_idx + batch_size]).to(device)).item()
@@ -129,9 +136,25 @@ def main():
             print(f"Training epoch {epochs} - validation loss: {test_loss[-1]}")
 
     print("Finished training")
-    eval_pose_estimator(os.path.join(save_path, args.save_as + ".pt"), device, torch.Tensor(test_x).to(device),
-            torch.Tensor(test_y).to(device),
-                        low if not args.rel else None, high if not args.rel else None)
+    print("Evaluating")
+    net = torch.load(os.path.join(save_path, args.save_as + ".pt"))
+    net.to(device)
+    x = torch.Tensor(test_x).to(device)
+    aux_x = torch.Tensor(aux_test_x).to(device)
+    y = unnormalise_y(test_y, low, high)
+    net.eval()
+    with torch.no_grad():
+        distances = []
+        thetas = []
+        for x_, aux_x_, y_ in tqdm(zip(x, aux_x, y)):
+            output = net.predict(x_.unsqueeze(0), aux_x_.unsqueeze(0))
+            normed = output if low is None else unnormalise_y(output, low, high)
+            pred_y = normed.squeeze().cpu().numpy()
+            actual_y = y_
+            distances += [np.linalg.norm(pred_y[:-1] - actual_y[:-1])]
+            thetas += [np.abs(pred_y[-1] - actual_y[-1])]
+        print(f"Mean distance error: {(1000 * sum(distances) / len(distances))} mm")
+        print(f"Mean rotational error: {(sum(thetas) / len(thetas))} radians")
 
 
 if __name__ == "__main__":

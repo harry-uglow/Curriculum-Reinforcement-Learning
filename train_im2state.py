@@ -58,6 +58,7 @@ def main():
     np_random = np.random.RandomState()
     np_random.seed(1053831)
     p = np_random.permutation(num_samples)
+    images = np.transpose([np.array(img) for img in images], (0, 3, 1, 2))
     positions = positions[p]
 
     num_test_examples = num_samples // 10
@@ -67,9 +68,7 @@ def main():
     print("Setting up data.")
     test_indices = p[:num_test_examples]
     train_indices = p[num_test_examples:]
-    test_x = np.zeros((num_test_examples, 3, 128, 128))
-    for i, idx in enumerate(test_indices):
-        test_x[i] = np.transpose(images[idx], (2, 0, 1))
+    test_x = images[test_indices]
 
     test_y = positions[:num_test_examples]
     train_y = positions[num_test_examples:]
@@ -86,9 +85,7 @@ def main():
     while updates_with_no_improvement < 5:
         for batch_idx in tqdm(range(0, num_train_examples, batch_size)):
             indices = train_indices[batch_idx:batch_idx + batch_size]
-            train_x = np.zeros((batch_size, 3, 128, 128))
-            for i, idx in enumerate(indices):
-                train_x[i] = np.transpose(images[idx], (2, 0, 1))
+            train_x = images[indices]
 
             output = net.predict(torch.Tensor(train_x).to(device))
             pred_y = output if args.rel else unnormalise_y(output, low, high)

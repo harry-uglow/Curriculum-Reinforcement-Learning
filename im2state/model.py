@@ -23,35 +23,30 @@ class PoseEstimator(nn.Module):
         self.conv_layers = nn.Sequential(  # 128 x 128
             (nn.Conv2d(num_inputs, 64, 3, padding=1)),
             nn.ReLU(inplace=True),
-            (nn.Conv2d(64, 64, 3, padding=1)),
+            (nn.Conv2d(64, 64, 3, padding=1, stride=2)),
             nn.ReLU(inplace=True),
-            nn.MaxPool2d(2),  # 64
             (nn.Conv2d(64, 128, 3, padding=1)),
             nn.ReLU(inplace=True),
-            (nn.Conv2d(128, 128, 3, padding=1)),
+            (nn.Conv2d(128, 128, 3, padding=1, stride=2)),
             nn.ReLU(inplace=True),
-            nn.MaxPool2d(2),  # 32
             (nn.Conv2d(128, 256, 3, padding=1)),
             nn.ReLU(inplace=True),
             (nn.Conv2d(256, 256, 3, padding=1)),
             nn.ReLU(inplace=True),
-            (nn.Conv2d(256, 256, 3, padding=1)),
+            (nn.Conv2d(256, 256, 3, padding=1, stride=2)),
             nn.ReLU(inplace=True),
-            nn.MaxPool2d(2),  # 16
             (nn.Conv2d(256, 512, 3, padding=1)),
             nn.ReLU(inplace=True),
             (nn.Conv2d(512, 512, 3, padding=1)),
             nn.ReLU(inplace=True),
-            (nn.Conv2d(512, 512, 3, padding=1)),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(2),  # 8
-            (nn.Conv2d(512, 512, 3, padding=1)),
+            (nn.Conv2d(512, 512, 3, padding=1, stride=2)),
             nn.ReLU(inplace=True),
             (nn.Conv2d(512, 512, 3, padding=1)),
             nn.ReLU(inplace=True),
             (nn.Conv2d(512, 512, 3, padding=1)),
             nn.ReLU(inplace=True),
-            nn.MaxPool2d(2),  # 4
+            (nn.Conv2d(512, 512, 3, padding=1, stride=2)),
+            nn.ReLU(inplace=True),
         )
 
         self.fc_layers = nn.Sequential(
