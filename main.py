@@ -291,4 +291,4 @@ if __name__ == "__main__":
             main(scene)
             args.initial_policy = args.env_name
     else:
-        main('reach_no_wall')
+        main('dish_rack')
