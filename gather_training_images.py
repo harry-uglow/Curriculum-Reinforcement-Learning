@@ -34,7 +34,7 @@ def main():
                          no_norm=True, show=(args.num_processes == 1))
 
     null_action = torch.zeros((args.num_processes, envs.action_space.shape[0]))
-    save_path = os.path.join(save_root, 'training_data')
+    save_path = os.path.join(save_root, f'training_data/{args.seed}')
     try:
         os.makedirs(save_path)
     except OSError:
@@ -44,9 +44,7 @@ def main():
     high = rack_upper
 
     envs.get_images(mode='activate')
-    images = []
-    rel_positions = np.zeros((args.num_steps, len(args.state_indices)))
-    abs_positions = np.zeros((args.num_steps, len(args.state_indices) - 1))
+    image_paths = []
     actions = np.zeros((args.num_steps, 7))
     joint_angles = np.zeros((args.num_steps, 7))
 
@@ -54,11 +52,10 @@ def main():
 
     for i in tqdm(range(args.num_steps // args.num_processes)):
         start_index = args.num_processes * i
-        rel_obs = obs[:, args.state_indices]
-        abs_obs = np.array(envs.get_images(mode="target"))
-        images += [Image.fromarray(img, 'RGB') for img in envs.get_images()]
-        rel_positions[start_index:start_index + args.num_processes] = rel_obs
-        abs_positions[start_index:start_index + args.num_processes] = abs_obs
+        for j, image in enumerate(envs.get_images()):
+            file_num = args.seed * 100000 + args.num_processes * i + j
+            Image.fromarray(image, 'RGB').save(os.path.join(save_path, f'{file_num}.png'))
+            image_paths += [f'{file_num}.png']
         joint_angles[start_index:start_index + args.num_processes] = obs[:, :7]
 
         obs = envs.step(null_action)[0]
@@ -66,16 +63,10 @@ def main():
         action = np.array(envs.get_images(mode="action"))
         actions[start_index:start_index + args.num_processes] = action
 
-        if i % 1000 == 999:
-            j = start_index + args.num_processes
-            torch.save([images[:j], abs_positions[:j], rel_positions[:j], low, high,
-                        joint_angles[:j], actions[:j]],
-                       os.path.join(save_path, f'{args.env_name}_{args.num_steps}_e2e.pt'))
-
     envs.close()
 
-    torch.save([images, abs_positions, rel_positions, low, high],
-               os.path.join(save_path, f'{args.env_name}_{args.num_steps}_e2e.pt'))
+    torch.save([image_paths, joint_angles, actions, low, high],
+               os.path.join(save_path,f'{args.env_name}_{args.num_steps}_{args.seed}_e2e.pt'))
 
 
 if __name__ == "__main__":
