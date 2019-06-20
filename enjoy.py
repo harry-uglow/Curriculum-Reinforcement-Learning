@@ -16,6 +16,8 @@ from a2c_ppo_acktr.utils import get_render_func
 # workaround to unpickle olf model files
 import sys
 
+from im2state.utils import unnormalise_y
+
 sys.path.append('a2c_ppo_acktr')
 
 parser = argparse.ArgumentParser(description='RL')
@@ -51,13 +53,15 @@ def main():
     # We need to use the same statistics for normalization as used in training
     policies = torch.load(os.path.join(args.load_dir, args.env_name + ".pt"),
                           map_location=device)
-
-    if args.rip:
-        rip, estimator, policies = policies
+    if args.e2e:
+        e2e = policies
+        e2e.eval()
+        policies = None
     else:
-        estimator = torch.load(os.path.join(args.i2s_load_dir, args.image_layer + ".pt")) if \
-            args.image_layer else None
-        rip = None
+        e2e = None
+
+    estimator = torch.load(os.path.join(args.i2s_load_dir, args.image_layer + ".pt")) if \
+        args.image_layer else None
     if estimator:
         estimator.eval()
 
@@ -66,16 +70,13 @@ def main():
 
     env = make_vec_envs('bead_stack_nr', args.seed + 1000, args.num_processes, None, None,
                         args.add_timestep, device, False, policies, show=(args.num_processes == 1),
-                        no_norm=True, pose_estimator=pose_estimator_info, e2e=args.e2e)
+                        no_norm=True, pose_estimator=pose_estimator_info)
     null_action = torch.zeros((1, env.action_space.shape[0]))
 
     # Get a render function
     render_func = get_render_func(env)
 
-    if rip:
-        recurrent_hidden_states = torch.zeros(1, rip.recurrent_hidden_state_size)
-        masks = torch.zeros(1, 1)
-
+    env.get_images(mode='activate')
     obs = env.reset()
 
     if render_func is not None:
@@ -92,13 +93,16 @@ def main():
     i = 0
     total_successes = 0
     num_trials = 50
+    low = torch.Tensor([-0.3] * 7)
+    high = torch.Tensor([0.3] * 7)
     # init_rews = np.zeros((args.num_processes, 1))
     # rews = init_rews.copy()
     while i < num_trials:
         with torch.no_grad():
-            if rip:
-                value, action, _, recurrent_hidden_states = rip.act(
-                    obs, recurrent_hidden_states, masks, deterministic=args.det)
+            if e2e:
+                images = torch.Tensor(np.transpose(env.get_images(), (0, 3, 1, 2))).to(device)
+                output = e2e.predict(images, obs[:, :7])
+                action = unnormalise_y(output, low, high)
             else:
                 action = null_action
 
