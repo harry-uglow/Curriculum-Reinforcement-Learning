@@ -7,8 +7,8 @@ def format_images(imgs):
     return array.transpose(0, 3, 1, 2)
 
 
-# Normalise coordinates so all are in range [-1, 1]. Inputs must be ndarray.
-def normalise_coords(coords, low, high):
+# Normalise target value so all are in range [-1, 1]. Inputs must be ndarray.
+def normalise_target(coords, low, high):
     nlow = len(low)
     assert nlow == len(high)
     assert nlow == coords.shape[-1] or nlow == 1

@@ -16,8 +16,6 @@ from a2c_ppo_acktr.utils import get_render_func
 # workaround to unpickle olf model files
 import sys
 
-from im2state.utils import format_images, unnormalise_y, normalise_coords
-
 sys.path.append('a2c_ppo_acktr')
 
 parser = argparse.ArgumentParser(description='RL')
