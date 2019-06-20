@@ -272,7 +272,18 @@ scene_names = [
     'dish_rack',
 ]
 scene_names = [
-        'reach_over_wall',
+    'row_7',
+    'row_13',
+    'row_19',
+    'row_25',
+    'row_31',
+    'row_37',
+    'row_43',
+    'row_49',
+    'row_55',
+    'row_61',
+    'row_67',
+    'reach_over_wall_static',
 ]
 
 if __name__ == "__main__":
@@ -281,8 +292,6 @@ if __name__ == "__main__":
         for scene in scene_names:
             print(f"Training {scene} for {args.num_env_steps} timesteps")
             args.env_name = f'{base_name}_{scene}'
-            if scene == 'reach_over_wall':
-                args.num_env_steps = 4000000
             main(scene)
             args.initial_policy = args.env_name
     else:
