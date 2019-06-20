@@ -68,6 +68,7 @@ class DishRackEnv(SawyerEnv):
     def reset(self):
         super(DishRackEnv, self).reset()
         self.rack_pos[0] = self.np_random.uniform(rack_lower[0], rack_upper[0])
+        self.rack_pos[0] = 0.15
         self.rack_pos[1] = self.np_random.uniform(rack_lower[1], rack_upper[1])
         self.rack_rot[0] = self.np_random.uniform(rack_lower[2], rack_upper[2])
         vrep.simxSetObjectPosition(self.cid, self.rack_handle, -1, self.rack_pos,

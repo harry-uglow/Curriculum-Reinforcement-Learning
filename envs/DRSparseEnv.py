@@ -24,8 +24,6 @@ class DRSparseEnv(DishRackEnv):
         rew = rew_success * (1 - dist / max_dist)
 
         self.timestep += 1
-        if self.vis_mode:
-            self.randomise_domain()
         self.update_sim()
 
         ob = self._get_obs()
