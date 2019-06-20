@@ -68,7 +68,7 @@ def main(scene_path):
 
     envs = make_vec_envs(scene_path, args.seed, args.num_processes, args.gamma, args.log_dir,
                          args.add_timestep, device, False, initial_policies,
-                         pose_estimator=pose_estimator, e2e=args.e2e, show=True)
+                         pose_estimator=pose_estimator, e2e=args.e2e)
     if args.reuse_residual:
         vec_norm = get_vec_normalize(envs)
         if vec_norm is not None:
