@@ -68,7 +68,7 @@ def main(scene_path):
 
     envs = make_vec_envs(scene_path, args.seed, args.num_processes, args.gamma, args.log_dir,
                          args.add_timestep, device, False, initial_policies,
-                         pose_estimator=pose_estimator, e2e=args.e2e)
+                         pose_estimator=pose_estimator, e2e=args.e2e, show=True)
     if args.reuse_residual:
         vec_norm = get_vec_normalize(envs)
         if vec_norm is not None:
@@ -270,17 +270,10 @@ def full_pipeline():
         args.initial_policy = args.env_name
 
 scene_names = [
-    'dish_rack_pr_14',
-    'dish_rack_pr_16',
-    'dish_rack_pr_18',
-    'dish_rack_pr_20',
-    'dish_rack_pr_22',
     'dish_rack',
 ]
 
 if __name__ == "__main__":
-    full_pipeline()
-    exit(0)
     if args.reuse_residual:
         base_name = args.env_name
         base_ip = args.initial_policy
@@ -290,4 +283,4 @@ if __name__ == "__main__":
             main(scene)
             args.initial_policy = args.env_name
     else:
-        main('reach_no_wall')
+        main('dish_rack')

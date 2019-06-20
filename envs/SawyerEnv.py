@@ -36,6 +36,7 @@ class SawyerEnv(VrepEnv):
 
     def reset(self):
         initial_pose = self.np_random.multivariate_normal(self.init_joint_angles, self.identity)
+        initial_pose[0] -= 0.2
         self.call_lua_function('set_joint_angles', ints=self.init_config_tree, floats=initial_pose)
         self.target_velocities = np.array([0., 0., 0., 0., 0., 0., 0.])
 

@@ -83,7 +83,7 @@ class VrepEnv(Env):
         self.cid = vrep.simxStart(host, port_num, True, True, 5000, 5)
         catch_errors(vrep.simxSynchronous(self.cid, enable=True))
 
-        scene_path = os.path.join(scene_dir_path, f'{scene_name}.ttt')
+        scene_path = os.path.join(scene_dir_path, f'{scene_name}_{rank % 8}.ttt')
         catch_errors(vrep.simxLoadScene(self.cid, scene_path, 0, vrep.simx_opmode_blocking))
         atexit.register(self.close)
 
