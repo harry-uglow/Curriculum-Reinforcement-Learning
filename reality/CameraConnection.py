@@ -22,7 +22,7 @@ class CameraConnection:
         ret, img = self.cam.read()
         #img = np.array(cv2.cvtColor(cv2.imread('im_0.png'), cv2.COLOR_BGR2RGB))
         img = np.flipud(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-        return np.pad(img[:120, :120, :], ((4, 4), (4, 4), (0, 0)), 'edge')
+        return img[:120, :120, :]
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         cv2.destroyAllWindows()
