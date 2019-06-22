@@ -18,6 +18,8 @@ class RealEnv(Env):
 
     def step(self, action):
         action /= 5
+        #if self.timestep > 180:
+         #   action *= 1 - 0.1 * (self.timestep - 180)
        #action = np.zeros(self.num_joints)
        #if self.timestep < self.ep_len / 2:
        #    action[0] = 0.2
@@ -51,6 +53,8 @@ class RealEnv(Env):
 
         # SETS TO A NEUTRAL POSITION. Remove from dish rack first.
         # TODO: Does this return once done or immediately?
+        joint_angles = np.random.multivariate_normal(self._init_joint_angles, self.identity)
+        rospy.set_param('named_poses/right/poses/neutral', [float(a) for a in joint_angles])
         self.set_neutral()
 
         ob = self._get_obs()
@@ -60,7 +64,7 @@ class RealEnv(Env):
     def render(self, mode='rgb_array'):
         if mode == 'rgb_array':
             im = self.cam.get_image()
-            cv2.imwrite('im_' + str(self.timestep) + '.png', im)
+            cv2.imwrite(self.dir + '/' + str(self.timestep) + '.png', im)
             return im
         elif mode == 'activate':
             return self.res
@@ -71,10 +75,11 @@ class RealEnv(Env):
         else:
             raise NotImplementedError
 
-    def __init__(self, camera, resolution):
+    def __init__(self, camera, resolution, image_dir):
         """
         'Wobbles' both arms by commanding joint velocities sinusoidally.
         """
+        self.dir = image_dir
         print("Initializing node... ")
         rospy.init_node("rsdk_dish_rack")
         rospy.on_shutdown(self.clean_shutdown)
@@ -104,7 +109,8 @@ class RealEnv(Env):
         print "enabled"
         self._init_joint_angles = [self._right_arm.joint_angle(joint_name)
                                    for joint_name in self._right_joint_names]
-        rospy.set_param('named_poses/right/poses/neutral', self._init_joint_angles)
+        self._init_joint_angles = [-0.2962, -1.2494, -0.0097, 1.8775, -0.0382, 0.8524, 0.0410 - math.pi / 2]
+        self.identity = 0.001 * np.identity(self.num_joints)
 
         self._right_arm.set_command_timeout((1.0 / self._rate) * self._missed_cmds)
 

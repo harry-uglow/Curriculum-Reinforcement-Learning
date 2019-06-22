@@ -10,11 +10,8 @@ class CameraConnection:
     def __enter__(self):
         print "getting cam"
         self.cam = cv2.VideoCapture(self._loc)
-#       print self.cam.isOpened()
-        print "setting resolution" + str(self._res)
         self.cam.set(cv2.CAP_PROP_FRAME_WIDTH, self._res[0])
         self.cam.set(cv2.CAP_PROP_FRAME_HEIGHT, self._res[1])
-#       print "resolution set"
 
         return self
 

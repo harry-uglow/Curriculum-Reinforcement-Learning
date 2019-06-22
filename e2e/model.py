@@ -83,5 +83,5 @@ class E2ECNN(nn.Module):
     def predict(self, images, angles):
         x = torch.Tensor(images.cpu())
         for i in range(x.size(0)):
-            x[i] = self.normalize(x[i] / 255.0)
+            x[i] = self.normalize(x[i] )
         return self.forward((x.to(images.device), angles))

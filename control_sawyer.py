@@ -27,7 +27,8 @@ parser.add_argument(u'--pe-load-dir', default=u'./trained_models/im2state/',
                     help=u'directory to save agent logs (default: ./trained_models/)')
 
 parser.add_argument(u'--abs-to-rel', action=u'store_true', default=False)
-parser.add_argument(u'--device-num', default='0', help=u'select CUDA device')
+parser.add_argument(u'--device-num', default=u'0', help=u'select CUDA device')
+parser.add_argument(u'--dir', default=u'0', help=u'Directory to save images to')
 args = parser.parse_args()
 
 args.cuda = torch.cuda.is_available()
@@ -44,8 +45,8 @@ def make_env_fn(*args):
     return _thunk
 
 
-def make_env(device, camera):
-    env_fn = [make_env_fn(camera, [128, 128])]
+def make_env(device, camera, image_dir):
+    env_fn = [make_env_fn(camera, [128, 128], image_dir)]
     vec_env = DummyVecEnv(env_fn)
 
     vec_env = VecPyTorch(vec_env, device)
@@ -54,27 +55,30 @@ def make_env(device, camera):
 
 
 def main():
+    os.makedirs(args.dir)
     torch.set_num_threads(1)
     device = torch.device(u"cuda:" + args.device_num if args.cuda else u"cpu")
 
     e2e = torch.load(os.path.join(args.load_dir, args.policy_name + ".pt"),
                           map_location=device)
+    e2e.eval()
 
-    low = torch.Tensor([-0.3] * 7)
-    high = torch.Tensor([0.3] * 7)
+    low = torch.Tensor([-0.3] * 7).to(device)
+    high = torch.Tensor([0.3] * 7).to(device)
 
     #camera = None
     #if True:
-    with CameraConnection([128, 128]) as camera:
-        env = make_env(device, camera)
-        print u"Executing policy on real robot. Press Ctrl-C to stop..."
+    with torch.no_grad():
+        with CameraConnection([128, 128]) as camera:
+            env = make_env(device, camera, args.dir)
+            print u"Executing policy on real robot. Press Ctrl-C to stop..."
 
-        obs = env.reset()
-        while not rospy.is_shutdown():
-            images = torch.Tensor(np.transpose(env.get_images(), (0, 3, 1, 2))).to(device)
-            output = e2e.predict(images, obs[:, :7])
-            action = unnormalise_y(output, low, high)
-            obs = env.step(action)[0]
+            obs = env.reset()
+            while not rospy.is_shutdown():
+                images = torch.Tensor(np.transpose(env.get_images(), (0, 3, 1, 2))).to(device)
+                output = e2e.predict(images, obs[:, :7])
+                action = unnormalise_y(output, low, high)
+                obs = env.step(action)[0]
 
     print u"Done."
 
