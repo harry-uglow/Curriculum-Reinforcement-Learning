@@ -22,7 +22,6 @@ class BeadStackEnv(SawyerEnv):
                                    np.array([3.] * 7 + [math.inf] * 3 + [toy_upper[2]]),
                                    dtype=np.float32)
     timestep = 0
-    metadata = {'render.modes': ['human', 'rgb_array', 'activate']}
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -88,7 +87,6 @@ class BSSparseEnv(BeadStackEnv):
 
 
 class BSDenseEnv(BeadStackEnv):
-    scene_path = 'dish_rack_nr'
 
     def step(self, a):
         self.target_velocities = a

@@ -6,5 +6,9 @@ pipelines = {
         'bead_stack_3',
         'bead_stack_4',
         'bead_stack',
+    ],
+    'shelf': [
+        'shelf_nr',
+        'shelf',
     ]
 }

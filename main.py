@@ -172,7 +172,7 @@ def main(scene_path):
                 save_model = [save_model, getattr(get_vec_normalize(envs), 'ob_rms', None),
                               initial_policies]
 
-            torch.save(save_model, os.path.join(save_path, args.env_name + ".pt"))
+            torch.save(save_model, os.path.join(save_path, args.save_as + ".pt"))
 
         total_num_steps = (j + 1) * args.num_processes * args.num_steps
 
@@ -194,7 +194,7 @@ def main(scene_path):
                 and len(episode_rewards) > 1
                 and j % args.eval_interval == 0):
             eval_envs = make_vec_envs(
-                args.env_name, args.seed + args.num_processes, 1, args.gamma, eval_log_dir,
+                scene_path, args.seed + args.num_processes, 1, args.gamma, eval_log_dir,
                 args.add_timestep, device, True, show=True)
 
             vec_norm = get_vec_normalize(eval_envs)
@@ -235,22 +235,22 @@ def main(scene_path):
         if args.vis and (j % args.vis_interval == 0 or j == num_updates - 1):
             try:
                 # Sometimes monitor doesn't properly flush the outputs
-                visdom_plot(args.log_dir, args.env_name, args.algo, args.num_env_steps)
+                visdom_plot(args.log_dir, args.save_as, args.algo, args.num_env_steps)
             except IOError:
                 pass
     # Copy logs to permanent location so new graphs can be drawn.
-    copy_tree(args.log_dir, os.path.join('logs', args.env_name))
+    copy_tree(args.log_dir, os.path.join('logs', args.save_as))
     envs.close()
 
 
 if __name__ == "__main__":
     if args.pipeline is not None:
-        base_name = args.env_name
+        base_name = args.save_as
         for scene in pipelines[args.pipeline]:
             print(f"Training {scene} for {args.num_env_steps} timesteps")
-            args.env_name = f'{base_name}_{scene}'
+            args.save_as = f'{base_name}_{scene}'
             main(scene)
             args.reuse_residual = True
-            args.initial_policy = args.env_name
+            args.initial_policy = args.save_as
     else:
-        main(args.scene)
+        main(args.scene_name)

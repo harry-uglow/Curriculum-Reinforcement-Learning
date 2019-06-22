@@ -18,6 +18,7 @@ from envs.DRSparseEnv import DRSparseEnv
 from envs.ImageObsVecEnvWrapper import SimImageObsVecEnvWrapper
 from envs.ReachOverWallEnv import ReachNoWallEnv
 from envs.ResidualVecEnvWrapper import ResidualVecEnvWrapper
+from envs.ShelfStackEnv import SSDenseEnv
 from envs.wrappers import PoseEstimatorVecEnvWrapper, \
     ClipActions, E2EVecEnvWrapper
 from a2c_ppo_acktr.tuple_tensor import TupleTensor
@@ -40,7 +41,7 @@ except ImportError:
 
 def make_env(scene_path, seed, rank, log_dir, add_timestep, allow_early_resets, vis):
     def _thunk():
-        env = BSSparseEnv(scene_path, rank, not vis)
+        env = SSDenseEnv(scene_path, rank, not vis)
 
         env.seed(seed + rank)
 

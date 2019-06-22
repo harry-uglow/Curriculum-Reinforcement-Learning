@@ -55,8 +55,6 @@ def get_args():
                         help='Pipeline of scenes to use CuRL on')
     parser.add_argument('--scene-name', default=None,
                         help='An individual scene to load, cannot be used with --pipeline')
-    parser.add_argument('--pipeline', default='rack',
-                        help='Pipeline of scenes to use CuRL on')
     parser.add_argument('--initial-policy', default=None,
                         help='initial policy to use, located in trained_models/ppo/{name}.pt')
     parser.add_argument('--pose-estimator', default=None,
@@ -86,7 +84,6 @@ def get_args():
     parser.add_argument('--e2e', action='store_true', default=False,
                         help='Train an e2e policy (do not use full state observations)')
     # TODO: Remove
-    parser.add_argument('--save-as', default='i2s', help='Name to save im2state model under')
     parser.add_argument('--state-indices', nargs='+', type=int)
     parser.add_argument('--rel', action='store_true', default=False)
     parser.add_argument('--reuse-residual', action='store_true', default=False)
