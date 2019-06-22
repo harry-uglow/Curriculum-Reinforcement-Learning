@@ -118,6 +118,3 @@ class ReachNoWallEnv(ROWRandomTargetEnv):
 
         return ob, reward, done, dict(reward_dist=reward_dist, reward_ctrl=reward_ctrl)
 
-    def _get_obs(self):
-        full_obs = super(ReachNoWallEnv, self)._get_obs()
-        return full_obs[:-1]

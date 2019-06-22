@@ -15,6 +15,7 @@ from a2c_ppo_acktr.model import Policy
 from a2c_ppo_acktr.storage import RolloutStorage
 from a2c_ppo_acktr.utils import update_linear_schedule
 from a2c_ppo_acktr.visualize import visdom_plot
+from envs.pipelines import pipelines
 
 args = get_args()
 assert args.algo in ['a2c', 'ppo', 'acktr']
@@ -151,11 +152,6 @@ def main(scene_path):
 
         rollouts.after_update()
 
-        median_rew = np.median(episode_rewards)
-        min_rew = np.min(episode_rewards)
-        max_median_rew = max((max_median_rew, median_rew))
-        max_min_rew = max((max_min_rew, min_rew))
-
         # save for every interval-th episode or for the last epoch
         if (j % args.save_interval == 0 or j == num_updates - 1) and args.save_dir != "":
             print("Saving")
@@ -247,23 +243,14 @@ def main(scene_path):
     envs.close()
 
 
-scene_names = [
-    'bead_stack_nr',
-    'bead_stack_1',
-    'bead_stack_2',
-    'bead_stack_3',
-    'bead_stack_4',
-    'bead_stack',
-]
-
 if __name__ == "__main__":
-    if True:
+    if args.pipeline is not None:
         base_name = args.env_name
-        for scene in scene_names:
+        for scene in pipelines[args.pipeline]:
             print(f"Training {scene} for {args.num_env_steps} timesteps")
             args.env_name = f'{base_name}_{scene}'
             main(scene)
-            args.reuse_residual=True
+            args.reuse_residual = True
             args.initial_policy = args.env_name
     else:
-        main('bead_stack_nr')
+        main(args.scene)

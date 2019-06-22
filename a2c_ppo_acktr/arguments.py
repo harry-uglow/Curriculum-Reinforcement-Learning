@@ -49,8 +49,14 @@ def get_args():
                         help='vis interval, one log per n updates (default: 100)')
     parser.add_argument('--num-env-steps', type=int, default=10e6,
                         help='number of environment steps to train (default: 10e6)')
-    parser.add_argument('--env-name', default='PongNoFrameskip-v4',
-                        help='environment to train on (default: PongNoFrameskip-v4)')
+    parser.add_argument('--save-as', default=None,
+                        help='base name for saved policies')
+    parser.add_argument('--pipeline', default=None,
+                        help='Pipeline of scenes to use CuRL on')
+    parser.add_argument('--scene-name', default=None,
+                        help='An individual scene to load, cannot be used with --pipeline')
+    parser.add_argument('--pipeline', default='rack',
+                        help='Pipeline of scenes to use CuRL on')
     parser.add_argument('--initial-policy', default=None,
                         help='initial policy to use, located in trained_models/ppo/{name}.pt')
     parser.add_argument('--pose-estimator', default=None,
