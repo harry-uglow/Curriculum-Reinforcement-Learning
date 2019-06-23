@@ -119,7 +119,7 @@ def visdom_plot(folder, game, name, num_steps, bin_size=100,
     plt.xlim(0, num_steps * 1.01)
 
     plt.xlabel('Number of Timesteps')
-    plt.ylabel('Rewards')
+    plt.ylabel('Average Episode Returns')
 
     plt.title(game)
     plt.legend(loc=4)

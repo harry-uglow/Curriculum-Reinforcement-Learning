@@ -13,9 +13,10 @@ class SawyerEnv(VrepEnv):
     scale = 0.01
     identity = scale * np.identity(num_joints)
 
-    def __init__(self, *args):
+    def __init__(self, *args, random_joints=True):
         super().__init__(*args)
 
+        self.random_joints = random_joints
         self.np_random = np.random.RandomState()
 
         # Get the initial configuration of the robot (needed to later reset the robot's pose)
@@ -35,7 +36,10 @@ class SawyerEnv(VrepEnv):
         self.np_random.seed(seed)
 
     def reset(self):
-        initial_pose = self.np_random.multivariate_normal(self.init_joint_angles, self.identity)
+        if self.random_joints:
+            initial_pose = self.np_random.multivariate_normal(self.init_joint_angles, self.identity)
+        else:
+            initial_pose = self.init_joint_angles
         self.call_lua_function('set_joint_angles', ints=self.init_config_tree, floats=initial_pose)
         self.target_velocities = np.array([0., 0., 0., 0., 0., 0., 0.])
 

@@ -15,6 +15,7 @@ from a2c_ppo_acktr.model import Policy
 from a2c_ppo_acktr.storage import RolloutStorage
 from a2c_ppo_acktr.utils import update_linear_schedule
 from a2c_ppo_acktr.visualize import visdom_plot
+from envs.pipelines import pipelines
 
 args = get_args()
 assert args.algo in ['a2c', 'ppo', 'acktr']
@@ -22,6 +23,7 @@ if args.recurrent_policy:
     assert args.algo in ['a2c', 'ppo'], \
         'Recurrent policy is not implemented for ACKTR'
 
+num_updates = int(args.num_env_steps) // args.num_steps // args.num_processes
 
 torch.manual_seed(args.seed)
 torch.cuda.manual_seed_all(args.seed)
@@ -32,12 +34,6 @@ if args.cuda and torch.cuda.is_available() and args.cuda_deterministic:
 
 
 def main(scene_path):
-    print(f"Training {scene_path} for {args.num_env_steps} timesteps")
-    print(args.initial_policy)
-    print(args.env_name)
-    print(args.num_env_steps)
-    num_updates = int(args.num_env_steps) // args.num_steps // args.num_processes
-    print(num_updates)
     try:
         os.makedirs(args.log_dir)
     except OSError:
@@ -46,6 +42,8 @@ def main(scene_path):
             os.remove(f)
 
     eval_log_dir = args.log_dir + "_eval"
+    eval_x = []
+    eval_y = []
 
     try:
         os.makedirs(eval_log_dir)
@@ -87,14 +85,6 @@ def main(scene_path):
                           zero_last_layer=initial_policies is not None, base=base, dist=dist)
     actor_critic.to(device)
 
-    print(args.e2e)
-    print(not args.reuse_residual and args.e2e)
-    if not args.reuse_residual and args.e2e:
-        pretrained_cnn = torch.load(os.path.join('trained_models/im2state',
-                                                 "full_vgg16_16_diag_ren_l1_rpt.pt"))
-        actor_critic.base.conv_layers.load_state_dict(pretrained_cnn.conv_layers.state_dict())
-        #actor_critic.base.conv_layers.eval()
-
     if args.algo == 'a2c':
         agent = algo.A2C_ACKTR(actor_critic, args.value_loss_coef, args.entropy_coef, lr=args.lr,
                                eps=args.eps, alpha=args.alpha, max_grad_norm=args.max_grad_norm)
@@ -114,7 +104,9 @@ def main(scene_path):
     rollouts.obs[0].copy_(obs)
     rollouts.to(device)
 
-    episode_rewards = deque(maxlen=10)
+    episode_rewards = deque(maxlen=args.num_processes * args.num_steps // 48)  # ep_len = 48
+    max_min_rew = 0
+    max_median_rew = 0
 
     start = time.time()
     start_update = start
@@ -164,6 +156,7 @@ def main(scene_path):
 
         # save for every interval-th episode or for the last epoch
         if (j % args.save_interval == 0 or j == num_updates - 1) and args.save_dir != "":
+            print("Saving")
             save_path = os.path.join(args.save_dir, args.algo)
             try:
                 os.makedirs(save_path)
@@ -181,7 +174,8 @@ def main(scene_path):
                 save_model = [save_model, getattr(get_vec_normalize(envs), 'ob_rms', None),
                               initial_policies]
 
-            torch.save(save_model, os.path.join(save_path, args.env_name + ".pt"))
+            torch.save(save_model, os.path.join(save_path, args.save_as + ".pt"))
+            #torch.save(save_model, os.path.join(save_path, args.save_as + f"{j * args.num_processes * args.num_steps}.pt"))
 
         total_num_steps = (j + 1) * args.num_processes * args.num_steps
 
@@ -202,97 +196,53 @@ def main(scene_path):
         if (args.eval_interval is not None
                 and len(episode_rewards) > 1
                 and j % args.eval_interval == 0):
-            eval_envs = make_vec_envs(
-                args.env_name, args.seed + args.num_processes, 1, args.gamma, eval_log_dir,
-                args.add_timestep, device, True, show=True)
-
-            vec_norm = get_vec_normalize(eval_envs)
-            if vec_norm is not None:
-                vec_norm.eval()
-                vec_norm.ob_rms = get_vec_normalize(envs).ob_rms
-
-            eval_episode_rewards = []
-
-            obs = eval_envs.reset()
-            eval_recurrent_hidden_states = torch.zeros(args.num_processes,
-                            actor_critic.recurrent_hidden_state_size, device=device)
+            i = 0
+            total_successes = 0
+            max_trials = 50
+            eval_recurrent_hidden_states = torch.zeros(
+                args.num_processes, actor_critic.recurrent_hidden_state_size, device=device)
             eval_masks = torch.zeros(args.num_processes, 1, device=device)
+            while i + args.num_processes <= max_trials:
 
-            while len(eval_episode_rewards) < 1:
                 with torch.no_grad():
                     _, action, _, eval_recurrent_hidden_states = actor_critic.act(
                         obs, eval_recurrent_hidden_states, eval_masks, deterministic=True)
 
-                # Obser reward and next obs
-                obs, reward, done, infos = eval_envs.step(action)
+                obs, rews, dones, _ = envs.step(action)
 
-                eval_masks = torch.tensor([[0.0] if done_ else [1.0]
-                                           for done_ in done],
-                                           dtype=torch.float32,
-                                           device=device)
+                if np.all(dones):
+                    print(rews)
+                    i += args.num_processes
+                    rew = sum([int(rew > 0) for rew in rews])
+                    total_successes += rew
 
-                for info in infos:
-                    if 'episode' in info.keys():
-                        eval_episode_rewards.append(info['episode']['r'])
+            p_succ = (100 * total_successes / i)
+            eval_x += [total_num_steps]
+            eval_y += [p_succ]
 
-            eval_envs.close()
-
-            print(" Evaluation using {} episodes: mean reward {:.5f}\n".
-                format(len(eval_episode_rewards),
-                       np.mean(eval_episode_rewards)))
+            print(f"Evaluation: {total_successes} successful out of {i} episodes - "
+                  f"{p_succ:.2f}% successful\n")
+            torch.save([eval_x, eval_y], os.path.join(args.save_as + "_eval.pt"))
 
         if args.vis and (j % args.vis_interval == 0 or j == num_updates - 1):
             try:
                 # Sometimes monitor doesn't properly flush the outputs
-                visdom_plot(args.log_dir, args.env_name, args.algo, args.num_env_steps)
+                visdom_plot(args.log_dir, args.save_as, args.algo, args.num_env_steps)
             except IOError:
                 pass
     # Copy logs to permanent location so new graphs can be drawn.
-    copy_tree(args.log_dir, os.path.join('logs', args.env_name))
+    copy_tree(args.log_dir, os.path.join('logs', args.save_as))
     envs.close()
 
-def full_pipeline():
-    args.initial_policy = args.env_name
-    base_name = 'rel'
-    args.num_env_steps = 200000
-    for scene in scene_names:
-        args.env_name = f'{base_name}_{scene}'
-        if scene == 'reach_over_wall':
-            args.num_env_steps = 4000000
-        main(scene)
-        args.reuse_residual = True
-        args.initial_policy = args.env_name
-
-scene_names = [
-    'dish_rack_pr_14',
-    'dish_rack_pr_16',
-    'dish_rack_pr_18',
-    'dish_rack_pr_20',
-    'dish_rack_pr_22',
-    'dish_rack',
-]
-scene_names = [
-    'row_7',
-    'row_13',
-    'row_19',
-    'row_25',
-    'row_31',
-    'row_37',
-    'row_43',
-    'row_49',
-    'row_55',
-    'row_61',
-    'row_67',
-    'reach_over_wall_static',
-]
 
 if __name__ == "__main__":
-    if args.reuse_residual:
-        base_name = args.env_name
-        for scene in scene_names:
+    if args.pipeline is not None:
+        base_name = args.save_as
+        for scene in pipelines[args.pipeline]:
             print(f"Training {scene} for {args.num_env_steps} timesteps")
-            args.env_name = f'{base_name}_{scene}'
+            args.save_as = f'{base_name}_{scene}'
             main(scene)
-            args.initial_policy = args.env_name
+            args.reuse_residual = True
+            args.initial_policy = args.save_as
     else:
-        main('reach_over_wall')
+        main(args.scene_name)
