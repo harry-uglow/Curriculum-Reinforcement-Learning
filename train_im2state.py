@@ -31,25 +31,20 @@ def main():
     images, abs_positions, rel_positions, low, high= torch.load(
         os.path.join(args.load_dir, args.env_name + ".pt"))
     print("Loaded")
-    print(len(images))
     low = torch.Tensor(low).to(device)
     high = torch.Tensor(high).to(device)
-    print("Low and high bounds on GPU.")
 
     save_path = os.path.join('trained_models', 'im2state')
     try:
         os.makedirs(save_path)
     except OSError:
         pass
-    print("dirs up.")
 
     positions = rel_positions if args.rel else abs_positions
-    print("positions")
     print(positions.shape[1])
 
     net = PoseEstimator(3, positions.shape[1])
     net = net.to(device)
-    print("Net created")
     optimizer = optim.Adam(net.parameters(), lr=args.lr)
     criterion = custom_loss
 
@@ -65,7 +60,6 @@ def main():
     num_train_examples = num_samples - num_test_examples
     batch_size = 100
 
-    print("Setting up data.")
     test_indices = p[:num_test_examples]
     train_indices = p[num_test_examples:]
     test_x = images[test_indices]
