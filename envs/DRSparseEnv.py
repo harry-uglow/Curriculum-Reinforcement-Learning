@@ -3,7 +3,6 @@ import os
 import numpy as np
 from envs.DishRackEnv import DishRackEnv
 
-np.set_printoptions(precision=2, linewidth=200)  # DEBUG
 dir_path = os.getcwd()
 
 max_displacement = 0.015  # 1.5cm

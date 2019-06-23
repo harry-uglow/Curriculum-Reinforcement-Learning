@@ -31,7 +31,6 @@ def check_for_errors(code):
         raise RuntimeError('A connection to vrep has not been made yet. Have you called connect()?')
 
 
-# TODO: Make this the main one
 # Function to check for errors when calling a remote API function
 def catch_errors(input):
     if isinstance(input, tuple):

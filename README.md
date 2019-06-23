@@ -20,4 +20,10 @@ cd baselines
 pip install -e .
 ```
 
-Install V-REP, move remoteApi.so/.dylib to root folder.
+Install V-REP, move remoteApi.so (or .dylib) to root folder.
+
+## Branches
+
+* master - most code is here in Python 3.7
+* python2_... - branches with this prefix are written in Python 2.7 because \
+required packages for connecting to Sawyer robot are Python 2 ONLY

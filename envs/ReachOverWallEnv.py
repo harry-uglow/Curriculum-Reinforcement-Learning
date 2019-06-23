@@ -7,7 +7,6 @@ from envs.SawyerEnv import SawyerEnv
 
 from envs.VrepEnv import check_for_errors, catch_errors
 
-np.set_printoptions(precision=2, linewidth=200)  # DEBUG
 dir_path = os.getcwd()
 
 cube_lower = np.array([0.15, (-0.35), 0.025])

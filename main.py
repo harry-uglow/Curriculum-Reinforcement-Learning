@@ -160,7 +160,6 @@ def main(scene_path):
             except OSError:
                 pass
 
-            # TODO: Save better
             save_model = actor_critic
             if args.cuda:
                 save_model = copy.deepcopy(actor_critic).cpu()
