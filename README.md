@@ -1,6 +1,6 @@
 # Deep-RL-Sim2Real
 
-This project uses PPO as its main RL algorithm. [ikostrikov's implementation](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail) was used as a starting point for this repository. ikostrikov_license.txt contains the license for this implementation.
+This project uses PPO as its main RL algorithm. [ikostrikov's implementation](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail) was used as a starting point for this repository. ikostrikov_license.txt contains the license for this implementation. The project was forked at commit ddb89a5cc4df36396d17a73d4b6631fa3caca3b4 - any changes since then are my own.
 
 ## Requirements
 
