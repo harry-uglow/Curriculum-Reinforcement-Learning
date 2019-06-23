@@ -40,7 +40,6 @@ class DRNonRespondableEnv(DishRackEnv):
         orientation_diff = np.abs(self.get_plate_orientation()).sum()
 
         self.timestep += 1
-        self.randomise_domain()
         self.update_sim()
 
         ob = self._get_obs()

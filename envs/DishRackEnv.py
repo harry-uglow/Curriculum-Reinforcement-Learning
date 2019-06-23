@@ -21,7 +21,7 @@ class DishRackEnv(SawyerEnv):
     timestep = 0
     metadata = {'render.modes': ['human', 'rgb_array', 'activate']}
     max_cam_displace = 0.05
-    max_cam_rotation = 0.2  # ~2.9 deg
+    max_cam_rotation = 0.2
     max_light_displace = 1.
     max_cloth_rotation = 0.05
     max_height_displacement = 0.02
@@ -48,7 +48,7 @@ class DishRackEnv(SawyerEnv):
     def __init__(self, *args):
         super().__init__(*args)
 
-        self.ep_len = 48
+        self.ep_len = 32
 
         self.plate_handle = catch_errors(vrep.simxGetObjectHandle(self.cid,
                 "Plate_center", vrep.simx_opmode_blocking))
@@ -100,6 +100,8 @@ class DishRackEnv(SawyerEnv):
             self.cid, self.plate_handle, self.target_handle, vrep.simx_opmode_blocking))
         return np.array(orientation[:-1])
 
+    # Typical render modes are rgb_array and human. Others are abuse of the get_images/render
+    # functions for gathering training data from base environments.
     def render(self, mode='rgb_array'):
         if mode == 'rgb_array':
             return self._read_vision_sensor()
@@ -117,7 +119,7 @@ class DishRackEnv(SawyerEnv):
             mask[mask > 0] = 255
             return mask
         elif mode == 'human':
-            return  # Human rendering is automatically handled by headless mode.
+            return
             # TODO: Render footage from vision sensor
         elif mode == 'activate':
             assert not self.vis_mode
