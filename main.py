@@ -173,6 +173,7 @@ def main(scene_path):
                               initial_policies]
 
             torch.save(save_model, os.path.join(save_path, args.save_as + ".pt"))
+            #torch.save(save_model, os.path.join(save_path, args.save_as + f"{j * args.num_processes * args.num_steps}.pt"))
 
         total_num_steps = (j + 1) * args.num_processes * args.num_steps
 
