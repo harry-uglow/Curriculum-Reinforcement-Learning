@@ -9,6 +9,12 @@ pipelines = {
     ],
     'shelf': [
         'shelf_nr',
+        'shelf_55',
+        'shelf_75',
+        'shelf_95',
+        'shelf_115',
+        'shelf_135',
+        'shelf_155',
         'shelf',
     ]
 }
