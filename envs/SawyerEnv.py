@@ -10,7 +10,7 @@ class SawyerEnv(VrepEnv):
     action_space = spaces.Box(np.array([-0.3] * num_joints), np.array([0.3] * num_joints),
                               dtype=np.float32)
     target_velocities = np.array([0., 0., 0., 0., 0., 0., 0.])
-    scale = 0.001
+    scale = 0.01
     identity = scale * np.identity(num_joints)
 
     def __init__(self, *args, random_joints=True):

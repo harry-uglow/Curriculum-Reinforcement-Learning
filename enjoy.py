@@ -68,7 +68,7 @@ def main():
     pose_estimator_info = (estimator, args.state_indices, rack_lower, rack_upper) if \
         args.image_layer else None
 
-    env = make_vec_envs('shelf_155', args.seed + 1000, args.num_processes, None, None,
+    env = make_vec_envs('dish_rack', args.seed + 1000, args.num_processes, None, None,
                         args.add_timestep, device, False, policies, show=(args.num_processes == 1),
                         no_norm=True, pose_estimator=pose_estimator_info)
     null_action = torch.zeros((1, env.action_space.shape[0]))
@@ -76,7 +76,8 @@ def main():
     # Get a render function
     render_func = get_render_func(env)
 
-    env.get_images(mode='activate')
+    if e2e:
+        env.get_images(mode='activate')
     obs = env.reset()
 
     if render_func is not None:
