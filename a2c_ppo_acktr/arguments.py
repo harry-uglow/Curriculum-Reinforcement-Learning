@@ -83,10 +83,10 @@ def get_args():
                         help='port to run the server on (default: 8097)')
     parser.add_argument('--e2e', action='store_true', default=False,
                         help='Train an e2e policy (do not use full state observations)')
-    # TODO: Remove
+    parser.add_argument('--reuse-residual', action='store_true', default=False)
+    # TODO: Separate arguments for gather_training_images or train_im2state into their own parsers.
     parser.add_argument('--state-indices', nargs='+', type=int)
     parser.add_argument('--rel', action='store_true', default=False)
-    parser.add_argument('--reuse-residual', action='store_true', default=False)
     args = parser.parse_args()
 
     args.cuda = not args.no_cuda and torch.cuda.is_available()

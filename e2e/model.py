@@ -14,9 +14,9 @@ class Flatten(nn.Module):
         return x.view(x.size(0), -1)
 
 
-class PoseEstimator(nn.Module):
+class E2ECNN(nn.Module):
     def __init__(self, num_inputs, num_outputs):
-        super(PoseEstimator, self).__init__()
+        super(E2ECNN, self).__init__()
         self._output_size = num_outputs
 
         self.conv_layers = nn.Sequential(  # 120 x 120

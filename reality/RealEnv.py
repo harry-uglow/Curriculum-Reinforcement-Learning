@@ -7,7 +7,6 @@ from std_msgs.msg import UInt16
 from intera_interface import CHECK_VERSION, limb, RobotEnable
 
 
-# TODO: Build as a Gym env with wrappers for policies
 class RealEnv(Env):
     timestep = 0
     ep_len = 128
@@ -37,7 +36,6 @@ class RealEnv(Env):
         input("Move the arm into open space and press Enter to continue.")
 
         # SETS TO A NEUTRAL POSITION. Remove from dish rack first.
-        # TODO: Does this return once done or immediately?
         self.set_neutral()
 
         return self._get_obs()
@@ -54,7 +52,7 @@ class RealEnv(Env):
         rospy.on_shutdown(self.clean_shutdown)
 
         self._right_arm = limb.Limb("right")
-        self._right_joint_names = self._right_arm.joint_names()  # TODO: Select relevant
+        self._right_joint_names = self._right_arm.joint_names()
 
         # control parameters
         self._rate = 20.0  # Hz

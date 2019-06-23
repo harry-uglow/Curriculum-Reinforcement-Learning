@@ -8,8 +8,6 @@ from envs.SawyerEnv import SawyerEnv
 from envs.VrepEnv import catch_errors
 import math
 
-np.set_printoptions(precision=2, linewidth=200)  # DEBUG
-
 rack_lower = np.array([-0.05, (-0.6), -0.25])  # x, y, rotation
 rack_upper = np.array([0.15, (-0.45), 0.25])
 
