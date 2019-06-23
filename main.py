@@ -42,6 +42,8 @@ def main(scene_path):
             os.remove(f)
 
     eval_log_dir = args.log_dir + "_eval"
+    eval_x = []
+    eval_y = []
 
     try:
         os.makedirs(eval_log_dir)
@@ -194,44 +196,33 @@ def main(scene_path):
         if (args.eval_interval is not None
                 and len(episode_rewards) > 1
                 and j % args.eval_interval == 0):
-            eval_envs = make_vec_envs(
-                scene_path, args.seed + args.num_processes, 1, args.gamma, eval_log_dir,
-                args.add_timestep, device, True, show=True)
-
-            vec_norm = get_vec_normalize(eval_envs)
-            if vec_norm is not None:
-                vec_norm.eval()
-                vec_norm.ob_rms = get_vec_normalize(envs).ob_rms
-
-            eval_episode_rewards = []
-
-            obs = eval_envs.reset()
-            eval_recurrent_hidden_states = torch.zeros(args.num_processes,
-                            actor_critic.recurrent_hidden_state_size, device=device)
+            i = 0
+            total_successes = 0
+            max_trials = 50
+            eval_recurrent_hidden_states = torch.zeros(
+                args.num_processes, actor_critic.recurrent_hidden_state_size, device=device)
             eval_masks = torch.zeros(args.num_processes, 1, device=device)
+            while i + args.num_processes <= max_trials:
 
-            while len(eval_episode_rewards) < 1:
                 with torch.no_grad():
                     _, action, _, eval_recurrent_hidden_states = actor_critic.act(
                         obs, eval_recurrent_hidden_states, eval_masks, deterministic=True)
 
-                # Obser reward and next obs
-                obs, reward, done, infos = eval_envs.step(action)
+                obs, rews, dones, _ = envs.step(action)
 
-                eval_masks = torch.tensor([[0.0] if done_ else [1.0]
-                                           for done_ in done],
-                                           dtype=torch.float32,
-                                           device=device)
+                if np.all(dones):
+                    print(rews)
+                    i += args.num_processes
+                    rew = sum([int(rew > 0) for rew in rews])
+                    total_successes += rew
 
-                for info in infos:
-                    if 'episode' in info.keys():
-                        eval_episode_rewards.append(info['episode']['r'])
+            p_succ = (100 * total_successes / i)
+            eval_x += [total_num_steps]
+            eval_y += [p_succ]
 
-            eval_envs.close()
-
-            print(" Evaluation using {} episodes: mean reward {:.5f}\n".
-                format(len(eval_episode_rewards),
-                       np.mean(eval_episode_rewards)))
+            print(f"Evaluation: {total_successes} successful out of {i} episodes - "
+                  f"{p_succ:.2f}% successful\n")
+            torch.save([eval_x, eval_y], os.path.join(args.save_as + "_eval.pt"))
 
         if args.vis and (j % args.vis_interval == 0 or j == num_updates - 1):
             try:
