@@ -104,9 +104,7 @@ def main(scene_path):
     rollouts.obs[0].copy_(obs)
     rollouts.to(device)
 
-    episode_rewards = deque(maxlen=args.num_processes * args.num_steps // 48)  # ep_len = 48
-    max_min_rew = 0
-    max_median_rew = 0
+    episode_rewards = deque(maxlen=10)
 
     start = time.time()
     start_update = start
@@ -156,7 +154,6 @@ def main(scene_path):
 
         # save for every interval-th episode or for the last epoch
         if (j % args.save_interval == 0 or j == num_updates - 1) and args.save_dir != "":
-            print("Saving")
             save_path = os.path.join(args.save_dir, args.algo)
             try:
                 os.makedirs(save_path)

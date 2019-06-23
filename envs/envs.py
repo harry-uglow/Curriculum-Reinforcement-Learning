@@ -39,7 +39,7 @@ except ImportError:
 #     pass
 
 
-def make_env(scene_path, seed, rank, log_dir, add_timestep, allow_early_resets, vis, nr):
+def make_env(scene_path, seed, rank, log_dir, add_timestep, allow_early_resets, vis):
     def _thunk():
         env = DRSparseEnv(scene_path, rank, not vis)
 
@@ -108,7 +108,7 @@ def wrap_initial_policies(envs, device, initial_policies):
 def make_vec_envs(env_name, seed, num_processes, gamma, log_dir, add_timestep, device,
                   allow_early_resets, initial_policies, num_frame_stack=None, show=False,
                   no_norm=False, pose_estimator=None, image_ips=None, e2e=False):
-    envs = [make_env(env_name, seed, i, log_dir, add_timestep, allow_early_resets, show, initial_policies is None)
+    envs = [make_env(env_name, seed, i, log_dir, add_timestep, allow_early_resets, show)
             for i in range(num_processes)]
 
     if len(envs) > 1:
@@ -134,7 +134,7 @@ def make_vec_envs(env_name, seed, num_processes, gamma, log_dir, add_timestep, d
     if pose_estimator is not None:
         estimator, state_to_estimate, low, high = pose_estimator
         envs = wrap_initial_policies(envs, device, image_ips)
-        envs = PoseEstimatorVecEnvWrapper(envs, device, initial_policies, abs_to_rel=True)
+        envs = PoseEstimatorVecEnvWrapper(envs, device, *pose_estimator, abs_to_rel=True)
     if e2e:
         envs = wrap_initial_policies(envs, device, initial_policies)
 
