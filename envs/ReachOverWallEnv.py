@@ -5,7 +5,7 @@ from gym import spaces
 import vrep
 from envs.SawyerEnv import SawyerEnv
 
-from envs.VrepEnv import check_for_errors, catch_errors
+from envs.VrepEnv import check_for_errors
 
 dir_path = os.getcwd()
 
@@ -44,9 +44,6 @@ class ReachOverWallEnv(SawyerEnv):
         self.init_wall_rot = vrep.simxGetObjectOrientation(self.cid,
                 self.wall_handle, -1, vrep.simx_opmode_blocking)[1]
         self.wall_orientation = self.init_wall_rot
-        self.collision_handle = catch_errors(vrep.simxGetCollisionHandle(self.cid, "Collision",
-                                                                         vrep.simx_opmode_blocking))
-        self.collided = False
 
     def reset(self):
         super(ReachOverWallEnv, self).reset()
@@ -59,7 +56,6 @@ class ReachOverWallEnv(SawyerEnv):
         vrep.simxSetObjectOrientation(self.cid, self.wall_handle, -1, self.init_wall_rot,
                                      vrep.simx_opmode_blocking)
         self.timestep = 0
-        self.collided = False
 
         return self._get_obs()
 
@@ -103,11 +99,7 @@ class ROWSparseEnv(ReachOverWallEnv):
         displacement = np.abs(self.get_vector(self.target_handle, self.end_handle))
 
         rew_success = 0.1 if np.all(displacement <= max_displacement) else 0
-        if catch_errors(vrep.simxReadCollision(self.cid, self.collision_handle,
-                                               vrep.simx_opmode_blocking)):
-            self.collided = True
-        reward_obstacle = - 0.05 if self.collided else 0
-        rew = rew_success + reward_obstacle
+        rew = rew_success
 
         self.timestep += 1
         self.update_sim()
@@ -115,7 +107,7 @@ class ROWSparseEnv(ReachOverWallEnv):
         ob = self._get_obs()
         done = (self.timestep == self.ep_len)
 
-        return ob, rew, done, dict(rew_success=rew_success, reward_obstacle=reward_obstacle)
+        return ob, rew, done, dict(rew_success=rew_success)
 
 
 class ReachNoWallEnv(ROWSparseEnv):
