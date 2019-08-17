@@ -33,5 +33,14 @@ pipelines = {
         'row_61',
         'row_67',
         'reach_over_wall_static',
-    ]
+    ],
+    'rack': [
+        'dish_rack_nr',
+        'dish_rack_pr_14',
+        'dish_rack_pr_16',
+        'dish_rack_pr_18',
+        'dish_rack_pr_20',
+        'dish_rack_pr_22',
+        'dish_rack',
+    ],
 }
