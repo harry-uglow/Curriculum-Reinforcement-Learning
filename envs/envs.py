@@ -38,7 +38,7 @@ def make_env(scene_path, seed, rank, log_dir, add_timestep, allow_early_resets, 
     def _thunk():
         # Swap DRSparseEnv for required environment class.
         # TODO: Pass in environment class or use registration as in baselines.
-        env = DRSparseEnv(scene_path, rank, not vis)
+        env = DRNonRespondableEnv(scene_path, rank, not vis)
 
         env.seed(seed + rank)
 
