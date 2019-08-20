@@ -46,7 +46,7 @@ class DishRackEnv(SawyerEnv):
     def __init__(self, *args):
         super().__init__(*args)
 
-        self.ep_len = 48
+        self.ep_len = 64
 
         self.plate_handle = catch_errors(vrep.simxGetObjectHandle(self.cid,
                 "Plate_center", vrep.simx_opmode_blocking))
@@ -58,8 +58,6 @@ class DishRackEnv(SawyerEnv):
                 "DefaultOrientation", vrep.simx_opmode_blocking))
         self.rack_rot = catch_errors(vrep.simxGetObjectOrientation(self.cid, self.rack_handle,
                 self.rack_rot_ref, vrep.simx_opmode_blocking))
-        self.collision_handle = catch_errors(vrep.simxGetCollisionHandle(self.cid,
-                "Collision", vrep.simx_opmode_blocking))
         self.target_handle = catch_errors(vrep.simxGetObjectHandle(self.cid,
                 "Target", vrep.simx_opmode_blocking))
 

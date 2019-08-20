@@ -51,7 +51,7 @@ class SawyerEnv(VrepEnv):
         return joint_angles
 
     def update_sim(self):
-        self.call_lua_function('update_robot_movement', floats=self.target_velocity * 0.1)
+        self.call_lua_function('update_robot_movement', floats=self.target_velocity * 0.05)
 
         vrep.simxSynchronousTrigger(self.cid)
         vrep.simxGetPingTime(self.cid)
