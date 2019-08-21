@@ -21,6 +21,7 @@ pipelines = {
         'shelf',
     ],
     'wall': [
+        'reach_no_wall',
         'row_7',
         'row_13',
         'row_19',

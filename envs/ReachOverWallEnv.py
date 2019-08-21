@@ -20,14 +20,15 @@ class ReachOverWallEnv(SawyerEnv):
     scene_path = dir_path + '/reach_over_wall.ttt'
     observation_space = spaces.Box(np.array([0] * 11), np.array([1] * 11), dtype=np.float32)
     timestep = 0
+    action_space = spaces.Box(np.array([-0.1] * 3), np.array([0.1] * 3), dtype=np.float32)
 
     def __init__(self, *args):
         super().__init__(*args)
 
-        self.ep_len = 100
+        self.ep_len = 128
 
         return_code, self.end_handle = vrep.simxGetObjectHandle(self.cid,
-                "Waypoint_tip", vrep.simx_opmode_blocking)
+                "Target_tip", vrep.simx_opmode_blocking)
         check_for_errors(return_code)
         self.end_pose = self.get_end_pose()
         return_code, self.target_handle = vrep.simxGetObjectHandle(self.cid,
@@ -60,7 +61,7 @@ class ReachOverWallEnv(SawyerEnv):
         return self._get_obs()
 
     def step(self, a):
-        self.target_velocities = a  # Residual RL
+        self.target_point = a
         vec = self.get_end_pose() - self.target_pos
 
         self.timestep += 1
@@ -72,7 +73,7 @@ class ReachOverWallEnv(SawyerEnv):
         done = (self.timestep == self.ep_len)
 
         reward_dist = - np.linalg.norm(vec)
-        reward_ctrl = - np.square(self.target_velocities).mean()
+        reward_ctrl = - np.square(self.target_point).mean()
         reward_obstacle = - np.abs(self.wall_orientation).sum()
         reward = 0.01 * (reward_dist + 0.1 * reward_ctrl + 0.1 * reward_obstacle)
 
@@ -95,7 +96,7 @@ class ReachOverWallEnv(SawyerEnv):
 class ROWSparseEnv(ReachOverWallEnv):
 
     def step(self, a):
-        self.target_velocities = a  # Residual RL
+        self.target_point = a
         displacement = np.abs(self.get_vector(self.target_handle, self.end_handle))
 
         rew_success = 0.1 if np.all(displacement <= max_displacement) else 0
@@ -113,7 +114,7 @@ class ROWSparseEnv(ReachOverWallEnv):
 class ReachNoWallEnv(ROWSparseEnv):
 
     def step(self, a):
-        self.target_velocities = a
+        self.target_point = a
         vec = self.get_end_pose() - self.target_pos
 
         self.timestep += 1
@@ -123,7 +124,7 @@ class ReachNoWallEnv(ROWSparseEnv):
         done = (self.timestep == self.ep_len)
 
         reward_dist = - np.linalg.norm(vec)
-        reward_ctrl = - np.square(self.target_velocities).mean()
+        reward_ctrl = - np.square(self.target_point).mean()
         reward = 0.01 * (reward_dist + reward_ctrl)
 
         return ob, reward, done, dict(reward_dist=reward_dist, reward_ctrl=reward_ctrl)

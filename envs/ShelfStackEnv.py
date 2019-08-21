@@ -52,7 +52,7 @@ class ShelfStackEnv(SawyerEnv):
 class SSSparseEnv(ShelfStackEnv):
 
     def step(self, a):
-        self.target_velocities = a
+        self.target_point = a
         displacement = np.abs(self.get_vector(self.target_handle, self.mug_h))
         orientation_diff = np.abs(self.get_mug_orientation())
 
@@ -72,7 +72,7 @@ class SSSparseEnv(ShelfStackEnv):
 class SSDenseEnv(ShelfStackEnv):
 
     def step(self, a):
-        self.target_velocities = a
+        self.target_point = a
         dist = self.get_distance(self.target_handle, self.mug_h)
         orientation_diff = np.abs(self.get_mug_orientation()).sum()
 
@@ -83,7 +83,7 @@ class SSDenseEnv(ShelfStackEnv):
         done = (self.timestep == self.ep_len)
 
         rew_dist = - dist
-        rew_ctrl = - np.square(np.abs(self.target_velocities).mean())
+        rew_ctrl = - np.square(np.abs(self.target_point).mean())
         rew_orientation = - orientation_diff / max(dist, 0.04)  # Radius = 0.04
         rew = 0.1 * (rew_dist + rew_ctrl + 0.05 * rew_orientation)
 

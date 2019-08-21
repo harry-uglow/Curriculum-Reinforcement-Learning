@@ -13,7 +13,7 @@ max_rot = 0.1  # ~5.7 deg
 class DRSparseEnv(DishRackEnv):
 
     def step(self, a):
-        self.target_velocity = a
+        self.target_point = a
         displacement = np.abs(self.get_vector(self.target_handle, self.plate_handle))
         orientation_diff = np.abs(self.get_plate_orientation())
 

@@ -45,7 +45,7 @@ class SawyerReacherEnv(SawyerEnv):
         return self._get_obs()
 
     def step(self, a):
-        self.target_velocities = a
+        self.target_point = a
         vec = self.get_end_pose() - self.target_pose
         reward_dist = - np.linalg.norm(vec) / 100.
 
@@ -55,7 +55,7 @@ class SawyerReacherEnv(SawyerEnv):
         ob = self._get_obs()
         done = (self.timestep == self.ep_len)
 
-        reward_ctrl = - np.square(self.target_velocities).mean() / 100.
+        reward_ctrl = - np.square(self.target_point).mean() / 100.
         reward = reward_dist + reward_ctrl
 
         return ob, reward, done, dict(reward_dist=reward_dist,

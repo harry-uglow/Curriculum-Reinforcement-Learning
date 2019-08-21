@@ -8,7 +8,7 @@ from envs.VrepEnv import catch_errors, VrepEnv
 class SawyerEnv(VrepEnv):
     num_joints = 7
     action_space = spaces.Box(np.array([-0.1] * 5), np.array([0.1] * 5), dtype=np.float32)
-    target_velocity = np.array([0.] * 5)
+    target_point = np.array([0.] * 5)
     scale = 0.01
     identity = scale * np.identity(num_joints)
 
@@ -42,7 +42,7 @@ class SawyerEnv(VrepEnv):
         else:
             initial_pose = self.init_joint_angles
         self.call_lua_function('set_joint_angles', ints=self.init_config_tree, floats=initial_pose)
-        self.target_velocity = np.array([0.] * 5)
+        self.target_point = np.array([0.] * 5)
 
     def _get_obs(self):
         _, joint_angles, _, _ = self.call_lua_function('get_joint_angles')
@@ -51,7 +51,7 @@ class SawyerEnv(VrepEnv):
         return joint_angles
 
     def update_sim(self):
-        self.call_lua_function('update_robot_movement', floats=self.target_velocity * 0.05)
+        self.call_lua_function('update_robot_movement', floats=self.target_point * 0.05)
 
         vrep.simxSynchronousTrigger(self.cid)
         vrep.simxGetPingTime(self.cid)
