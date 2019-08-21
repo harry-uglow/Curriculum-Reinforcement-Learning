@@ -24,7 +24,7 @@ class ShelfStackEnv(SawyerEnv):
     def __init__(self, *args):
         super().__init__(*args, random_joints=False)
 
-        self.ep_len = 64
+        self.ep_len = 100
 
         self.mug_h = catch_errors(vrep.simxGetObjectHandle(self.cid,
                 "Mug_center", vrep.simx_opmode_blocking))
