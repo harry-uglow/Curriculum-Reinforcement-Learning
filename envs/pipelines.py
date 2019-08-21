@@ -8,8 +8,8 @@ pipelines = {
         'bead_stack',
     ],
     'shelf': [
-        'shelf_nr',
-        'shelf_55',
+        # 'shelf_nr',
+        'shelf_50',
         # 'shelf_75',
         'shelf_95',
         # 'shelf_115',
