@@ -110,9 +110,7 @@ class InitialController(ActionWrapper):
         self.base_env = env.unwrapped
 
     def action(self, action):
-        target_pos = self.base_env.get_position(self.base_env.target_handle)
-        end_pos = self.base_env.get_position(self.base_env.subject_handle)
-        vec = target_pos - end_pos
+        vec = self.base_env.target_pos - self.base_env.subject_pos
         if not ((vec >= self.action_space.low[0]) & (vec <= self.action_space.high[0])).all():
             vec /= np.max(np.abs(vec))
             vec *= self.action_space.high[0]

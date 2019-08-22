@@ -28,8 +28,8 @@ class SawyerEnv(VrepEnv):
             handle = catch_errors(vrep.simxGetObjectHandle(self.cid, 'Sawyer_joint' + str(i + 1),
                                                            vrep.simx_opmode_blocking))
             self.joint_handles[i] = handle
-        self.mv_target = catch_errors(vrep.simxGetObjectHandle(self.cid, 'MvTarget',
-                                                               vrep.simx_opmode_blocking))
+        self.subject_pos = [0.]*3
+        self.target_pos = [0.]*3
 
         # Start the simulation (the "Play" button in V-Rep should now be in a "Pressed" state)
         catch_errors(vrep.simxStartSimulation(self.cid, vrep.simx_opmode_blocking))

@@ -87,7 +87,9 @@ class DishRackEnv(SawyerEnv):
 
     def _get_obs(self):
         joint_obs = super(DishRackEnv, self)._get_obs()
-        pos_vector = self.get_position(self.target_handle) - self.get_position(self.subject_handle)
+        self.target_pos = self.get_position(self.target_handle)
+        self.subject_pos = self.get_position(self.subject_handle)
+        pos_vector = self.target_pos - self.subject_pos
 
         return np.concatenate((joint_obs, pos_vector, self.rack_rot[:1]))
 
