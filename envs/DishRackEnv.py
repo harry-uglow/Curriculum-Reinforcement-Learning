@@ -28,7 +28,7 @@ class DishRackEnv(SawyerEnv):
     vis_mode = False
     vis_handle = None
     res = None
-    plate_handle = None
+    subject_handle = None
     cloth_handle = None
     init_cam_pos = None
     init_cam_rot = None
@@ -48,7 +48,7 @@ class DishRackEnv(SawyerEnv):
 
         self.ep_len = 64
 
-        self.plate_handle = catch_errors(vrep.simxGetObjectHandle(self.cid,
+        self.subject_handle = catch_errors(vrep.simxGetObjectHandle(self.cid,
                 "Plate_center", vrep.simx_opmode_blocking))
         self.rack_handle = catch_errors(vrep.simxGetObjectHandle(self.cid,
                 "DishRack", vrep.simx_opmode_blocking))
@@ -87,13 +87,13 @@ class DishRackEnv(SawyerEnv):
 
     def _get_obs(self):
         joint_obs = super(DishRackEnv, self)._get_obs()
-        pos_vector = self.get_position(self.target_handle) - self.get_position(self.plate_handle)
+        pos_vector = self.get_position(self.target_handle) - self.get_position(self.subject_handle)
 
         return np.concatenate((joint_obs, pos_vector, self.rack_rot[:1]))
 
     def get_plate_orientation(self):
         orientation = catch_errors(vrep.simxGetObjectOrientation(
-            self.cid, self.plate_handle, self.target_handle, vrep.simx_opmode_blocking))
+            self.cid, self.subject_handle, self.target_handle, vrep.simx_opmode_blocking))
         return np.array(orientation[:-1])
 
     # Typical render modes are rgb_array and human. Others are abuse of the get_images/render
@@ -105,7 +105,7 @@ class DishRackEnv(SawyerEnv):
             pos = self.get_position(self.target_handle)
             return np.append(pos[:-1], self.rack_rot[:1])
         elif mode == 'plate':
-            return self.get_position(self.plate_handle)
+            return self.get_position(self.subject_handle)
         elif mode == 'target_height':
             return self.get_position(self.target_handle)[-1:]
         elif mode == 'action':
@@ -139,7 +139,7 @@ class DishRackEnv(SawyerEnv):
                                                                 "Vision_sensor",
                                                                 vrep.simx_opmode_blocking))
         self.res = self.call_lua_function('get_resolution')[0]
-        self.plate_handle = catch_errors(vrep.simxGetObjectHandle(self.cid, "Plate",
+        self.subject_handle = catch_errors(vrep.simxGetObjectHandle(self.cid, "Plate",
                                                                   vrep.simx_opmode_blocking))
         self.cloth_handle = catch_errors(vrep.simxGetObjectHandle(self.cid, "Cloth",
                                                                   vrep.simx_opmode_blocking))
@@ -155,7 +155,7 @@ class DishRackEnv(SawyerEnv):
         def init_color(handle, scale):
             return [(handle, self.call_lua_function('get_color', ints=[handle])[1], scale)]
 
-        self.init_colors += init_color(self.plate_handle, 0.025)
+        self.init_colors += init_color(self.subject_handle, 0.025)
         self.init_colors += init_color(self.rack_handle, 0.05)
         self.init_colors += init_color(self.cloth_handle, 0.05)
 

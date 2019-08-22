@@ -14,7 +14,7 @@ class DRSparseEnv(DishRackEnv):
 
     def step(self, a):
         self.target_point = a
-        displacement = np.abs(self.get_vector(self.target_handle, self.plate_handle))
+        displacement = np.abs(self.get_vector(self.target_handle, self.subject_handle))
         orientation_diff = np.abs(self.get_plate_orientation())
 
         rew_success = 0.1 if np.all(orientation_diff <= max_rot) and \

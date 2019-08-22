@@ -3,8 +3,10 @@ import torch
 from baselines.common.vec_env import VecEnvWrapper
 from gym import spaces, ActionWrapper
 
+import vrep
 from envs.ImageObsVecEnvWrapper import get_image_obs_wrapper
 from envs.ResidualVecEnvWrapper import get_residual_layers
+from envs.VrepEnv import catch_errors
 from im2state.utils import unnormalise_y
 
 
@@ -100,3 +102,30 @@ class E2EVecEnvWrapper(VecEnvWrapper):
         self.curr_state_obs = obs
         image_obs = np.transpose(self.venv.get_images(), (0, 3, 1, 2))
         return (image_obs, self.curr_state_obs), rew, done, info
+
+
+class InitialController(ActionWrapper):
+    def __init__(self, env):
+        super(InitialController, self).__init__(env)
+        self.base_env = env.unwrapped
+
+    def action(self, action):
+        target_pos = self.base_env.get_position(self.base_env.target_handle)
+        end_pos = self.base_env.get_position(self.base_env.subject_handle)
+        vec = target_pos - end_pos
+        if not ((vec >= self.action_space.low[0]) & (vec <= self.action_space.high[0])).all():
+            vec /= np.max(np.abs(vec))
+            vec *= self.action_space.high[0]
+
+        full_vec = vec + action[:3] * 0.02
+
+        if not ((full_vec >= self.action_space.low[0]) & (full_vec <= self.action_space.high[
+            0])).all():
+            full_vec /= np.max(np.abs(full_vec))
+            full_vec *= self.action_space.high[0]
+
+        rot = action[3:]
+
+        full_action = np.append(full_vec, rot)
+
+        return full_action

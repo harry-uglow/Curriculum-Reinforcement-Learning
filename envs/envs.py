@@ -19,7 +19,8 @@ from envs.ImageObsVecEnvWrapper import SimImageObsVecEnvWrapper
 from envs.ReachOverWallEnv import ReachNoWallEnv, ROWSparseEnv
 from envs.ResidualVecEnvWrapper import ResidualVecEnvWrapper
 from envs.ShelfStackEnv import SSDenseEnv, SSSparseEnv
-from envs.wrappers import PoseEstimatorVecEnvWrapper, ClipActions, E2EVecEnvWrapper
+from envs.wrappers import PoseEstimatorVecEnvWrapper, ClipActions, E2EVecEnvWrapper, \
+    InitialController
 from a2c_ppo_acktr.tuple_tensor import TupleTensor
 
 try:
@@ -37,11 +38,12 @@ def make_env(scene_path, seed, rank, log_dir, add_timestep, allow_early_resets, 
     def _thunk():
         # Swap DRSparseEnv for required environment class.
         # TODO: Pass in environment class or use registration as in baselines.
-        env = SSSparseEnv(scene_path, rank, not vis)
+        env = DRSparseEnv(scene_path, rank, not vis)
 
         env.seed(seed + rank)
 
         # env = ClipActions(env)
+        env = InitialController(env)
 
         if log_dir is not None:
             env = bench.Monitor(env, os.path.join(log_dir, str(rank)),

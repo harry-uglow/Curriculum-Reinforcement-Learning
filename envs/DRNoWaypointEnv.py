@@ -11,7 +11,7 @@ class DRNoWaypointEnv(DishRackEnv):
 
     def step(self, a):
         self.target_point = a
-        dist = self.get_distance(self.target_handle, self.plate_handle)
+        dist = self.get_distance(self.target_handle, self.subject_handle)
         orientation_diff = np.abs(self.get_plate_orientation()).sum()
         rew_collision = - int(catch_errors(vrep.simxReadCollision(
             self.cid, self.collision_handle, vrep.simx_opmode_blocking)))
@@ -35,7 +35,7 @@ class DRNonRespondableEnv(DishRackEnv):
 
     def step(self, a):
         self.target_point = a
-        dist = self.get_distance(self.target_handle, self.plate_handle)
+        dist = self.get_distance(self.target_handle, self.subject_handle)
         orientation_diff = np.abs(self.get_plate_orientation()).sum()
 
         self.timestep += 1
