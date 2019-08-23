@@ -17,10 +17,8 @@ class DRSparseEnv(DishRackEnv):
         displacement = np.abs(self.get_vector(self.target_handle, self.subject_handle))
         orientation_diff = np.abs(self.get_plate_orientation())
 
-        rew_success = 0.1 if np.all(orientation_diff <= max_rot) and \
+        rew = 0.1 if np.all(orientation_diff <= max_rot) and \
                              np.all(displacement <= max_displacement) else 0
-        dist = np.linalg.norm(displacement)
-        rew = rew_success * (1 - dist / max_dist)
 
         self.timestep += 1
         if self.vis_mode:
@@ -30,4 +28,4 @@ class DRSparseEnv(DishRackEnv):
         ob = self._get_obs()
         done = (self.timestep == self.ep_len)
 
-        return ob, rew, done, dict(rew_success=rew_success)
+        return ob, rew, done, dict(rew_success=rew)

@@ -34,11 +34,10 @@ except ImportError:
     pass
 
 
-def make_env(scene_path, seed, rank, log_dir, add_timestep, allow_early_resets, vis):
+def make_env(env_name, scene_path, seed, rank, log_dir, add_timestep, allow_early_resets, vis):
     def _thunk():
         # Swap DRSparseEnv for required environment class.
-        # TODO: Pass in environment class or use registration as in baselines.
-        env = SSSparseEnv(scene_path, rank, not vis)
+        env = env_name(scene_path, rank, not vis)
 
         env.seed(seed + rank)
 
@@ -62,10 +61,10 @@ def wrap_initial_policies(envs, device, initial_policies):
     return envs
 
 
-def make_vec_envs(env_name, seed, num_processes, gamma, log_dir, add_timestep, device,
+def make_vec_envs(env_name, scene_path, seed, num_processes, gamma, log_dir, add_timestep, device,
                   allow_early_resets, initial_policies, num_frame_stack=None, show=False,
                   no_norm=False, pose_estimator=None, image_ips=None, e2e=False):
-    envs = [make_env(env_name, seed, i, log_dir, add_timestep, allow_early_resets, show)
+    envs = [make_env(env_name, scene_path, seed, i, log_dir, add_timestep, allow_early_resets, show)
             for i in range(num_processes)]
 
     if len(envs) > 1:

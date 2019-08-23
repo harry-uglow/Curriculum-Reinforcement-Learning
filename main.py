@@ -34,7 +34,7 @@ if args.cuda and torch.cuda.is_available() and args.cuda_deterministic:
     torch.backends.cudnn.deterministic = True
 
 
-def main(scene_path):
+def main(env, scene_path):
     try:
         os.makedirs(args.log_dir)
     except OSError:
@@ -71,7 +71,7 @@ def main(scene_path):
                                              args.pose_estimator + ".pt")) \
         if args.pose_estimator else None
 
-    envs = make_vec_envs(scene_path, args.seed, args.num_processes, args.gamma, args.log_dir,
+    envs = make_vec_envs(env, scene_path, args.seed, args.num_processes, args.gamma, args.log_dir,
                          args.add_timestep, device, False, initial_policies,
                          pose_estimator=pose_estimator, e2e=args.e2e)
     if args.reuse_residual:
@@ -278,25 +278,27 @@ def curriculum_with_metric():
     if args.eval_interval is None:
         raise ValueError("Need to set eval_interval to evaluate success rate")
     args.use_linear_lr_decay = False
-    training_lengths = execute_curriculum(pipelines[args.pipeline][:-1])
-    scene = pipelines[args.pipeline][-1]
+    env, stages = pipelines[args.pipeline]
+    training_lengths = execute_curriculum(stages[:-1])
+    scene = stages[-1]
     print(f"Training on {scene} full task:")
     args.save_as = f'{base_name}_{scene}'
     args.trg_succ_rate = 101
-    training_lengths += [main(scene)]
+    training_lengths += [main(env, scene)]
     print(training_lengths)
     save_path = os.path.join(args.save_dir, args.algo)
     torch.save(training_lengths, os.path.join(save_path, args.save_as + "_train_lengths.pt"))
 
 
-def execute_curriculum(stages):
+def execute_curriculum(pipeline):
+    env, stages = pipeline
     training_lengths = []
     criteria_string = f"until {args.trg_succ_rate}% successful" if use_metric \
         else f"for {args.num_env_steps} timesteps"
     for scene in stages:
         print(f"Training {scene} {criteria_string}")
         args.save_as = f'{base_name}_{scene}'
-        training_lengths += [main(scene)]
+        training_lengths += [main(env, scene)]
         args.reuse_residual = True
         args.initial_policy = args.save_as
     return training_lengths
@@ -309,4 +311,4 @@ if __name__ == "__main__":
         else:
             execute_curriculum(pipelines[args.pipeline])
     else:
-        main(args.scene_name)
+        main(None, args.scene_name)  # TODO

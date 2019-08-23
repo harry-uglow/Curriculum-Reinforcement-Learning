@@ -9,6 +9,7 @@ from tqdm import tqdm
 
 from envs.DishRackEnv import rack_lower, rack_upper
 from envs.ResidualVecEnvWrapper import get_residual_layers
+from envs.ShelfStackEnv import SSSparseEnv
 from envs.envs import make_vec_envs, get_vec_normalize
 from a2c_ppo_acktr.utils import get_render_func
 
@@ -68,7 +69,7 @@ def main():
     pose_estimator_info = (estimator, args.state_indices, rack_lower, rack_upper) if \
         args.image_layer else None
 
-    env = make_vec_envs('dish_rack', args.seed + 1000, args.num_processes, None, None,
+    env = make_vec_envs(SSSparseEnv, 'shelf_300', args.seed + 1000, args.num_processes, None, None,
                         args.add_timestep, device, False, policies, show=(args.num_processes == 1),
                         no_norm=True, pose_estimator=pose_estimator_info)
     null_action = torch.zeros((1, env.action_space.shape[0]))

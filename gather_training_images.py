@@ -6,6 +6,7 @@ import torch
 from PIL import Image
 
 from a2c_ppo_acktr.arguments import get_args
+from envs.DRSparseEnv import DRSparseEnv
 from envs.DishRackEnv import rack_lower, rack_upper
 from envs.envs import make_vec_envs
 
@@ -29,7 +30,7 @@ def main():
 
     policies = torch.load(os.path.join(args.load_dir, 'ppo', args.env_name + ".pt"))
 
-    envs = make_vec_envs('dish_rack', args.seed + 1000, args.num_processes, args.gamma,
+    envs = make_vec_envs(DRSparseEnv, 'dish_rack', args.seed + 1000, args.num_processes, args.gamma,
                          args.log_dir, args.add_timestep, device, False, policies,
                          no_norm=True, show=(args.num_processes == 1))
 
