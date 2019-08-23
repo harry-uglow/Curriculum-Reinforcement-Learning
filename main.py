@@ -23,8 +23,8 @@ if args.recurrent_policy:
     assert args.algo in ['a2c', 'ppo'], \
         'Recurrent policy is not implemented for ACKTR'
 
-num_updates = int(args.num_env_steps) // args.num_steps // args.num_processes
-
+base_name = args.save_as
+use_metric = args.trg_succ_rate is not None
 torch.manual_seed(args.seed)
 torch.cuda.manual_seed_all(args.seed)
 
@@ -40,6 +40,7 @@ def main(scene_path):
         files = glob.glob(os.path.join(args.log_dir, '*.monitor.csv'))
         for f in files:
             os.remove(f)
+    save_path = os.path.join(args.save_dir, args.algo)
 
     eval_log_dir = args.log_dir + "_eval"
     eval_x = []
@@ -106,9 +107,16 @@ def main(scene_path):
 
     episode_rewards = deque(maxlen=10)
 
+    num_updates = int(args.num_env_steps) // args.num_steps // args.num_processes
+    total_num_steps = 0
+    j = 0
+    max_succ = 0
+    p_succ = 0
+    evals_without_improv = 0
+
     start = time.time()
     start_update = start
-    for j in range(num_updates):
+    while (not use_metric and j < num_updates) or (use_metric and max_succ < args.trg_succ_rate):
 
         if args.use_linear_lr_decay:
             # decrease learning rate linearly
@@ -152,27 +160,6 @@ def main(scene_path):
 
         rollouts.after_update()
 
-        # save for every interval-th episode or for the last epoch
-        if (j % args.save_interval == 0 or j == num_updates - 1) and args.save_dir != "":
-            save_path = os.path.join(args.save_dir, args.algo)
-            try:
-                os.makedirs(save_path)
-            except OSError:
-                pass
-
-            save_model = actor_critic
-            if args.cuda:
-                save_model = copy.deepcopy(actor_critic).cpu()
-
-            if pose_estimator is not None:
-                save_model = [save_model, pose_estimator, initial_policies]
-            else:
-                save_model = [save_model, getattr(get_vec_normalize(envs), 'ob_rms', None),
-                              initial_policies]
-
-            torch.save(save_model, os.path.join(save_path, args.save_as + ".pt"))
-            #torch.save(save_model, os.path.join(save_path, args.save_as + f"{j * args.num_processes * args.num_steps}.pt"))
-
         total_num_steps = (j + 1) * args.num_processes * args.num_steps
 
         if j % args.log_interval == 0 and len(episode_rewards) > 1:
@@ -192,6 +179,7 @@ def main(scene_path):
         if (args.eval_interval is not None
                 and len(episode_rewards) > 1
                 and j % args.eval_interval == 0):
+            print("Evaluating current policy...")
             i = 0
             total_successes = 0
             max_trials = 50
@@ -207,7 +195,6 @@ def main(scene_path):
                 obs, rews, dones, _ = envs.step(action)
 
                 if np.all(dones):
-                    print(rews)
                     i += args.num_processes
                     rew = sum([int(rew > 0) for rew in rews])
                     total_successes += rew
@@ -216,9 +203,46 @@ def main(scene_path):
             eval_x += [total_num_steps]
             eval_y += [p_succ]
 
+            end = time.time()
             print(f"Evaluation: {total_successes} successful out of {i} episodes - "
-                  f"{p_succ:.2f}% successful\n")
+                  f"{p_succ:.2f}% successful. Eval length: {end - start_update}\n")
             torch.save([eval_x, eval_y], os.path.join(args.save_as + "_eval.pt"))
+            start_update = end
+
+            if p_succ > max_succ:
+                max_succ = p_succ
+                evals_without_improv = 0
+            else:
+                evals_without_improv += 1
+
+            if evals_without_improv == 10:
+                save_model = actor_critic
+                if args.cuda:
+                    save_model = copy.deepcopy(actor_critic).cpu()
+
+                save_model = [save_model, getattr(get_vec_normalize(envs), 'ob_rms', None),
+                              initial_policies]
+
+                torch.save(save_model, os.path.join(save_path, args.save_as + "_fail.pt"))
+                break
+
+        # save for every interval-th episode or for the last epoch
+        if ((not use_metric and (j % args.save_interval == 0 or j == num_updates - 1))
+                or (use_metric and max_succ == p_succ)) and args.save_dir != "":
+            os.makedirs(save_path, exist_ok=True)
+
+            save_model = actor_critic
+            if args.cuda:
+                save_model = copy.deepcopy(actor_critic).cpu()
+
+            if pose_estimator is not None:
+                save_model = [save_model, pose_estimator, initial_policies]
+            else:
+                save_model = [save_model, getattr(get_vec_normalize(envs), 'ob_rms', None),
+                              initial_policies]
+
+            torch.save(save_model, os.path.join(save_path, args.save_as + ".pt"))
+            # torch.save(save_model, os.path.join(save_path, args.save_as + f"{j * args.num_processes * args.num_steps}.pt"))
 
         if args.vis and (j % args.vis_interval == 0 or j == num_updates - 1):
             try:
@@ -226,19 +250,55 @@ def main(scene_path):
                 visdom_plot(args.log_dir, args.save_as, args.algo, args.num_env_steps)
             except IOError:
                 pass
+
+        j += 1
+
+    if use_metric:
+        if max_succ > args.trg_succ_rate:
+            print(f"Achieved greater than {args.trg_succ_rate}% success, advancing curriculum.")
+        else:
+            print(f"WARNING: Training has finished with a success rate < {args.trg_succ_rate}%")
     # Copy logs to permanent location so new graphs can be drawn.
     copy_tree(args.log_dir, os.path.join('logs', args.save_as))
     envs.close()
+    return total_num_steps
+
+
+def curriculum_with_metric():
+    if args.use_linear_clip_decay:
+        raise ValueError("Cannot use clip decay with unbounded metric-based training length.")
+    if args.eval_interval is None:
+        raise ValueError("Need to set eval_interval to evaluate success rate")
+    args.use_linear_lr_decay = False
+    training_lengths = execute_curriculum(pipelines[args.pipeline][:-1])
+    scene = pipelines[args.pipeline][-1]
+    print(f"Training on {scene} full task:")
+    args.save_as = f'{base_name}_{scene}'
+    args.trg_succ_rate = 100
+    training_lengths += [main(scene)]
+    print(training_lengths)
+    save_path = os.path.join(args.save_dir, args.algo)
+    torch.save(training_lengths, os.path.join(save_path, args.save_as + "_train_lengths.pt"))
+
+
+def execute_curriculum(stages):
+    training_lengths = []
+    criteria_string = f"until {args.trg_succ_rate}% successful" if use_metric \
+        else f"for {args.num_env_steps} timesteps"
+    for scene in stages:
+        print(f"Training {scene} {criteria_string}")
+        args.save_as = f'{base_name}_{scene}'
+        training_lengths += [main(scene)]
+        args.reuse_residual = True
+        args.initial_policy = args.save_as
+    return training_lengths
 
 
 if __name__ == "__main__":
     if args.pipeline is not None:
-        base_name = args.save_as
-        for scene in pipelines[args.pipeline]:
-            print(f"Training {scene} for {args.num_env_steps} timesteps")
-            args.save_as = f'{base_name}_{scene}'
-            main(scene)
-            args.reuse_residual = True
-            args.initial_policy = args.save_as
+        if use_metric:
+            curriculum_with_metric()
+        else:
+            execute_curriculum(pipelines[args.pipeline])
     else:
         main(args.scene_name)
