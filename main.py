@@ -279,7 +279,7 @@ def curriculum_with_metric():
         raise ValueError("Need to set eval_interval to evaluate success rate")
     args.use_linear_lr_decay = False
     env, stages = pipelines[args.pipeline]
-    training_lengths = execute_curriculum(stages[:-1])
+    training_lengths = execute_curriculum(env, stages[:-1])
     scene = stages[-1]
     print(f"Training on {scene} full task:")
     args.save_as = f'{base_name}_{scene}'
@@ -290,8 +290,7 @@ def curriculum_with_metric():
     torch.save(training_lengths, os.path.join(save_path, args.save_as + "_train_lengths.pt"))
 
 
-def execute_curriculum(pipeline):
-    env, stages = pipeline
+def execute_curriculum(env, stages):
     training_lengths = []
     criteria_string = f"until {args.trg_succ_rate}% successful" if use_metric \
         else f"for {args.num_env_steps} timesteps"
@@ -309,6 +308,6 @@ if __name__ == "__main__":
         if use_metric:
             curriculum_with_metric()
         else:
-            execute_curriculum(pipelines[args.pipeline])
+            execute_curriculum(*pipelines[args.pipeline])
     else:
         main(None, args.scene_name)  # TODO
