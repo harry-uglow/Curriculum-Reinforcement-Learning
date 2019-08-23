@@ -298,6 +298,7 @@ def execute_curriculum(env, stages):
         print(f"Training {scene} {criteria_string}")
         args.save_as = f'{base_name}_{scene}'
         training_lengths += [main(env, scene)]
+        time.sleep(10)
         args.reuse_residual = True
         args.initial_policy = args.save_as
     return training_lengths
