@@ -1,5 +1,6 @@
 import copy
 import glob
+import math
 import os
 import time
 from collections import deque
@@ -111,6 +112,7 @@ def main(scene_path):
     total_num_steps = 0
     j = 0
     max_succ = 0
+    max_mean_rew = - math.inf
     p_succ = 0
     evals_without_improv = 0
 
@@ -211,11 +213,17 @@ def main(scene_path):
 
             if p_succ > max_succ:
                 max_succ = p_succ
+                max_mean_rew = np.mean(episode_rewards)
                 evals_without_improv = 0
+            elif p_succ == max_succ:
+                mean_ep_rew = np.mean(episode_rewards)
+                if mean_ep_rew > max_mean_rew:
+                    max_mean_rew = mean_ep_rew
+                    evals_without_improv = 0
             else:
                 evals_without_improv += 1
 
-            if evals_without_improv == 10:
+            if evals_without_improv == 5:
                 save_model = actor_critic
                 if args.cuda:
                     save_model = copy.deepcopy(actor_critic).cpu()
@@ -223,12 +231,12 @@ def main(scene_path):
                 save_model = [save_model, getattr(get_vec_normalize(envs), 'ob_rms', None),
                               initial_policies]
 
-                torch.save(save_model, os.path.join(save_path, args.save_as + "_fail.pt"))
+                torch.save(save_model, os.path.join(save_path, args.save_as + "_final.pt"))
                 break
 
         # save for every interval-th episode or for the last epoch
         if ((not use_metric and (j % args.save_interval == 0 or j == num_updates - 1))
-                or (use_metric and max_succ == p_succ)) and args.save_dir != "":
+                or (use_metric and evals_without_improv == 0)) and args.save_dir != "":
             os.makedirs(save_path, exist_ok=True)
 
             save_model = actor_critic
@@ -257,7 +265,7 @@ def main(scene_path):
         if max_succ >= args.trg_succ_rate:
             print(f"Achieved greater than {args.trg_succ_rate}% success, advancing curriculum.")
         else:
-            print(f"WARNING: Training has finished with a success rate < {args.trg_succ_rate}%")
+            print(f"Policy converged with max success rate < {args.trg_succ_rate}%")
     # Copy logs to permanent location so new graphs can be drawn.
     copy_tree(args.log_dir, os.path.join('logs', args.save_as))
     envs.close()
@@ -274,7 +282,7 @@ def curriculum_with_metric():
     scene = pipelines[args.pipeline][-1]
     print(f"Training on {scene} full task:")
     args.save_as = f'{base_name}_{scene}'
-    args.trg_succ_rate = 100
+    args.trg_succ_rate = 101
     training_lengths += [main(scene)]
     print(training_lengths)
     save_path = os.path.join(args.save_dir, args.algo)
