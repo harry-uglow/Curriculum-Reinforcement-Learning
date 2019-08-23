@@ -21,13 +21,13 @@ class DRWaypointEnv(DishRackEnv):
         self.reached_waypoint = False
         self.call_lua_function('set_joint_angles', ints=self.init_config_tree,
                                floats=self.init_joint_angles)
-        self.target_point = np.array([0., 0., 0., 0., 0., 0., 0.])
+        self.curr_action = np.array([0., 0., 0., 0., 0., 0., 0.])
         self.timestep = 0
 
         return self._get_obs()
 
     def step(self, a):
-        self.target_point = a
+        self.curr_action = a
         plate_trg = self.get_distance(self.target_handle, self.subject_handle)
         plate_way = self.get_distance(self.waypoint_handle, self.subject_handle)
         way_trg = self.get_distance(self.target_handle, self.waypoint_handle)
@@ -44,7 +44,7 @@ class DRWaypointEnv(DishRackEnv):
         done = (self.timestep == self.ep_len)
 
         rew_dist = - (plate_trg if self.reached_waypoint else plate_way + way_trg)
-        rew_ctrl = - np.square(np.abs(self.target_point).mean())
+        rew_ctrl = - np.square(np.abs(self.curr_action).mean())
         rew_orientation = - orientation_diff / max(plate_trg, 0.11)  # Radius = 0.11
         rew = 0.01 * (rew_dist + rew_ctrl + 0.04 * rew_orientation)
 

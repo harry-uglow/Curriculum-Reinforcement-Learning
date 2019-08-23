@@ -3,7 +3,7 @@ import os
 import numpy as np
 from gym import spaces
 import vrep
-from envs.SawyerEnv import SawyerEnv
+from envs.GoalDrivenEnv import GoalDrivenEnv
 
 from envs.VrepEnv import check_for_errors
 
@@ -15,27 +15,18 @@ cube_upper = np.array([0.45, (-0.65), 0.5])
 max_displacement = 0.03  # 3cm
 
 
-class ReachOverWallEnv(SawyerEnv):
+class ReachOverWallEnv(GoalDrivenEnv):
 
     scene_path = dir_path + '/reach_over_wall.ttt'
     observation_space = spaces.Box(np.array([0] * 11), np.array([1] * 11), dtype=np.float32)
-    timestep = 0
-    action_space = spaces.Box(np.array([-0.1] * 3), np.array([0.1] * 3), dtype=np.float32)
 
     def __init__(self, *args):
         super().__init__(*args)
 
         self.ep_len = 128
 
-        return_code, self.end_handle = vrep.simxGetObjectHandle(self.cid,
-                "Target_tip", vrep.simx_opmode_blocking)
-        check_for_errors(return_code)
-        self.end_pose = self.get_end_pose()
-        return_code, self.target_handle = vrep.simxGetObjectHandle(self.cid,
+        return_code, self.sphere_handle = vrep.simxGetObjectHandle(self.cid,
                 "Sphere", vrep.simx_opmode_blocking)
-        check_for_errors(return_code)
-        return_code, self.target_pos = vrep.simxGetObjectPosition(self.cid, self.target_handle,
-                -1, vrep.simx_opmode_blocking)
         check_for_errors(return_code)
         return_code, self.wall_handle = vrep.simxGetObjectHandle(self.cid,
                 "Wall", vrep.simx_opmode_blocking)
@@ -50,19 +41,18 @@ class ReachOverWallEnv(SawyerEnv):
         super(ReachOverWallEnv, self).reset()
         self.target_pos[0] = self.np_random.uniform(cube_lower[0], cube_upper[0])
         self.target_pos[1] = self.np_random.uniform(cube_lower[1], cube_upper[1])
-        vrep.simxSetObjectPosition(self.cid, self.target_handle, -1, self.target_pos,
+        vrep.simxSetObjectPosition(self.cid, self.sphere_handle, -1, self.target_pos,
                                    vrep.simx_opmode_blocking)
         vrep.simxSetObjectPosition(self.cid, self.wall_handle, -1, self.wall_pos,
                                   vrep.simx_opmode_blocking)
         vrep.simxSetObjectOrientation(self.cid, self.wall_handle, -1, self.init_wall_rot,
                                      vrep.simx_opmode_blocking)
-        self.timestep = 0
 
         return self._get_obs()
 
     def step(self, a):
-        self.target_point = a
-        vec = self.get_end_pose() - self.target_pos
+        self.curr_action = a
+        vec = self.subject_pos - self.target_pos
 
         self.timestep += 1
         self.update_sim()
@@ -73,7 +63,7 @@ class ReachOverWallEnv(SawyerEnv):
         done = (self.timestep == self.ep_len)
 
         reward_dist = - np.linalg.norm(vec)
-        reward_ctrl = - np.square(self.target_point).mean()
+        reward_ctrl = - np.square(self.curr_action).mean()
         reward_obstacle = - np.abs(self.wall_orientation).sum()
         reward = 0.01 * (reward_dist + 0.1 * reward_ctrl + 0.1 * reward_obstacle)
 
@@ -82,22 +72,15 @@ class ReachOverWallEnv(SawyerEnv):
                                       reward_obstacle=reward_obstacle)
 
     def _get_obs(self):
-        joint_obs = super(ReachOverWallEnv, self)._get_obs()
-        pos_vector = self.get_position(self.target_handle) - self.get_position(self.end_handle)
-
-        return np.concatenate((joint_obs, pos_vector, [self.wall_pos[0]]))
-
-    def get_end_pose(self):
-        pose = vrep.simxGetObjectPosition(self.cid, self.end_handle, -1,
-                                          vrep.simx_opmode_blocking)[1]
-        return np.array(pose)
+        base_obs = super(ReachOverWallEnv, self)._get_obs()
+        return np.append(base_obs, [self.wall_pos[0]])
 
 
 class ROWSparseEnv(ReachOverWallEnv):
 
     def step(self, a):
-        self.target_point = a
-        displacement = np.abs(self.get_vector(self.target_handle, self.end_handle))
+        self.curr_action = a
+        displacement = np.abs(self.get_vector(self.target_handle, self.sphere_handle))
 
         rew_success = 0.1 if np.all(displacement <= max_displacement) else 0
         rew = rew_success
@@ -114,8 +97,8 @@ class ROWSparseEnv(ReachOverWallEnv):
 class ReachNoWallEnv(ROWSparseEnv):
 
     def step(self, a):
-        self.target_point = a
-        vec = self.get_end_pose() - self.target_pos
+        self.curr_action = a
+        vec = self.subject_pos - self.target_pos
 
         self.timestep += 1
         self.update_sim()
@@ -124,7 +107,7 @@ class ReachNoWallEnv(ROWSparseEnv):
         done = (self.timestep == self.ep_len)
 
         reward_dist = - np.linalg.norm(vec)
-        reward_ctrl = - np.square(self.target_point).mean()
+        reward_ctrl = - np.square(self.curr_action).mean()
         reward = 0.01 * (reward_dist + reward_ctrl)
 
         return ob, reward, done, dict(reward_dist=reward_dist, reward_ctrl=reward_ctrl)

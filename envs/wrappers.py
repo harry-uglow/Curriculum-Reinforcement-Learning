@@ -3,10 +3,8 @@ import torch
 from baselines.common.vec_env import VecEnvWrapper
 from gym import spaces, ActionWrapper
 
-import vrep
 from envs.ImageObsVecEnvWrapper import get_image_obs_wrapper
 from envs.ResidualVecEnvWrapper import get_residual_layers
-from envs.VrepEnv import catch_errors
 from im2state.utils import unnormalise_y
 
 
@@ -115,7 +113,7 @@ class InitialController(ActionWrapper):
             vec /= np.max(np.abs(vec))
             vec *= self.action_space.high[0]
 
-        full_vec = vec + action[:3] * 0.02
+        full_vec = vec + action[:3] * 0.02  # Exploration factor
 
         if not ((full_vec >= self.action_space.low[0]) & (full_vec <= self.action_space.high[
             0])).all():

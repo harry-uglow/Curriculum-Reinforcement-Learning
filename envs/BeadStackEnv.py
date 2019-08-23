@@ -67,7 +67,7 @@ class BeadStackEnv(SawyerEnv):
 class BSSparseEnv(BeadStackEnv):
 
     def step(self, a):
-        self.target_point = a
+        self.curr_action = a
         displacement = np.abs(self.get_vector(self.target_handle, self.bead_handle))
         orientation_diff = np.abs(self.get_bead_orientation())
 
@@ -87,7 +87,7 @@ class BSSparseEnv(BeadStackEnv):
 class BSDenseEnv(BeadStackEnv):
 
     def step(self, a):
-        self.target_point = a
+        self.curr_action = a
         dist = self.get_distance(self.target_handle, self.bead_handle)
         orientation_diff = np.abs(self.get_bead_orientation()).sum()
 
@@ -98,7 +98,7 @@ class BSDenseEnv(BeadStackEnv):
         done = (self.timestep == self.ep_len)
 
         rew_dist = - dist
-        rew_ctrl = - np.square(np.abs(self.target_point).mean())
+        rew_ctrl = - np.square(np.abs(self.curr_action).mean())
         rew_orientation = - orientation_diff / max(dist, 0.11)  # Radius = 0.11
         rew = 0.01 * (rew_dist + rew_ctrl + 0.1 * rew_orientation)
 
