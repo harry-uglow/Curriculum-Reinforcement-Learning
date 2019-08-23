@@ -19,8 +19,8 @@ class ShelfStackEnv(GoalDrivenEnv):
 
     def __init__(self, *args):
         super().__init__(*args, random_joints=False)
-
         self.ep_len = 100
+        self.target_pos = self.get_position(self.target_handle)
 
     def reset(self):
         super(ShelfStackEnv, self).reset()
