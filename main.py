@@ -254,7 +254,7 @@ def main(scene_path):
         j += 1
 
     if use_metric:
-        if max_succ > args.trg_succ_rate:
+        if max_succ >= args.trg_succ_rate:
             print(f"Achieved greater than {args.trg_succ_rate}% success, advancing curriculum.")
         else:
             print(f"WARNING: Training has finished with a success rate < {args.trg_succ_rate}%")
