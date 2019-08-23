@@ -5,8 +5,8 @@ from envs.GoalDrivenEnv import GoalDrivenEnv
 from envs.VrepEnv import catch_errors
 import math
 
-toy_lower = np.array([-0.1, (-0.75), -0.25])  # x, y, rotation
-toy_upper = np.array([0.1, (-0.55), 0.25])
+trg_lower = np.array([0.85, 0.])  # x, y
+trg_upper = np.array([0.95, 0.3])
 
 max_displacement = 0.015  # 1.5cm
 max_rot = 0.1  # ~5.7 deg
@@ -24,7 +24,10 @@ class ShelfStackEnv(GoalDrivenEnv):
 
     def reset(self):
         super(ShelfStackEnv, self).reset()
-        self.timestep = 0
+        self.target_pos[0] = self.np_random.uniform(trg_lower[0], trg_upper[0])
+        self.target_pos[1] = self.np_random.uniform(trg_lower[1], trg_upper[1])
+        vrep.simxSetObjectPosition(self.cid, self.target_handle, -1, self.target_pos,
+                                   vrep.simx_opmode_blocking)
 
         return self._get_obs()
 

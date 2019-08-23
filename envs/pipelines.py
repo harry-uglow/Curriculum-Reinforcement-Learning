@@ -16,8 +16,8 @@ pipelines = {
         # 'shelf_135',
         'shelf_155',
         'shelf_200',
-        'shelf_250',
-        'shelf_300',
+        # 'shelf_250',
+        # 'shelf_300',
         'shelf',
     ],
     'wall': [
