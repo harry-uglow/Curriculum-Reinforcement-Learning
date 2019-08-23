@@ -1,10 +1,7 @@
-import glob
-import os
-
 import numpy as np
 from gym import spaces
 import vrep
-from envs.SawyerEnv import SawyerEnv
+from envs.GoalDrivenEnv import GoalDrivenEnv
 from envs.VrepEnv import catch_errors
 import math
 
@@ -12,11 +9,10 @@ rack_lower = np.array([-0.05, (-0.6), -0.25])  # x, y, rotation
 rack_upper = np.array([0.15, (-0.45), 0.25])
 
 
-class DishRackEnv(SawyerEnv):
+class DishRackEnv(GoalDrivenEnv):
     observation_space = spaces.Box(np.array([-3.]*7 + [-math.inf]*3 + [rack_lower[2]]),
                                    np.array([3.]*7 + [math.inf]*3 + [rack_upper[2]]),
                                    dtype=np.float32)
-    timestep = 0
     metadata = {'render.modes': ['human', 'rgb_array', 'activate']}
     max_cam_displace = 0.05
     max_cam_rotation = 0.2
@@ -67,7 +63,6 @@ class DishRackEnv(SawyerEnv):
                                    vrep.simx_opmode_blocking)
         vrep.simxSetObjectOrientation(self.cid, self.rack_handle, self.rack_rot_ref, self.rack_rot,
                                       vrep.simx_opmode_blocking)
-        self.timestep = 0
 
         if self.vis_mode:
             # OTHER POSES
