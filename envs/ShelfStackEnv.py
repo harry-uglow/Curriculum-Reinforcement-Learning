@@ -8,7 +8,7 @@ import math
 trg_lower = np.array([0.85, 0.])  # x, y
 trg_upper = np.array([0.95, 0.3])
 
-max_displacement = 0.015  # 1.5cm
+max_displacement = 0.025  # 1.5cm
 max_rot = 0.1  # ~5.7 deg
 
 

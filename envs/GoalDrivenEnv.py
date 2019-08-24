@@ -8,7 +8,7 @@ from envs.VrepEnv import catch_errors, VrepEnv
 
 class GoalDrivenEnv(SawyerEnv):
     # Cartesian control - orientation constraints don't matter
-    action_space = spaces.Box(np.array([-0.02]*3 + [-1.]*3), np.array([0.02]*3 + [1.]*3),
+    action_space = spaces.Box(np.array([-0.03]*3 + [-1.]*3), np.array([0.03]*3 + [1.]*3),
                               dtype=np.float32)
     curr_action = np.array([0.] * 6)
     timestep = 0
