@@ -165,7 +165,6 @@ def main(env, scene_path):
             else:
                 evals_without_improv += 1
 
-            print(evals_without_improv)
             if evals_without_improv == 5:
                 save_model = actor_critic
                 if args.cuda:
