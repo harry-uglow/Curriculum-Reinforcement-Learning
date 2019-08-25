@@ -153,16 +153,15 @@ def main(env, scene_path):
             torch.save([eval_x, eval_y], os.path.join(args.save_as + "_eval.pt"))
             start_update = end
 
+            mean_ep_rew = np.mean(eval_episode_rewards)
             if p_succ > max_succ:
                 max_succ = p_succ
-                max_mean_rew = np.mean(eval_episode_rewards)
+                max_mean_rew = mean_ep_rew
                 evals_without_improv = 0
-            elif p_succ == max_succ:
-                mean_ep_rew = np.mean(eval_episode_rewards)
-                if mean_ep_rew > max_mean_rew:
-                    print("Same success rate, higher reward")
-                    max_mean_rew = mean_ep_rew
-                    evals_without_improv = 0
+            elif p_succ == max_succ and mean_ep_rew > max_mean_rew:
+                print("Same success rate, higher reward")
+                max_mean_rew = mean_ep_rew
+                evals_without_improv = 0
             else:
                 evals_without_improv += 1
 
