@@ -50,4 +50,23 @@ pipelines = {
             'dish_rack',
         ]
     ),
+    'rack_2': (
+        DRSparseEnv,
+        [
+            'dish_rack_nr',
+            'dish_rack_pr_14',
+            'dish_rack_pr_18',
+            'dish_rack_pr_22',
+            'dish_rack',
+        ]
+    ),
+    'rack_4': (
+        DRSparseEnv,
+        [
+            'dish_rack_nr',
+            'dish_rack_pr_14',
+            'dish_rack_pr_22',
+            'dish_rack',
+        ]
+    ),
 }
