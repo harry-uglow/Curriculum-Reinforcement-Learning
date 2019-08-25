@@ -106,6 +106,7 @@ def main(env, scene_path):
     rollouts.to(device)
 
     episode_rewards = deque(maxlen=10)
+    eval_episode_rewards = deque(maxlen=50)
 
     num_updates = int(args.num_env_steps) // args.num_steps // args.num_processes
     total_num_steps = 0
@@ -118,6 +119,82 @@ def main(env, scene_path):
     start = time.time()
     start_update = start
     while (not use_metric and j < num_updates) or (use_metric and max_succ < args.trg_succ_rate):
+        if (args.eval_interval is not None and j % args.eval_interval == 0):
+            print("Evaluating current policy...")
+            i = 0
+            total_successes = 0
+            max_trials = 50
+            eval_recurrent_hidden_states = torch.zeros(
+                args.num_processes, actor_critic.recurrent_hidden_state_size, device=device)
+            eval_masks = torch.zeros(args.num_processes, 1, device=device)
+            while i + args.num_processes <= max_trials:
+
+                with torch.no_grad():
+                    _, action, _, eval_recurrent_hidden_states = actor_critic.act(
+                        obs, eval_recurrent_hidden_states, eval_masks, deterministic=True)
+
+                obs, rews, dones, infos = envs.step(action)
+
+                for info in infos:
+                    if 'episode' in info.keys():
+                        eval_episode_rewards.append(info['episode']['r'])
+
+                if np.all(dones):
+                    i += args.num_processes
+                    rew = sum([int(rew > 0) for rew in rews])
+                    total_successes += rew
+
+            p_succ = (100 * total_successes / i)
+            eval_x += [total_num_steps]
+            eval_y += [p_succ]
+
+            end = time.time()
+            print(f"Evaluation: {total_successes} successful out of {i} episodes - "
+                  f"{p_succ:.2f}% successful. Eval length: {end - start_update}")
+            torch.save([eval_x, eval_y], os.path.join(args.save_as + "_eval.pt"))
+            start_update = end
+
+            if p_succ > max_succ:
+                max_succ = p_succ
+                max_mean_rew = np.mean(eval_episode_rewards)
+                evals_without_improv = 0
+            elif p_succ == max_succ:
+                mean_ep_rew = np.mean(eval_episode_rewards)
+                if mean_ep_rew > max_mean_rew:
+                    print("Same success rate, higher reward")
+                    max_mean_rew = mean_ep_rew
+                    evals_without_improv = 0
+            else:
+                evals_without_improv += 1
+
+            if evals_without_improv == 5:
+                save_model = actor_critic
+                if args.cuda:
+                    save_model = copy.deepcopy(actor_critic).cpu()
+
+                save_model = [save_model, getattr(get_vec_normalize(envs), 'ob_rms', None),
+                              initial_policies]
+
+                torch.save(save_model, os.path.join(save_path, args.save_as + "_final.pt"))
+                break
+
+        # save for every interval-th episode or for the last epoch
+        if ((not use_metric and (j % args.save_interval == 0 or j == num_updates - 1))
+                or (use_metric and evals_without_improv == 0)) and args.save_dir != "":
+            os.makedirs(save_path, exist_ok=True)
+
+            save_model = actor_critic
+            if args.cuda:
+                save_model = copy.deepcopy(actor_critic).cpu()
+
+            if pose_estimator is not None:
+                save_model = [save_model, pose_estimator, initial_policies]
+            else:
+                save_model = [save_model, getattr(get_vec_normalize(envs), 'ob_rms', None),
+                              initial_policies]
+
+            torch.save(save_model, os.path.join(save_path, args.save_as + ".pt"))
+            # torch.save(save_model, os.path.join(save_path, args.save_as + f"{j * args.num_processes * args.num_steps}.pt"))
 
         if args.use_linear_lr_decay:
             # decrease learning rate linearly
@@ -165,7 +242,7 @@ def main(env, scene_path):
 
         if j % args.log_interval == 0 and len(episode_rewards) > 1:
             end = time.time()
-            print("Updates {}, num timesteps {}, FPS {} \n Last {} training episodes: mean/median reward {:.1f}/{:.1f}, min/max reward {:.1f}/{:.1f}\n".
+            print("Updates {}, num timesteps {}, FPS {} \n Last {} training episodes: mean/median reward {:.1f}/{:.1f}, min/max reward {:.1f}/{:.1f}".
                 format(j, total_num_steps,
                        int(total_num_steps / (end - start)),
                        len(episode_rewards),
@@ -176,81 +253,6 @@ def main(env, scene_path):
                        value_loss, action_loss))
             print("Update length: ", end - start_update)
             start_update = end
-
-        if (args.eval_interval is not None
-                and len(episode_rewards) > 1
-                and j % args.eval_interval == 0):
-            print("Evaluating current policy...")
-            i = 0
-            total_successes = 0
-            max_trials = 50
-            eval_recurrent_hidden_states = torch.zeros(
-                args.num_processes, actor_critic.recurrent_hidden_state_size, device=device)
-            eval_masks = torch.zeros(args.num_processes, 1, device=device)
-            while i + args.num_processes <= max_trials:
-
-                with torch.no_grad():
-                    _, action, _, eval_recurrent_hidden_states = actor_critic.act(
-                        obs, eval_recurrent_hidden_states, eval_masks, deterministic=True)
-
-                obs, rews, dones, _ = envs.step(action)
-
-                if np.all(dones):
-                    i += args.num_processes
-                    rew = sum([int(rew > 0) for rew in rews])
-                    total_successes += rew
-
-            p_succ = (100 * total_successes / i)
-            eval_x += [total_num_steps]
-            eval_y += [p_succ]
-
-            end = time.time()
-            print(f"Evaluation: {total_successes} successful out of {i} episodes - "
-                  f"{p_succ:.2f}% successful. Eval length: {end - start_update}\n")
-            torch.save([eval_x, eval_y], os.path.join(args.save_as + "_eval.pt"))
-            start_update = end
-
-            if p_succ > max_succ:
-                max_succ = p_succ
-                max_mean_rew = np.mean(episode_rewards)
-                evals_without_improv = 0
-            elif p_succ == max_succ:
-                mean_ep_rew = np.mean(episode_rewards)
-                if mean_ep_rew > max_mean_rew:
-                    print("Same success rate, higher reward")
-                    max_mean_rew = mean_ep_rew
-                    evals_without_improv = 0
-            else:
-                evals_without_improv += 1
-
-            if evals_without_improv == 5:
-                save_model = actor_critic
-                if args.cuda:
-                    save_model = copy.deepcopy(actor_critic).cpu()
-
-                save_model = [save_model, getattr(get_vec_normalize(envs), 'ob_rms', None),
-                              initial_policies]
-
-                torch.save(save_model, os.path.join(save_path, args.save_as + "_final.pt"))
-                break
-
-        # save for every interval-th episode or for the last epoch
-        if ((not use_metric and (j % args.save_interval == 0 or j == num_updates - 1))
-                or (use_metric and evals_without_improv == 0)) and args.save_dir != "":
-            os.makedirs(save_path, exist_ok=True)
-
-            save_model = actor_critic
-            if args.cuda:
-                save_model = copy.deepcopy(actor_critic).cpu()
-
-            if pose_estimator is not None:
-                save_model = [save_model, pose_estimator, initial_policies]
-            else:
-                save_model = [save_model, getattr(get_vec_normalize(envs), 'ob_rms', None),
-                              initial_policies]
-
-            torch.save(save_model, os.path.join(save_path, args.save_as + ".pt"))
-            # torch.save(save_model, os.path.join(save_path, args.save_as + f"{j * args.num_processes * args.num_steps}.pt"))
 
         if args.vis and (j % args.vis_interval == 0 or j == num_updates - 1):
             try:
