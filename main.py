@@ -113,13 +113,12 @@ def main(env, scene_path):
     j = 0
     max_succ = 0
     max_mean_rew = 0
-    p_succ = 0
     evals_without_improv = 0
 
     start = time.time()
     start_update = start
     while (not use_metric and j < num_updates) or (use_metric and max_succ < args.trg_succ_rate):
-        if (args.eval_interval is not None and j % args.eval_interval == 0):
+        if args.eval_interval is not None and j % args.eval_interval == 0:
             print("Evaluating current policy...")
             i = 0
             total_successes = 0
