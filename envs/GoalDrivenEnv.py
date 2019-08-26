@@ -27,6 +27,7 @@ class GoalDrivenEnv(SawyerEnv):
         super(GoalDrivenEnv, self).reset()
         self.timestep = 0
         self.curr_action = np.array([0.] * 6)
+        return self._get_obs()
 
     def _get_obs(self):
         joint_obs = super(GoalDrivenEnv, self)._get_obs()

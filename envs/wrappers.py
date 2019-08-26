@@ -113,14 +113,14 @@ class InitialController(ActionWrapper):
             vec /= np.max(np.abs(vec))
             vec *= self.action_space.high[0]
 
-        full_vec = vec + action[:3] * 0.02  # Exploration factor
+        full_vec = vec + action[:3] * 0.05  # 1 step = 0.05 ms
 
         if not ((full_vec >= self.action_space.low[0]) & (full_vec <= self.action_space.high[
             0])).all():
             full_vec /= np.max(np.abs(full_vec))
             full_vec *= self.action_space.high[0]
 
-        rot = action[3:]
+        rot = action[3:] * 0.05
 
         full_action = np.append(full_vec, rot)
 

@@ -7,6 +7,7 @@ import math
 
 trg_lower = np.array([0.85, 0.])  # x, y
 trg_upper = np.array([0.95, 0.3])
+trg_pos = np.array([0.875, 0.15])
 
 max_displacement = 0.025  # 1.5cm
 max_rot = 0.1  # ~5.7 deg
@@ -21,15 +22,8 @@ class ShelfStackEnv(GoalDrivenEnv):
         super().__init__(*args, random_joints=False)
         self.ep_len = 100
         self.target_pos = self.get_position(self.target_handle)
-
-    def reset(self):
-        super(ShelfStackEnv, self).reset()
-        self.target_pos[0] = self.np_random.uniform(trg_lower[0], trg_upper[0])
-        self.target_pos[1] = self.np_random.uniform(trg_lower[1], trg_upper[1])
-        vrep.simxSetObjectPosition(self.cid, self.target_handle, -1, self.target_pos,
-                                   vrep.simx_opmode_blocking)
-
-        return self._get_obs()
+        self.target_pos[0] = trg_pos[0]
+        self.target_pos[1] = trg_pos[1]
 
     def get_mug_orientation(self):
         orientation = catch_errors(vrep.simxGetObjectOrientation(
