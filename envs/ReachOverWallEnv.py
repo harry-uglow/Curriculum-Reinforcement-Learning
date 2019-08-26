@@ -80,7 +80,7 @@ class ROWSparseEnv(ReachOverWallEnv):
 
     def step(self, a):
         self.curr_action = a
-        displacement = np.abs(self.get_vector(self.target_handle, self.sphere_handle))
+        displacement = np.abs(self.get_vector(self.target_handle, self.subject_handle))
 
         rew_success = 0.1 if np.all(displacement <= max_displacement) else 0
         rew = rew_success
