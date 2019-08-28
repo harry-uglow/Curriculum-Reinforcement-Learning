@@ -105,8 +105,7 @@ def main(env, scene_path):
     rollouts.obs[0].copy_(obs)
     rollouts.to(device)
 
-    episode_rewards = deque(maxlen=10)
-    eval_episode_rewards = deque(maxlen=50)
+    episode_rewards = deque(maxlen=64)
 
     num_updates = int(args.num_env_steps) // args.num_steps // args.num_processes
     total_num_steps = 0
@@ -123,6 +122,7 @@ def main(env, scene_path):
             i = 0
             total_successes = 0
             max_trials = 50
+            eval_episode_rewards = []
             eval_recurrent_hidden_states = torch.zeros(
                 args.num_processes, actor_critic.recurrent_hidden_state_size, device=device)
             eval_masks = torch.zeros(args.num_processes, 1, device=device)

@@ -24,6 +24,8 @@ class ShelfStackEnv(GoalDrivenEnv):
         self.target_pos = self.get_position(self.target_handle)
         self.target_pos[0] = trg_pos[0]
         self.target_pos[1] = trg_pos[1]
+        vrep.simxSetObjectPosition(self.cid, self.target_handle, -1, self.target_pos,
+                                   vrep.simx_opmode_blocking)
 
     def get_mug_orientation(self):
         orientation = catch_errors(vrep.simxGetObjectOrientation(
