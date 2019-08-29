@@ -23,7 +23,7 @@ class ReachOverWallEnv(GoalDrivenEnv):
     def __init__(self, *args):
         super().__init__(*args)
 
-        self.ep_len = 128
+        self.ep_len = 100
 
         return_code, self.sphere_handle = vrep.simxGetObjectHandle(self.cid,
                 "Sphere", vrep.simx_opmode_blocking)

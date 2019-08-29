@@ -57,6 +57,8 @@ def get_args():
                         help='Pipeline of scenes to use CuRL on')
     parser.add_argument('--scene-name', default=None,
                         help='An individual scene to load, cannot be used with --pipeline')
+    parser.add_argument('--first-stage', type=int, default=0,
+                        help = "Index of starting curriculum stage.")
     parser.add_argument('--initial-policy', default=None,
                         help='initial policy to use, located in trained_models/ppo/{name}.pt')
     parser.add_argument('--pose-estimator', default=None,

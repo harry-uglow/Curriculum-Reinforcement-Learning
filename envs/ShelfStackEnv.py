@@ -7,7 +7,7 @@ import math
 
 trg_lower = np.array([0.85, 0.])  # x, y
 trg_upper = np.array([0.95, 0.3])
-trg_pos = np.array([0.875, 0.15])
+trg_pos = np.array([0.9, 0.15])
 
 max_displacement = 0.025  # 1.5cm
 max_rot = 0.1  # ~5.7 deg
@@ -20,7 +20,7 @@ class ShelfStackEnv(GoalDrivenEnv):
 
     def __init__(self, *args):
         super().__init__(*args, random_joints=False)
-        self.ep_len = 100
+        self.ep_len = 64
         self.target_pos = self.get_position(self.target_handle)
         self.target_pos[0] = trg_pos[0]
         self.target_pos[1] = trg_pos[1]

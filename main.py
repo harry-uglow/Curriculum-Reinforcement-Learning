@@ -279,7 +279,7 @@ def curriculum_with_metric():
         raise ValueError("Need to set eval_interval to evaluate success rate")
     args.use_linear_lr_decay = False
     env, stages = pipelines[args.pipeline]
-    training_lengths = execute_curriculum(env, stages[:-1])
+    training_lengths = execute_curriculum(env, stages[args.first_stage:-1])
     scene = stages[-1]
     print(f"Training on {scene} full task:")
     args.save_as = f'{base_name}_{scene}'
