@@ -76,10 +76,18 @@ class VrepEnv(Env):
             port_num += 16
         remote_api_string = '-gREMOTEAPISERVERSERVICE_' + str(port_num) + '_FALSE_TRUE'
         args = [*xvfb_args, vrep_path, '-h' if headless else '', remote_api_string]
-        self.process = Popen(args, preexec_fn=os.setsid, stdout=DEVNULL)
-        time.sleep(10)
-
-        self.cid = vrep.simxStart(host, port_num, True, True, 5000, 5)
+        self.cid = -1
+        while self.cid == -1:
+            self.process = Popen(args, preexec_fn=os.setsid, stdout=DEVNULL)
+            time.sleep(10)
+            self.cid = vrep.simxStart(host, port_num, True, True, 5000, 5)
+            if self.cid == -1:
+                print(f"{rank} failed to connect to V-REP. Retrying...")
+                try:
+                    pgrp = os.getpgid(self.process.pid)
+                    os.killpg(pgrp, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
         catch_errors(vrep.simxSynchronous(self.cid, enable=True))
 
         scene_path = os.path.join(scene_dir_path, f'{scene_name}.ttt')
