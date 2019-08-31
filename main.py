@@ -71,8 +71,8 @@ def main(env, scene_path):
         if args.pose_estimator else None
 
     envs = make_vec_envs(env, scene_path, args.seed, args.num_processes, args.gamma, args.log_dir,
-                         args.add_timestep, device, False, initial_policies,
-                         pose_estimator=pose_estimator, e2e=args.e2e)
+                         device, False, initial_policies, pose_estimator=pose_estimator,
+                         init_control=not args.dense_ip)
     if args.reuse_residual:
         vec_norm = get_vec_normalize(envs)
         if vec_norm is not None:
@@ -132,13 +132,13 @@ def main(env, scene_path):
                     _, action, _, eval_recurrent_hidden_states = actor_critic.act(
                         obs, eval_recurrent_hidden_states, eval_masks, deterministic=True)
 
-                obs, rews, dones, infos = envs.step(action)
+                obs, _, dones, infos = envs.step(action)
 
-                for info in infos:
-                    if 'episode' in info.keys():
+                if np.all(dones):  # Rigid - assumes episodes are fixed length
+                    rews = []
+                    for info in infos:
+                        rews.append(info['rew_success'])
                         eval_episode_rewards.append(info['episode']['r'])
-
-                if np.all(dones):
                     i += args.num_processes
                     rew = sum([int(rew > 0) for rew in rews])
                     total_successes += rew
@@ -272,43 +272,59 @@ def main(env, scene_path):
     return total_num_steps
 
 
-def curriculum_with_metric():
+def train_with_metric(pipeline, train):
     if args.use_linear_clip_decay:
         raise ValueError("Cannot use clip decay with unbounded metric-based training length.")
     if args.eval_interval is None:
         raise ValueError("Need to set eval_interval to evaluate success rate")
     args.use_linear_lr_decay = False
-    env, stages = pipelines[args.pipeline]
-    training_lengths = execute_curriculum(env, stages[args.first_stage:-1])
-    scene = stages[-1]
-    print(f"Training on {scene} full task:")
-    args.save_as = f'{base_name}_{scene}'
-    args.trg_succ_rate = 101
-    training_lengths += [main(env, scene)]
+    training_lengths = train(pipeline)
+
     print(training_lengths)
     save_path = os.path.join(args.save_dir, args.algo)
     torch.save(training_lengths, os.path.join(save_path, args.save_as + "_train_lengths.pt"))
 
 
-def execute_curriculum(env, stages):
+def execute_curriculum(pipeline):
     training_lengths = []
     criteria_string = f"until {args.trg_succ_rate}% successful" if use_metric \
         else f"for {args.num_env_steps} timesteps"
-    for scene in stages:
+    for scene in pipeline['curriculum']:
         print(f"Training {scene} {criteria_string}")
         args.save_as = f'{base_name}_{scene}'
-        training_lengths += [main(env, scene)]
+        training_lengths += [main(pipeline['sparse'], scene)]
         time.sleep(10)
         args.reuse_residual = True
         args.initial_policy = args.save_as
+    scene = pipeline['task']
+    print(f"Training on {scene} full task")
+    args.save_as = f'{base_name}_{scene}'
+    args.trg_succ_rate = 101  # Does not affect fixed length curriculum
+    training_lengths += [main(pipeline['sparse'], scene)]
+    return training_lengths
+
+
+def train_baseline(pipeline):
+    training_lengths = []
+    scene = pipeline['task']
+    print(f"Training {scene} until {args.trg_succ_rate}% successful with dense rewards")
+    args.save_as = f'{base_name}_dense_{scene}'
+    training_lengths += [main(pipeline['dense'], scene)]
+    time.sleep(10)
+    args.initial_policy = args.save_as
+    print(f"Training on {scene} until convergence")
+    args.save_as = f'{base_name}_sparse_{scene}'
+    args.trg_succ_rate = 101
+    training_lengths += [main(pipeline['sparse'], scene)]
     return training_lengths
 
 
 if __name__ == "__main__":
-    if args.pipeline is not None:
-        if use_metric:
-            curriculum_with_metric()
-        else:
-            execute_curriculum(*pipelines[args.pipeline])
-    else:
+    if args.scene_name is not None:
         main(None, args.scene_name)  # TODO
+    elif args.dense_ip:
+        train_with_metric(pipelines[args.pipeline], train_baseline)
+    elif use_metric:
+        train_with_metric(pipelines[args.pipeline], execute_curriculum)
+    else:
+        execute_curriculum(pipelines[args.pipeline])

@@ -90,7 +90,6 @@ class BoundPositionVelocity(ActionWrapper):
             pos /= np.max(np.abs(pos))
             pos *= self.action_space.high[0]
 
-        action[:3] = pos
         return action
 
 
@@ -140,12 +139,7 @@ class InitialController(ActionWrapper):
 
         full_vec = vec + action[:3]
 
-        if not ((full_vec >= self.action_space.low[0]) & (full_vec <= self.action_space.high[
-            0])).all():
-            full_vec /= np.max(np.abs(full_vec))
-            full_vec *= self.action_space.high[0]
-
-        rot = action[3:] * 0.05
+        rot = action[3:]
 
         full_action = np.append(full_vec, rot)
 

@@ -13,7 +13,8 @@ from baselines.common.vec_env.vec_normalize import VecNormalize as VecNormalize_
 
 from envs.ImageObsVecEnvWrapper import SimImageObsVecEnvWrapper
 from envs.ResidualVecEnvWrapper import ResidualVecEnvWrapper
-from envs.wrappers import PoseEstimatorVecEnvWrapper, InitialController, BoundPositionVelocity
+from envs.wrappers import PoseEstimatorVecEnvWrapper, InitialController, BoundPositionVelocity, \
+    ScaleActions
 from a2c_ppo_acktr.tuple_tensor import TupleTensor
 
 try:
@@ -34,10 +35,10 @@ def make_env(env_name, scene_path, seed, rank, log_dir, allow_early_resets, vis,
 
         env.seed(seed + rank)
 
-        env = VelocityToActionEnv(env, 0.05)  # 1 step = 0.05 ms
+        env = BoundPositionVelocity(env)
         if init_control:
             env = InitialController(env)
-        env = BoundPositionVelocity(env)
+        env = ScaleActions(env, 0.05)  # 1 step = 0.05 ms
 
         if log_dir is not None:
             env = bench.Monitor(env, os.path.join(log_dir, str(rank)),
@@ -56,7 +57,7 @@ def wrap_initial_policies(envs, device, initial_policies):
     return envs
 
 
-def make_vec_envs(env_name, scene_path, seed, num_processes, gamma, log_dir, add_timestep, device,
+def make_vec_envs(env_name, scene_path, seed, num_processes, gamma, log_dir, device,
                   allow_early_resets, initial_policies, num_frame_stack=None, show=False,
                   no_norm=False, pose_estimator=None, image_ips=None, init_control=True):
     envs = [make_env(env_name, scene_path, seed, i, log_dir, allow_early_resets, show, init_control)
@@ -81,13 +82,12 @@ def make_vec_envs(env_name, scene_path, seed, num_processes, gamma, log_dir, add
     envs = VecPyTorch(envs, device)
 
     if pose_estimator is not None:
-        estimator, state_to_estimate, low, high = pose_estimator
         envs = wrap_initial_policies(envs, device, image_ips)
         envs = PoseEstimatorVecEnvWrapper(envs, device, *pose_estimator, abs_to_rel=True)
 
     if num_frame_stack is not None:
         envs = VecPyTorchFrameStack(envs, num_frame_stack, device)
-    elif not (pose_estimator) and len(envs.observation_space.shape) == 3:
+    elif not pose_estimator and len(envs.observation_space.shape) == 3:
         envs = VecPyTorchFrameStack(envs, 4, device)
 
     return envs

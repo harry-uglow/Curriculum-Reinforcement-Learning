@@ -52,24 +52,14 @@ class ReachOverWallEnv(GoalDrivenEnv):
 
     def step(self, a):
         self.curr_action = a
-        vec = self.subject_pos - self.target_pos
 
         self.timestep += 1
         self.update_sim()
 
-        self.wall_orientation = vrep.simxGetObjectOrientation(self.cid, self.wall_handle, -1,
-                                                              vrep.simx_opmode_blocking)[1]
         ob = self._get_obs()
         done = (self.timestep == self.ep_len)
 
-        reward_dist = - np.linalg.norm(vec)
-        reward_ctrl = - np.square(self.curr_action).mean()
-        reward_obstacle = - np.abs(self.wall_orientation).sum()
-        reward = 0.01 * (reward_dist + 0.1 * reward_ctrl + 0.1 * reward_obstacle)
-
-        return ob, reward, done, dict(reward_dist=reward_dist,
-                                      reward_ctrl=reward_ctrl,
-                                      reward_obstacle=reward_obstacle)
+        return ob, done
 
     def _get_obs(self):
         base_obs = super(ReachOverWallEnv, self)._get_obs()
@@ -79,36 +69,25 @@ class ReachOverWallEnv(GoalDrivenEnv):
 class ROWSparseEnv(ReachOverWallEnv):
 
     def step(self, a):
-        self.curr_action = a
         displacement = np.abs(self.get_vector(self.target_handle, self.subject_handle))
 
         rew_success = 0.1 if np.all(displacement <= max_displacement) else 0
         rew = rew_success
 
-        self.timestep += 1
-        self.update_sim()
-
-        ob = self._get_obs()
-        done = (self.timestep == self.ep_len)
+        ob, done = super(ROWSparseEnv, self).step(a)
 
         return ob, rew, done, dict(rew_success=rew_success)
 
 
-class ReachNoWallEnv(ROWSparseEnv):
+class ROWDenseEnv(ReachOverWallEnv):
 
     def step(self, a):
-        self.curr_action = a
         vec = self.subject_pos - self.target_pos
 
-        self.timestep += 1
-        self.update_sim()
-
-        ob = self._get_obs()
-        done = (self.timestep == self.ep_len)
-
         reward_dist = - np.linalg.norm(vec)
-        reward_ctrl = - np.square(self.curr_action).mean()
-        reward = 0.01 * (reward_dist + reward_ctrl)
+        reward = 0.01 * reward_dist
 
-        return ob, reward, done, dict(reward_dist=reward_dist, reward_ctrl=reward_ctrl)
+        ob, done = super(ROWDenseEnv, self).step(a)
+
+        return ob, reward, done, dict(reward_dist=reward_dist)
 

@@ -44,6 +44,13 @@ class ResidualVecEnvWrapper(VecEnvWrapper):
                                              deterministic=True)
         if self.ob_rms:
             ip_action = ip_action.squeeze(1).cpu().numpy()
+
+        pos = ip_action[:3] * 0.05  # 1 step = 0.05 ms
+        if not ((pos >= self.action_space.low[0]) & (pos <= self.action_space.high[0])).all():
+            pos /= np.max(np.abs(pos))
+            pos *= self.action_space.high[0]
+        pos /= 0.05
+
         whole_action = ip_action + action
         self.venv.step_async(whole_action)
 
