@@ -78,6 +78,31 @@ class ClipActions(ActionWrapper):
         return np.clip(action, self.action_space.low, self.action_space.high)
 
 
+# TODO: Scale properly to support boundaries where low != -high
+class BoundPositionVelocity(ActionWrapper):
+    def __init__(self, env):
+        super(BoundPositionVelocity, self).__init__(env)
+
+    def action(self, action):
+        pos = action[:3]
+
+        if not ((pos >= self.action_space.low[0]) & (pos <= self.action_space.high[0])).all():
+            pos /= np.max(np.abs(pos))
+            pos *= self.action_space.high[0]
+
+        action[:3] = pos
+        return action
+
+
+class ScaleActions(ActionWrapper):
+    def __init__(self, env, factor):
+        self.factor = factor
+        super(ScaleActions, self).__init__(env)
+
+    def action(self, action):
+        return action * self.factor
+
+
 class E2EVecEnvWrapper(VecEnvWrapper):
     def __init__(self, venv):
         res = venv.get_images(mode='activate')[0]
@@ -113,7 +138,7 @@ class InitialController(ActionWrapper):
             vec /= np.max(np.abs(vec))
             vec *= self.action_space.high[0]
 
-        full_vec = vec + action[:3] * 0.05  # 1 step = 0.05 ms
+        full_vec = vec + action[:3]
 
         if not ((full_vec >= self.action_space.low[0]) & (full_vec <= self.action_space.high[
             0])).all():

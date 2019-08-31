@@ -11,16 +11,9 @@ from baselines.common.vec_env.subproc_vec_env import SubprocVecEnv
 from baselines.common.vec_env.dummy_vec_env import DummyVecEnv
 from baselines.common.vec_env.vec_normalize import VecNormalize as VecNormalize_
 
-from envs.BeadStackEnv import BSDenseEnv, BSSparseEnv
-from envs.DRNoWaypointEnv import DRNonRespondableEnv
-from envs.DRWaypointEnv import DRWaypointEnv
-from envs.DRSparseEnv import DRSparseEnv
 from envs.ImageObsVecEnvWrapper import SimImageObsVecEnvWrapper
-from envs.ReachOverWallEnv import ReachNoWallEnv, ROWSparseEnv
 from envs.ResidualVecEnvWrapper import ResidualVecEnvWrapper
-from envs.ShelfStackEnv import SSDenseEnv, SSSparseEnv
-from envs.wrappers import PoseEstimatorVecEnvWrapper, ClipActions, E2EVecEnvWrapper, \
-    InitialController
+from envs.wrappers import PoseEstimatorVecEnvWrapper, InitialController, BoundPositionVelocity
 from a2c_ppo_acktr.tuple_tensor import TupleTensor
 
 try:
@@ -34,15 +27,17 @@ except ImportError:
     pass
 
 
-def make_env(env_name, scene_path, seed, rank, log_dir, add_timestep, allow_early_resets, vis):
+def make_env(env_name, scene_path, seed, rank, log_dir, allow_early_resets, vis, init_control):
     def _thunk():
         # Swap DRSparseEnv for required environment class.
         env = env_name(scene_path, rank, not vis)
 
         env.seed(seed + rank)
 
-        # env = ClipActions(env)
-        env = InitialController(env)
+        env = VelocityToActionEnv(env, 0.05)  # 1 step = 0.05 ms
+        if init_control:
+            env = InitialController(env)
+        env = BoundPositionVelocity(env)
 
         if log_dir is not None:
             env = bench.Monitor(env, os.path.join(log_dir, str(rank)),
@@ -63,8 +58,8 @@ def wrap_initial_policies(envs, device, initial_policies):
 
 def make_vec_envs(env_name, scene_path, seed, num_processes, gamma, log_dir, add_timestep, device,
                   allow_early_resets, initial_policies, num_frame_stack=None, show=False,
-                  no_norm=False, pose_estimator=None, image_ips=None, e2e=False):
-    envs = [make_env(env_name, scene_path, seed, i, log_dir, add_timestep, allow_early_resets, show)
+                  no_norm=False, pose_estimator=None, image_ips=None, init_control=True):
+    envs = [make_env(env_name, scene_path, seed, i, log_dir, allow_early_resets, show, init_control)
             for i in range(num_processes)]
 
     if len(envs) > 1:
@@ -76,8 +71,6 @@ def make_vec_envs(env_name, scene_path, seed, num_processes, gamma, log_dir, add
 
     if pose_estimator is not None:
         envs = SimImageObsVecEnvWrapper(envs)
-    if e2e:
-        envs = E2EVecEnvWrapper(envs)
 
     if len(envs.observation_space.shape) == 1 and not no_norm:
         if gamma is None:
@@ -91,12 +84,10 @@ def make_vec_envs(env_name, scene_path, seed, num_processes, gamma, log_dir, add
         estimator, state_to_estimate, low, high = pose_estimator
         envs = wrap_initial_policies(envs, device, image_ips)
         envs = PoseEstimatorVecEnvWrapper(envs, device, *pose_estimator, abs_to_rel=True)
-    if e2e:
-        envs = wrap_initial_policies(envs, device, initial_policies)
 
     if num_frame_stack is not None:
         envs = VecPyTorchFrameStack(envs, num_frame_stack, device)
-    elif not (pose_estimator or e2e) and len(envs.observation_space.shape) == 3:
+    elif not (pose_estimator) and len(envs.observation_space.shape) == 3:
         envs = VecPyTorchFrameStack(envs, 4, device)
 
     return envs
