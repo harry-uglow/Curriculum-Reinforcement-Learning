@@ -1,5 +1,6 @@
 import copy
 import glob
+import math
 import os
 import time
 from collections import deque
@@ -111,7 +112,7 @@ def main(env, scene_path):
     total_num_steps = 0
     j = 0
     max_succ = 0
-    max_mean_rew = 0
+    max_mean_rew = - math.inf
     evals_without_improv = 0
 
     start = time.time()
