@@ -285,13 +285,15 @@ def train_with_metric(pipeline, train):
     for i in range(0, args.num_seeds * 16, 16):
         args.seed = i
         training_lengths += [train(pipeline, f"{base}_{i}")]
-        torch.save(training_lengths, os.path.join(save_path, base + "_train_lengths.pt"))
+        torch.save(training_lengths,
+                   os.path.join(save_path, f"{base}_{args.pipeline}_train_lengths.pt"))
 
     print(training_lengths)
     total_train_times = [sum(lengths) for lengths in training_lengths]
     print(total_train_times)
     torch.save([total_train_times, training_lengths],
-               os.path.join(save_path, base + "_train_lengths.pt"))
+               os.path.join(save_path, f"{base}_{args.pipeline}_train_lengths.pt"))
+    return [total_train_times, training_lengths]
 
 
 def execute_curriculum(pipeline, save_base):
