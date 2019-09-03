@@ -284,6 +284,7 @@ def train_with_metric(pipeline, train):
     base = args.save_as
     for i in range(0, args.num_seeds * 16, 16):
         args.seed = i
+        print(f"Using seed {args.seed}")
         training_lengths += [train(pipeline, f"{base}_{i}")]
         torch.save(training_lengths,
                    os.path.join(save_path, f"{base}_{args.pipeline}_train_lengths.pt"))

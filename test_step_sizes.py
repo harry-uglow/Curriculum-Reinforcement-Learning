@@ -14,6 +14,7 @@ if __name__ == "__main__":
     for i in range(5):
         args.save_as = f"{2**i}cm"
         curr_pipeline = f"{args.pipeline}_{2**i}"
+        print(f"Training with {args.save_as} curriculum (if available)...")
         try:
             results += [train_with_metric(pipelines[curr_pipeline], execute_curriculum)]
             tags += [args.save_as]
