@@ -99,6 +99,7 @@ class DishRackEnv(GoalDrivenEnv):
         elif mode == 'target_height':
             return self.get_position(self.target_handle)[-1:]
         elif mode == 'action':
+
             return self.curr_action
         elif mode == 'mask':
             mask = self._read_vision_sensor(grayscale=True)

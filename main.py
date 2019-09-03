@@ -24,7 +24,6 @@ if args.recurrent_policy:
     assert args.algo in ['a2c', 'ppo'], \
         'Recurrent policy is not implemented for ACKTR'
 
-base_name = args.save_as
 use_metric = args.trg_succ_rate is not None
 torch.manual_seed(args.seed)
 torch.cuda.manual_seed_all(args.seed)
@@ -279,42 +278,51 @@ def train_with_metric(pipeline, train):
     if args.eval_interval is None:
         raise ValueError("Need to set eval_interval to evaluate success rate")
     args.use_linear_lr_decay = False
-    training_lengths = train(pipeline)
+
+    training_lengths = []
+    save_path = os.path.join(args.save_dir, args.algo)
+    base = args.save_as
+    for i in range(0, args.num_seeds * 16, 16):
+        args.seed = i
+        training_lengths += [train(pipeline, f"{base}_{i}")]
+        torch.save(training_lengths, os.path.join(save_path, base + "_train_lengths.pt"))
 
     print(training_lengths)
-    save_path = os.path.join(args.save_dir, args.algo)
-    torch.save(training_lengths, os.path.join(save_path, args.save_as + "_train_lengths.pt"))
+    total_train_times = [sum(lengths) for lengths in training_lengths]
+    print(total_train_times)
+    torch.save([total_train_times, training_lengths],
+               os.path.join(save_path, base + "_train_lengths.pt"))
 
 
-def execute_curriculum(pipeline):
+def execute_curriculum(pipeline, save_base):
     training_lengths = []
     criteria_string = f"until {args.trg_succ_rate}% successful" if use_metric \
         else f"for {args.num_env_steps} timesteps"
     for scene in pipeline['curriculum']:
         print(f"Training {scene} {criteria_string}")
-        args.save_as = f'{base_name}_{scene}'
+        args.save_as = f'{save_base}_{scene}'
         training_lengths += [main(pipeline['sparse'], scene)]
         time.sleep(10)
         args.reuse_residual = True
         args.initial_policy = args.save_as
     scene = pipeline['task']
     print(f"Training on {scene} full task")
-    args.save_as = f'{base_name}_{scene}'
+    args.save_as = f'{save_base}_{scene}'
     args.trg_succ_rate = 101  # Does not affect fixed length curriculum
     training_lengths += [main(pipeline['sparse'], scene)]
     return training_lengths
 
 
-def train_baseline(pipeline):
+def train_baseline(pipeline, save_base):
     training_lengths = []
     scene = pipeline['task']
     print(f"Training {scene} until {args.trg_succ_rate}% successful with dense rewards")
-    args.save_as = f'{base_name}_dense_{scene}'
+    args.save_as = f'{save_base}_dense_{scene}'
     training_lengths += [main(pipeline['dense'], scene)]
     time.sleep(10)
     args.initial_policy = args.save_as
     print(f"Training on {scene} until convergence")
-    args.save_as = f'{base_name}_sparse_{scene}'
+    args.save_as = f'{save_base}_sparse_{scene}'
     args.trg_succ_rate = 101
     training_lengths += [main(pipeline['sparse'], scene)]
     return training_lengths
