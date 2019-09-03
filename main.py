@@ -304,7 +304,6 @@ def execute_curriculum(pipeline, save_base):
         print(f"Training {scene} {criteria_string}")
         args.save_as = f'{save_base}_{scene}'
         training_lengths += [main(pipeline['sparse'], scene)]
-        time.sleep(10)
         args.reuse_residual = True
         args.initial_policy = args.save_as
     scene = pipeline['task']
@@ -321,7 +320,6 @@ def train_baseline(pipeline, save_base):
     print(f"Training {scene} until {args.trg_succ_rate}% successful with dense rewards")
     args.save_as = f'{save_base}_dense_{scene}'
     training_lengths += [main(pipeline['dense'], scene)]
-    time.sleep(10)
     args.initial_policy = args.save_as
     print(f"Training on {scene} until convergence")
     args.save_as = f'{save_base}_sparse_{scene}'
