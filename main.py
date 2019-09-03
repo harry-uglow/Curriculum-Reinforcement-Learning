@@ -252,10 +252,10 @@ def main(env, scene_path):
             print("Update length: ", end - start_update)
             start_update = end
 
-        if args.vis and (j % args.vis_interval == 0 or j == num_updates - 1):
+        if args.vis and (j % args.vis_interval == 0 or (not use_metric and j == num_updates - 1)):
             try:
                 # Sometimes monitor doesn't properly flush the outputs
-                visdom_plot(args.log_dir, args.save_as, args.algo, args.num_env_steps)
+                visdom_plot(args.log_dir, args.save_as, args.algo, total_num_steps)
             except IOError:
                 pass
 
@@ -293,7 +293,7 @@ def train_with_metric(pipeline, train):
     print(total_train_times)
     torch.save([total_train_times, training_lengths],
                os.path.join(save_path, f"{base}_{args.pipeline}_train_lengths.pt"))
-    return [total_train_times, training_lengths]
+    return total_train_times, training_lengths
 
 
 def execute_curriculum(pipeline, save_base):
