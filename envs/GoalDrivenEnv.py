@@ -38,7 +38,8 @@ class GoalDrivenEnv(SawyerEnv):
         return np.append(joint_obs, pos_vector)
 
     def update_sim(self):
-        self.call_lua_function('update_robot_movement', floats=self.curr_action)
+        _, targets, _, _ = self.call_lua_function('update_robot_movement', floats=self.curr_action)
 
         vrep.simxSynchronousTrigger(self.cid)
         vrep.simxGetPingTime(self.cid)
+        return targets

@@ -336,4 +336,4 @@ if __name__ == "__main__":
     elif use_metric:
         train_with_metric(pipelines[args.pipeline], execute_curriculum)
     else:
-        execute_curriculum(pipelines[args.pipeline])
+        execute_curriculum(pipelines[args.pipeline], args.save_as)

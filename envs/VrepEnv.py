@@ -79,7 +79,7 @@ class VrepEnv(Env):
         self.cid = -1
         while self.cid == -1:
             self.process = Popen(args, preexec_fn=os.setsid, stdout=DEVNULL)
-            time.sleep(10)
+            time.sleep(6)
             self.cid = vrep.simxStart(host, port_num, True, True, 5000, 5)
             if self.cid == -1:
                 print(f"{rank} failed to connect to V-REP. Retrying...")

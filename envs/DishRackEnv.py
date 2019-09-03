@@ -53,6 +53,7 @@ class DishRackEnv(GoalDrivenEnv):
                 self.rack_rot_ref, vrep.simx_opmode_blocking))
         self.target_handle = catch_errors(vrep.simxGetObjectHandle(self.cid,
                 "Target", vrep.simx_opmode_blocking))
+        self.joint_targets = None
 
     def reset(self):
         super(DishRackEnv, self).reset()
@@ -99,8 +100,9 @@ class DishRackEnv(GoalDrivenEnv):
         elif mode == 'target_height':
             return self.get_position(self.target_handle)[-1:]
         elif mode == 'action':
-
             return self.curr_action
+        elif mode == 'joint_target_pos':
+            return self.joint_targets
         elif mode == 'mask':
             mask = self._read_vision_sensor(grayscale=True)
             mask[mask > 0] = 255
@@ -201,3 +203,6 @@ class DishRackEnv(GoalDrivenEnv):
         vrep.simxSetObjectOrientation(self.cid, self.vis_handle, -1,
                                       self.init_cam_rot + orientation_displacement,
                                       vrep.simx_opmode_blocking)
+
+    def update_sim(self):
+        self.joint_targets = super(DishRackEnv, self).update_sim()

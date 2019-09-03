@@ -3,18 +3,55 @@ from envs.ReachOverWallEnv import ROWSparseEnv, ROWDenseEnv
 from envs.ShelfStackEnv import SSSparseEnv, SSDenseEnv
 
 pipelines = {
-    'shelf': {
+    'shelf_1': {
         'sparse': SSSparseEnv,
         'dense': SSDenseEnv,
         'task': 'shelf_wall',
         'curriculum': [
             'shelf_nr',
-            'shelf_50',
-            'shelf_70',
-            'shelf_90',
-            'shelf_110',
-            'shelf_130',
-            'shelf_150',
+            'shelf_5',
+            'shelf_6',
+            'shelf_7',
+            'shelf_8',
+            'shelf_9',
+            'shelf_10',
+            'shelf_11',
+            'shelf_12',
+            'shelf_13',
+        ]
+    },
+    'shelf_2': {
+        'sparse': SSSparseEnv,
+        'dense': SSDenseEnv,
+        'task': 'shelf_wall',
+        'curriculum': [
+            'shelf_nr',
+            'shelf_5',
+            'shelf_7',
+            'shelf_9',
+            'shelf_11',
+            'shelf_13',
+        ]
+    },
+    'shelf_4': {
+        'sparse': SSSparseEnv,
+        'dense': SSDenseEnv,
+        'task': 'shelf_wall',
+        'curriculum': [
+            'shelf_nr',
+            'shelf_5',
+            'shelf_9',
+            'shelf_13',
+        ]
+    },
+    'shelf_8': {
+        'sparse': SSSparseEnv,
+        'dense': SSDenseEnv,
+        'task': 'shelf_wall',
+        'curriculum': [
+            'shelf_nr',
+            'shelf_5',
+            'shelf_13',
         ]
     },
     'wall_1': {
@@ -39,6 +76,7 @@ pipelines = {
             'row_43',
             'row_44',
             'row_45',
+            'row_46',
         ]
     },
     'wall_2': {
@@ -55,6 +93,7 @@ pipelines = {
             'row_40',
             'row_42',
             'row_44',
+            'row_46',
         ]
     },
     'wall_4': {
@@ -67,7 +106,28 @@ pipelines = {
             'row_34',
             'row_38',
             'row_42',
-            'row_45',
+            'row_46',
+        ]
+    },
+    'wall_8': {
+        'sparse': ROWSparseEnv,
+        'dense': ROWDenseEnv,
+        'task': 'reach_over_wall_static',
+        'curriculum': [
+            'reach_no_wall',
+            'row_30',
+            'row_38',
+            'row_46',
+        ]
+    },
+    'wall_16': {
+        'sparse': ROWSparseEnv,
+        'dense': ROWDenseEnv,
+        'task': 'reach_over_wall_static',
+        'curriculum': [
+            'reach_no_wall',
+            'row_30',
+            'row_46',
         ]
     },
     'rack_1': {
@@ -76,11 +136,11 @@ pipelines = {
         'task': 'dish_rack',
         'curriculum': [
             'dish_rack_nr',
-            'dish_rack_pr_14',
-            'dish_rack_pr_16',
-            'dish_rack_pr_18',
-            'dish_rack_pr_20',
-            'dish_rack_pr_22',
+            'dish_rack_7',
+            'dish_rack_8',
+            'dish_rack_9',
+            'dish_rack_10',
+            'dish_rack_11',
         ]
     },
     'rack_2': {
@@ -89,9 +149,9 @@ pipelines = {
         'task': 'dish_rack',
         'curriculum': [
             'dish_rack_nr',
-            'dish_rack_pr_14',
-            'dish_rack_pr_18',
-            'dish_rack_pr_22',
+            'dish_rack_7',
+            'dish_rack_9',
+            'dish_rack_11',
         ]
     },
     'rack_4': {
@@ -100,8 +160,11 @@ pipelines = {
         'task': 'dish_rack',
         'curriculum': [
             'dish_rack_nr',
-            'dish_rack_pr_14',
-            'dish_rack_pr_22',
+            'dish_rack_7',
+            'dish_rack_11',
         ]
     },
 }
+
+
+
