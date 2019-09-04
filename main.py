@@ -282,8 +282,12 @@ def train_with_metric(pipeline, train):
     training_lengths = []
     save_path = os.path.join(args.save_dir, args.algo)
     base = args.save_as
+    target = args.trg_succ_rate
     for i in range(0, args.num_seeds * 16, 16):
         args.seed = i
+        args.reuse_residual = False
+        args.trg_succ_rate = target
+        args.initial_policy = None
         print(f"Using seed {args.seed}")
         training_lengths += [train(pipeline, f"{base}_{i}")]
         torch.save(training_lengths,
