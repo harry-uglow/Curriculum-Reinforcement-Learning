@@ -110,7 +110,7 @@ def main(env, scene_path):
     num_updates = int(args.num_env_steps) // args.num_steps // args.num_processes
     total_num_steps = 0
     j = 0
-    max_succ = 0
+    max_succ = -1
     max_mean_rew = - math.inf
     evals_without_improv = 0
 
