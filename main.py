@@ -272,7 +272,7 @@ def main(env, scene_path):
     return total_num_steps
 
 
-def train_with_metric(pipeline, train):
+def train_with_metric(pipeline, train, save_base):
     if args.use_linear_clip_decay:
         raise ValueError("Cannot use clip decay with unbounded metric-based training length.")
     if args.eval_interval is None:
@@ -281,7 +281,6 @@ def train_with_metric(pipeline, train):
 
     training_lengths = []
     save_path = os.path.join(args.save_dir, args.algo)
-    base = args.save_as
     target = args.trg_succ_rate
     for i in range(0, args.num_seeds * 16, 16):
         args.seed = i
@@ -289,15 +288,15 @@ def train_with_metric(pipeline, train):
         args.trg_succ_rate = target
         args.initial_policy = None
         print(f"Using seed {args.seed}")
-        training_lengths += [train(pipeline, f"{base}_{i}")]
+        training_lengths += [train(pipeline, f"{save_base}_{i}")]
         torch.save(training_lengths,
-                   os.path.join(save_path, f"{base}_{args.pipeline}_train_lengths.pt"))
+                   os.path.join(save_path, f"{save_base}_{args.pipeline}_train_lengths.pt"))
 
     print(training_lengths)
     total_train_times = [sum(lengths) for lengths in training_lengths]
     print(total_train_times)
     torch.save([total_train_times, training_lengths],
-               os.path.join(save_path, f"{base}_{args.pipeline}_train_lengths.pt"))
+               os.path.join(save_path, f"{save_base}_{args.pipeline}_train_lengths.pt"))
     return total_train_times, training_lengths
 
 
