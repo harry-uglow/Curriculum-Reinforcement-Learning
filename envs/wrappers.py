@@ -99,7 +99,8 @@ class ScaleActions(ActionWrapper):
         super(ScaleActions, self).__init__(env)
 
     def action(self, action):
-        return action * self.factor
+        action[:3] *= self.factor
+        return action
 
 
 class E2EVecEnvWrapper(VecEnvWrapper):
