@@ -3,13 +3,13 @@ import os
 
 import numpy as np
 import torch
-from torch import nn
-from torchvision import transforms
+
 from tqdm import tqdm
 
+from envs.DRRewardEnvs import DRSparseEnv
+# from envs.DRSparseEnv import DRSparseEnv
 from envs.DishRackEnv import rack_lower, rack_upper
-from envs.ResidualVecEnvWrapper import get_residual_layers
-from envs.ShelfStackEnv import SSSparseEnv
+from envs.ReachOverWallEnv import ROWSparseEnv
 from envs.envs import make_vec_envs, get_vec_normalize
 from a2c_ppo_acktr.utils import get_render_func
 
@@ -30,6 +30,8 @@ parser.add_argument('--log-interval', type=int, default=10,
                     help='log interval, one log per n updates (default: 10)')
 parser.add_argument('--env-name', default='PongNoFrameskip-v4',
                     help='environment to train on (default: PongNoFrameskip-v4)')
+parser.add_argument('--save-as', default='test',
+                    help='where to save % success results')
 parser.add_argument('--load-dir', default='./trained_models/',
                     help='directory to save agent logs (default: ./trained_models/)')
 parser.add_argument('--i2s-load-dir', default='./trained_models/im2state/',
@@ -69,9 +71,10 @@ def main():
     pose_estimator_info = (estimator, args.state_indices, rack_lower, rack_upper) if \
         args.image_layer else None
 
-    env = make_vec_envs(SSSparseEnv, 'shelf_300', args.seed + 1000, args.num_processes, None, None,
-                        args.add_timestep, device, False, policies, show=(args.num_processes == 1),
-                        no_norm=True, pose_estimator=pose_estimator_info)
+    env = make_vec_envs(DRSparseEnv, 'dish_rack', args.seed + 1000,
+                        args.num_processes, None, None, device, False, policies,
+                        show=(args.num_processes == 1), no_norm=True,
+                        pose_estimator=pose_estimator_info)
     null_action = torch.zeros((1, env.action_space.shape[0]))
 
     # Get a render function
@@ -89,7 +92,7 @@ def main():
 
         torsoId = -1
         for i in range(p.getNumBodies()):
-            if (p.getBodyInfo(i)[0].decode() == "torso"):
+            if p.getBodyInfo(i)[0].decode() == "torso":
                 torsoId = i
 
     i = 0
@@ -113,7 +116,7 @@ def main():
         # obs, step_rews, dones, _ = env.step(action)
         # rews += step_rews.cpu().numpy()
         if np.all(dones):
-            print(rews)
+            # print(rews)
             i += args.num_processes
             rew = sum([int(rew > 0) for rew in rews])
             total_successes += rew
@@ -129,8 +132,76 @@ def main():
         if render_func is not None:
             render_func('human')
 
-    print(f"{100 * total_successes / i}% successful")
+    p_succ = 100 * total_successes / i
+    print(f"{p_succ}% successful")
+    return p_succ
 
 
 if __name__ == "__main__":
-    main()
+    # policy_names = [
+    #     "50p_0_dish_rack",
+    #     "50p_16_dish_rack",
+    #     "50p_32_dish_rack",
+    # ]
+    policy_names = [
+        # "50p_1cm_0_reach_over_wall_static",
+        # "50p_1cm_16_reach_over_wall_static",
+        # "50p_1cm_32_reach_over_wall_static",
+        # "50p_2cm_0_reach_over_wall_static",
+        # "50p_2cm_16_reach_over_wall_static",
+        # "50p_2cm_32_reach_over_wall_static",
+        # "50p_4cm_0_reach_over_wall_static",
+        # "50p_4cm_16_reach_over_wall_static",
+        # "50p_4cm_32_reach_over_wall_static",
+        # "60p_1cm_0_reach_over_wall_static",
+        # "60p_1cm_16_reach_over_wall_static",
+        # "60p_1cm_32_reach_over_wall_static",
+        # "60p_2cm_0_reach_over_wall_static",
+        # "60p_2cm_16_reach_over_wall_static",
+        # "60p_2cm_32_reach_over_wall_static",
+        # "60p_4cm_0_reach_over_wall_static",
+        # "60p_4cm_16_reach_over_wall_static",
+        # "60p_4cm_32_reach_over_wall_static",
+        # "70p_1cm_0_reach_over_wall_static",
+        # "70p_1cm_16_reach_over_wall_static",
+        # "70p_1cm_32_reach_over_wall_static",
+        # "70p_2cm_0_reach_over_wall_static",
+        # "70p_2cm_16_reach_over_wall_static",
+        # "70p_2cm_32_reach_over_wall_static",
+        # "70p_4cm_0_reach_over_wall_static",
+        # "70p_4cm_16_reach_over_wall_static",
+        # "70p_4cm_32_reach_over_wall_static",
+        # "80p_1cm_0_reach_over_wall_static",
+        # "80p_1cm_16_reach_over_wall_static",
+        # "80p_1cm_32_reach_over_wall_static",
+        # "80p_2cm_0_reach_over_wall_static",
+        # "80p_2cm_16_reach_over_wall_static",
+        # "80p_2cm_32_reach_over_wall_static",
+        # "80p_4cm_0_reach_over_wall_static",
+        # "80p_4cm_16_reach_over_wall_static",
+        # "80p_4cm_32_reach_over_wall_static",
+        # "90p_1cm_0_reach_over_wall_static",
+        # "90p_1cm_16_reach_over_wall_static",
+        # "90p_1cm_32_reach_over_wall_static",
+        # "90p_2cm_0_reach_over_wall_static",
+        # "90p_2cm_16_reach_over_wall_static",
+        # "90p_2cm_32_reach_over_wall_static",
+        # "90p_4cm_0_reach_over_wall_static",
+        # "90p_4cm_16_reach_over_wall_static",
+        # "90p_4cm_32_reach_over_wall_static",
+        "100p_1cm_0_reach_over_wall_static",
+        "100p_1cm_16_reach_over_wall_static",
+        "100p_1cm_32_reach_over_wall_static",
+        "100p_2cm_0_reach_over_wall_static",
+        "100p_2cm_16_reach_over_wall_static",
+        "100p_2cm_32_reach_over_wall_static",
+        "100p_4cm_0_reach_over_wall_static",
+        "100p_4cm_16_reach_over_wall_static",
+        "100p_4cm_32_reach_over_wall_static",
+    ]
+    p_succs = []
+    for policy in tqdm(policy_names):
+        args.env_name = policy
+        print(args.env_name)
+        p_succs += [main()]
+        torch.save(list(zip(policy_names, p_succs)), f"{args.save_as}_results.pt")

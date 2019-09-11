@@ -38,7 +38,7 @@ def make_env(env_name, scene_path, seed, rank, log_dir, allow_early_resets, vis,
         env = BoundPositionVelocity(env)
         if init_control:
             env = InitialController(env)
-        env = ScaleActions(env, 0.02)  # 1 step = 0.05 ms
+        env = ScaleActions(env, 0.01)  # 1 step = 0.05 ms
 
         if log_dir is not None:
             env = bench.Monitor(env, os.path.join(log_dir, str(rank)),
