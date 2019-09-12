@@ -27,6 +27,7 @@ try:
 except ImportError:
     pass
 
+exploration_factor = 1/3
 
 def make_env(env_name, scene_path, seed, rank, log_dir, allow_early_resets, vis, init_control):
     def _thunk():
@@ -38,7 +39,7 @@ def make_env(env_name, scene_path, seed, rank, log_dir, allow_early_resets, vis,
         env = BoundPositionVelocity(env)
         if init_control:
             env = InitialController(env)
-        env = ScaleActions(env, 0.05)  # 1 step = 0.05 ms
+        env = ScaleActions(env, 0.05 * exploration_factor)  # 1 step = 0.05 ms
 
         if log_dir is not None:
             env = bench.Monitor(env, os.path.join(log_dir, str(rank)),

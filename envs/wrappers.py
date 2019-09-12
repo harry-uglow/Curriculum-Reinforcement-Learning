@@ -99,7 +99,7 @@ class ScaleActions(ActionWrapper):
         super(ScaleActions, self).__init__(env)
 
     def action(self, action):
-        action[:3] *= self.factor
+        action *= self.factor
         return action
 
 
