@@ -157,14 +157,14 @@ def main(env, scene_path):
             else:
                 evals_without_improv += 1
 
-            if evals_without_improv == 5 or max_succ >= args.trg_succ_rate:
+            if evals_without_improv == 10 or max_succ >= args.trg_succ_rate:
                 save_model = actor_critic
                 if args.cuda:
                     save_model = copy.deepcopy(actor_critic).cpu()
 
                 save_model = [save_model, getattr(get_vec_normalize(envs), 'ob_rms', None),
                               initial_policies]
-                extra = "_final" if evals_without_improv == 5 else ""
+                extra = "_final" if evals_without_improv == 10 else ""
                 torch.save(save_model, os.path.join(save_path, args.save_as + f"{extra}.pt"))
                 break
 
