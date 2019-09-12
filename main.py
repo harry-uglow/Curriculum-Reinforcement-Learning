@@ -104,6 +104,7 @@ def main(env, scene_path):
     j = 0
     max_succ = -1
     max_mean_rew = - math.inf
+    mean_ep_rew = - math.inf
     evals_without_improv = 0
 
     start = time.time()
@@ -114,7 +115,6 @@ def main(env, scene_path):
             i = 0
             total_successes = 0
             max_trials = 50
-            eval_episode_rewards = []
             eval_recurrent_hidden_states = torch.zeros(
                 args.num_processes, actor_critic.recurrent_hidden_state_size, device=device)
             eval_masks = torch.zeros(args.num_processes, 1, device=device)
@@ -130,7 +130,6 @@ def main(env, scene_path):
                     rews = []
                     for info in infos:
                         rews.append(info['rew_success'])
-                        eval_episode_rewards.append(info['episode']['r'])
                     i += args.num_processes
                     rew = sum([int(rew > 0) for rew in rews])
                     total_successes += rew
@@ -145,7 +144,6 @@ def main(env, scene_path):
             torch.save([eval_x, eval_y], os.path.join(args.save_as + "_eval.pt"))
             start_update = end
 
-            mean_ep_rew = np.mean(eval_episode_rewards)
             if p_succ > max_succ:
                 max_succ = p_succ
                 max_mean_rew = mean_ep_rew
@@ -231,12 +229,13 @@ def main(env, scene_path):
         total_num_steps = (j + 1) * args.num_processes * args.num_steps
 
         if j % args.log_interval == 0 and len(episode_rewards) > 1:
+            mean_ep_rew = np.mean(episode_rewards)
             end = time.time()
             print("Updates {}, num timesteps {}, FPS {} \n Last {} training episodes: mean/median reward {:.1f}/{:.1f}, min/max reward {:.1f}/{:.1f}".
                 format(j, total_num_steps,
                        int(total_num_steps / (end - start)),
                        len(episode_rewards),
-                       np.mean(episode_rewards),
+                       mean_ep_rew,
                        np.median(episode_rewards),
                        np.min(episode_rewards),
                        np.max(episode_rewards), dist_entropy,
