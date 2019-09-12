@@ -42,16 +42,8 @@ def main(env, scene_path):
             os.remove(f)
     save_path = os.path.join(args.save_dir, args.algo)
 
-    eval_log_dir = args.log_dir + "_eval"
     eval_x = []
     eval_y = []
-
-    try:
-        os.makedirs(eval_log_dir)
-    except OSError:
-        files = glob.glob(os.path.join(eval_log_dir, '*.monitor.csv'))
-        for f in files:
-            os.remove(f)
 
     torch.set_num_threads(1)
     device = torch.device("cuda:0" if args.cuda else "cpu")
