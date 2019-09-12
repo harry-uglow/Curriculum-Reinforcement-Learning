@@ -75,7 +75,7 @@ def main(env, scene_path):
     base = residual.base if args.reuse_residual else None
     dist = residual.dist if args.reuse_residual else None
     actor_critic = Policy(envs.observation_space.shape, envs.action_space, base_kwargs=base_kwargs,
-                          zero_last_layer=initial_policies is not None, base=base, dist=dist)
+                          zero_last_layer=True, base=base, dist=dist)
     actor_critic.to(device)
 
     if args.algo == 'a2c':
