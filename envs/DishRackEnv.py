@@ -54,6 +54,8 @@ class DishRackEnv(GoalDrivenEnv):
         self.target_handle = catch_errors(vrep.simxGetObjectHandle(self.cid,
                 "Target", vrep.simx_opmode_blocking))
         self.joint_targets = None
+        self.mv_trg_handle = catch_errors(vrep.simxGetObjectHandle(self.cid, "MvTarget",
+                                                                   vrep.simx_opmode_blocking))
 
     def reset(self):
         super(DishRackEnv, self).reset()
@@ -63,6 +65,10 @@ class DishRackEnv(GoalDrivenEnv):
         vrep.simxSetObjectPosition(self.cid, self.rack_handle, -1, self.rack_pos,
                                    vrep.simx_opmode_blocking)
         vrep.simxSetObjectOrientation(self.cid, self.rack_handle, self.rack_rot_ref, self.rack_rot,
+                                      vrep.simx_opmode_blocking)
+        trg_rot = catch_errors(vrep.simxGetObjectOrientation(self.cid, self.target_handle, -1,
+                                                             vrep.simx_opmode_blocking))
+        vrep.simxSetObjectOrientation(self.cid, self.mv_trg_handle, -1, trg_rot,
                                       vrep.simx_opmode_blocking)
 
         if self.vis_mode:
