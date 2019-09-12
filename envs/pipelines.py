@@ -6,7 +6,7 @@ pipelines = {
     'shelf_1': {
         'sparse': SSSparseEnv,
         'dense': SSDenseEnv,
-        'task': 'shelf_wall',
+        'task': 'shelf',
         'curriculum': [
             'shelf_nr',
             'shelf_5',
@@ -23,7 +23,7 @@ pipelines = {
     'shelf_2': {
         'sparse': SSSparseEnv,
         'dense': SSDenseEnv,
-        'task': 'shelf_wall',
+        'task': 'shelf',
         'curriculum': [
             'shelf_nr',
             'shelf_5',
@@ -36,7 +36,7 @@ pipelines = {
     'shelf_4': {
         'sparse': SSSparseEnv,
         'dense': SSDenseEnv,
-        'task': 'shelf_wall',
+        'task': 'shelf',
         'curriculum': [
             'shelf_nr',
             'shelf_5',
@@ -47,7 +47,7 @@ pipelines = {
     'shelf_8': {
         'sparse': SSSparseEnv,
         'dense': SSDenseEnv,
-        'task': 'shelf_wall',
+        'task': 'shelf',
         'curriculum': [
             'shelf_nr',
             'shelf_5',
