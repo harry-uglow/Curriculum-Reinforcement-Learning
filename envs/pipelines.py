@@ -50,6 +50,16 @@ pipelines = {
         'task': 'shelf',
         'curriculum': [
             'shelf_nr',
+            'shelf_5',
+            'shelf_13',
+        ]
+    },
+    'shelf_16': {
+        'sparse': SSSparseEnv,
+        'dense': SSDenseEnv,
+        'task': 'shelf',
+        'curriculum': [
+            'shelf_nr',
         ]
     },
     'shelf_res': {
@@ -130,8 +140,6 @@ pipelines = {
         'task': 'reach_over_wall_static',
         'curriculum': [
             'reach_no_wall',
-            'row_30',
-            'row_46',
         ]
     },
     'rack_1': {
