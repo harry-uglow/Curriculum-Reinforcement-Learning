@@ -5,7 +5,7 @@ from gym import spaces
 import vrep
 from envs.GoalDrivenEnv import GoalDrivenEnv
 
-from envs.VrepEnv import check_for_errors
+from envs.VrepEnv import check_for_errors, catch_errors
 
 dir_path = os.getcwd()
 
@@ -36,6 +36,8 @@ class ReachOverWallEnv(GoalDrivenEnv):
         self.init_wall_rot = vrep.simxGetObjectOrientation(self.cid,
                 self.wall_handle, -1, vrep.simx_opmode_blocking)[1]
         self.wall_orientation = self.init_wall_rot
+        self.mv_trg_handle = catch_errors(vrep.simxGetObjectHandle(self.cid, "MvTarget",
+                                                                  vrep.simx_opmode_blocking))
 
     def reset(self):
         super(ReachOverWallEnv, self).reset()
@@ -47,6 +49,8 @@ class ReachOverWallEnv(GoalDrivenEnv):
                                   vrep.simx_opmode_blocking)
         vrep.simxSetObjectOrientation(self.cid, self.wall_handle, -1, self.init_wall_rot,
                                      vrep.simx_opmode_blocking)
+        vrep.simxSetObjectOrientation(self.cid, self.mv_trg_handle, -1, [0., 0., 0.],
+                                      vrep.simx_opmode_blocking)
 
         return self._get_obs()
 
