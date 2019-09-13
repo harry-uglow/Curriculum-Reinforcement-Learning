@@ -327,8 +327,8 @@ if __name__ == "__main__":
     if args.scene_name is not None:
         main(None, args.scene_name)  # TODO
     elif args.dense_ip:
-        train_with_metric(pipelines[args.pipeline], train_baseline)
+        train_with_metric(pipelines[args.pipeline], train_baseline, args.save_as)
     elif use_metric:
-        train_with_metric(pipelines[args.pipeline], execute_curriculum)
+        train_with_metric(pipelines[args.pipeline], execute_curriculum, args.save_as)
     else:
         execute_curriculum(pipelines[args.pipeline], args.save_as)
