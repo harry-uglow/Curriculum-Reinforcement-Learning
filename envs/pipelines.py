@@ -50,9 +50,13 @@ pipelines = {
         'task': 'shelf',
         'curriculum': [
             'shelf_nr',
-            'shelf_5',
-            'shelf_13',
         ]
+    },
+    'shelf_res': {
+        'sparse': SSSparseEnv,
+        'dense': SSDenseEnv,
+        'task': 'shelf',
+        'curriculum': []
     },
     'wall_1': {
         'sparse': ROWSparseEnv,
@@ -163,6 +167,20 @@ pipelines = {
             'dish_rack_7',
             'dish_rack_11',
         ]
+    },
+    'rack_8': {  # Actually infinite
+        'sparse': DRSparseEnv,
+        'dense': DRDenseEnv,
+        'task': 'dish_rack',
+        'curriculum': [
+            'dish_rack_nr',
+        ]
+    },
+    'rack_res': {
+        'sparse': DRSparseEnv,
+        'dense': DRDenseEnv,
+        'task': 'dish_rack',
+        'curriculum': []
     },
 }
 
