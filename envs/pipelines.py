@@ -182,6 +182,12 @@ pipelines = {
         'task': 'dish_rack',
         'curriculum': []
     },
+    'rack_vis': {
+        'sparse': DRSparseEnv,
+        'dense': DRDenseEnv,
+        'task': 'dish_rack_vis',
+        'curriculum': []
+    },
 }
 
 
