@@ -155,7 +155,7 @@ def main(env, scene_path):
             else:
                 evals_without_improv += 1
 
-            if evals_without_improv == 5 or max_succ >= args.trg_succ_rate:
+            if evals_without_improv == 10 or max_succ >= args.trg_succ_rate:
                 save_model = actor_critic
                 if args.cuda:
                     save_model = copy.deepcopy(actor_critic).cpu()
@@ -230,6 +230,10 @@ def main(env, scene_path):
 
         if j % args.log_interval == 0 and len(episode_rewards) > 1:
             mean_ep_rew = np.mean(episode_rewards)
+            if mean_ep_rew > max_mean_rew:
+                print("Improved max mean reward")
+                max_mean_rew = mean_ep_rew
+                evals_without_improv = 0
             end = time.time()
             print("Updates {}, num timesteps {}, FPS {} \n Last {} training episodes: mean/median reward {:.1f}/{:.1f}, min/max reward {:.1f}/{:.1f}".
                 format(j, total_num_steps,
@@ -325,7 +329,7 @@ def train_baseline(pipeline, save_base):
 
 if __name__ == "__main__":
     if args.scene_name is not None:
-        main(None, args.scene_name)  # TODO
+        main(pipelines[args.pipeline]['sparse'], args.scene_name)  # TODO
     elif args.dense_ip:
         train_with_metric(pipelines[args.pipeline], train_baseline, args.save_as)
     elif use_metric:
