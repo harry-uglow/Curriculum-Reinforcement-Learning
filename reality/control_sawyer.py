@@ -1,3 +1,7 @@
+# The files in this directory can be used to run a trained policy on a real Sawyer arm. However it
+# turned out the code had to be in python2. The python2 translation that was used is on the
+# 'python2' branch.
+
 import argparse
 import os
 
@@ -5,7 +9,7 @@ import rospy
 import torch
 from baselines.common.vec_env import DummyVecEnv
 
-from envs.ImageObsVecEnvWrapper import ImageObsVecEnvWrapper, RealImageObsVecEnvWrapper
+from envs.ImageObsVecEnvWrapper import RealImageObsVecEnvWrapper
 from envs.envs import wrap_initial_policies, VecPyTorch
 from envs.wrappers import ClipActions, PoseEstimatorVecEnvWrapper
 from reality.CameraConnection import CameraConnection

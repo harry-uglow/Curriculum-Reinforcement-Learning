@@ -7,7 +7,6 @@ import numpy as np
 
 
 class E2EDataset(Dataset):
-    """Face Landmarks dataset."""
 
     def __init__(self, data_file, image_dir, transform, action_transform):
         """

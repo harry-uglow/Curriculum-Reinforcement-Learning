@@ -176,7 +176,7 @@ pipelines = {
             'dish_rack_11',
         ]
     },
-    'rack_8': {  # Actually infinite
+    'rack_8': {
         'sparse': DRSparseEnv,
         'dense': DRDenseEnv,
         'task': 'dish_rack',

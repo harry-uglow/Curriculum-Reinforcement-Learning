@@ -108,3 +108,5 @@ imgs/
 training_data/
 logs/
 0/
+evals/
+train_lengths/

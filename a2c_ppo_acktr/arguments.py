@@ -3,6 +3,7 @@ import argparse
 import torch
 
 
+# TODO: Move arguments for gather_training_images / train_pose_estimator into their own parsers.
 def get_args():
     parser = argparse.ArgumentParser(description='RL')
     parser.add_argument('--algo', default='ppo',
@@ -92,7 +93,6 @@ def get_args():
     parser.add_argument('--e2e', action='store_true', default=False,
                         help='Train an e2e policy (do not use full state observations)')
     parser.add_argument('--reuse-residual', action='store_true', default=False)
-    # TODO: Separate arguments for gather_training_images or train_im2state into their own parsers.
     parser.add_argument('--state-indices', nargs='+', type=int)
     parser.add_argument('--rel', action='store_true', default=False)
     args = parser.parse_args()

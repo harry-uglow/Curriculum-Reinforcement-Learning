@@ -133,12 +133,11 @@ class NNBase(nn.Module):
 
             # Let's figure out which steps in the sequence have a zero for any agent
             # We will always assume t=0 has a zero in it as that makes the logic cleaner
-            has_zeros = ((masks[1:] == 0.0) \
-                            .any(dim=-1)
-                            .nonzero()
-                            .squeeze()
-                            .cpu())
-
+            has_zeros = ((masks[1:] == 0.0)
+                         .any(dim=-1)
+                         .nonzero()
+                         .squeeze()
+                         .cpu())
 
             # +1 to correct the masks[1:]
             if has_zeros.dim() == 0:
@@ -149,7 +148,6 @@ class NNBase(nn.Module):
 
             # add t=0 and t=T to the list
             has_zeros = [0] + has_zeros + [T]
-
 
             hxs = hxs.unsqueeze(0)
             outputs = []
@@ -182,9 +180,9 @@ class CNNBase(NNBase):
         num_inputs = obs_shape[0]
 
         init_ = lambda m: init(m,
-            nn.init.orthogonal_,
-            lambda x: nn.init.constant_(x, 0),
-            nn.init.calculate_gain('relu'))
+                               nn.init.orthogonal_,
+                               lambda x: nn.init.constant_(x, 0),
+                               nn.init.calculate_gain('relu'))
 
         self.main = nn.Sequential(  # 84 x 84  128
             init_(nn.Conv2d(num_inputs, 32, 3, stride=2)),  # 63 x 63
@@ -203,8 +201,8 @@ class CNNBase(NNBase):
         )
 
         init_ = lambda m: init(m,
-            nn.init.orthogonal_,
-            lambda x: nn.init.constant_(x, 0))
+                               nn.init.orthogonal_,
+                               lambda x: nn.init.constant_(x, 0))
 
         self.critic_linear = init_(nn.Linear(hidden_size, 1))
 
@@ -228,9 +226,9 @@ class MLPBase(NNBase):
             num_inputs = hidden_size
 
         init_ = lambda m: init(m,
-            nn.init.orthogonal_,
-            lambda x: nn.init.constant_(x, 0),
-            np.sqrt(2))
+                               nn.init.orthogonal_,
+                               lambda x: nn.init.constant_(x, 0),
+                               np.sqrt(2))
 
         self.actor = nn.Sequential(
             init_(nn.Linear(num_inputs, hidden_size)),
@@ -308,7 +306,7 @@ class E2EBase(NNBase):
         self.flatten = Flatten()
 
         init_ = lambda m: init(m, nn.init.orthogonal_, lambda x: nn.init.constant_(x, 0),
-                                    np.sqrt(2))
+                               np.sqrt(2))
 
         self.actor = nn.Sequential(
             init_(nn.Linear(4 * 4 * 512 + 7, 256)),

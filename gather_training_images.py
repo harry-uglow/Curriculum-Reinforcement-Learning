@@ -24,6 +24,8 @@ if args.cuda and torch.cuda.is_available() and args.cuda_deterministic:
 save_root = '' if platform.system() == 'Darwin' else '/vol/bitbucket2/hu115/'
 
 
+# Script for rolling out a trained policy to gather images used to train an end-to-end controller
+# (see train_e2e.py)
 def main():
     torch.set_num_threads(1)
     device = torch.device("cuda:0" if args.cuda else "cpu")

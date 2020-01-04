@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
 
 
@@ -96,6 +95,7 @@ class PPO():
         action_loss_epoch /= num_updates
         dist_entropy_epoch /= num_updates
 
+        # Residual Policy Learning: https://arxiv.org/abs/1812.06298
         if self.burn_in and value_loss_epoch < self.bi_beta:
             print("Burned in")
             self.burn_in = False

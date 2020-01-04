@@ -1,10 +1,6 @@
 import os
 
-import numpy as np
-from torch import save
-
-from envs.pipelines import pipelines
-from main import train_with_metric, execute_curriculum, args
+from main import args
 
 if __name__ == "__main__":
     pipeline_base = args.pipeline

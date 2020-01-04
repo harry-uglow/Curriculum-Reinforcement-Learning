@@ -15,7 +15,6 @@ clrs = [
     '#1f77b4',  # muted blue
     '#ff7f0e',  # safety orange
     '#2ca02c',  # cooked asparagus green
-    # '#9467bd',  # muted purple
     '#d62728',  # brick red
     '#8c564b',  # chestnut brown
     '#e377c2',  # raspberry yogurt pink
@@ -25,19 +24,9 @@ clrs = [
 ]
 
 data = {
-    # '50p_1cm': [[], [], []],
     '50p_2cm': [[], [], []],
-    # '50p_4cm': [[], [], []],
-    # '60p_1cm': [[], [], []],
     '60p_2cm': [[], [], []],
-    # '60p_4cm': [[], [], []],
-    # '70p_1cm': [[], [], []],
     '70p_2cm': [[], [], []],
-    # '70p_4cm': [[], [], []],
-    # '80p_1cm': [[], [], []],
-    # '80p_2cm': [[], [], []],
-    # '80p_4cm': [[], [], []],
-    # 'inf': [],
     'base': [[], [], []],
 }
 
@@ -165,6 +154,5 @@ with sns.axes_style("darkgrid"):
     # plt.draw()
     plt.show()
 
-    # plt.savefig(f'imgs/{game}.png')
     # plt.close(fig)
 

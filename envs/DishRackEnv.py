@@ -115,7 +115,6 @@ class DishRackEnv(GoalDrivenEnv):
             return mask
         elif mode == 'human':
             return
-            # TODO: Render footage from vision sensor
         elif mode == 'activate':
             assert not self.vis_mode
             self.vis_mode = True

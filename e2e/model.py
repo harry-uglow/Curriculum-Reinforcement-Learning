@@ -14,43 +14,39 @@ class Flatten(nn.Module):
         return x.view(x.size(0), -1)
 
 
+# E2E controller model based on VGG16.
 class E2ECNN(nn.Module):
     def __init__(self, num_inputs, num_outputs):
         super(E2ECNN, self).__init__()
         self._output_size = num_outputs
 
-        self.conv_layers = nn.Sequential(  # 120 x 120
+        self.conv_layers = nn.Sequential(
             (nn.Conv2d(num_inputs, 64, 3, padding=1)),
             nn.ReLU(inplace=True),
             (nn.Conv2d(64, 64, 3, padding=1, stride=2)),
             nn.ReLU(inplace=True),
-            # nn.MaxPool2d(2),  # 60
             (nn.Conv2d(64, 128, 3, padding=1)),
             nn.ReLU(inplace=True),
             (nn.Conv2d(128, 128, 3, padding=1, stride=2)),
             nn.ReLU(inplace=True),
-            # nn.MaxPool2d(2),  # 30
             (nn.Conv2d(128, 256, 3, padding=1)),
             nn.ReLU(inplace=True),
             (nn.Conv2d(256, 256, 3, padding=1)),
             nn.ReLU(inplace=True),
             (nn.Conv2d(256, 256, 3, padding=1, stride=2)),
             nn.ReLU(inplace=True),
-            # nn.MaxPool2d(2),  # 15
             (nn.Conv2d(256, 512, 3, padding=1)),
             nn.ReLU(inplace=True),
             (nn.Conv2d(512, 512, 3, padding=1)),
             nn.ReLU(inplace=True),
             (nn.Conv2d(512, 512, 3, padding=1, stride=2)),
             nn.ReLU(inplace=True),
-            # nn.MaxPool2d(2),  # 8
             (nn.Conv2d(512, 512, 3, padding=1)),
             nn.ReLU(inplace=True),
             (nn.Conv2d(512, 512, 3, padding=1)),
             nn.ReLU(inplace=True),
             (nn.Conv2d(512, 512, 3, padding=1, stride=2)),
             nn.ReLU(inplace=True),
-            # nn.MaxPool2d(2),  # 4
         )
 
         self.flatten = Flatten()

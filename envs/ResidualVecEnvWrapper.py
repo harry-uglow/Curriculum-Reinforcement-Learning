@@ -12,6 +12,11 @@ def get_residual_layers(venv):
 
 
 class ResidualVecEnvWrapper(VecEnvWrapper):
+    """
+    An wrapper allowing use of a fixed initial policy to train a residual policy. See
+    envs.py for usage. Further reading on residual reinforcement learning:
+    https://arxiv.org/abs/1812.03201 and https://arxiv.org/abs/1812.06298
+    """
     def __init__(self, venv, initial_policy, ob_rms, device, clipob=10., epsilon=1e-8):
         super(ResidualVecEnvWrapper, self).__init__(venv)
         self.ip = initial_policy

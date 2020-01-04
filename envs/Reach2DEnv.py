@@ -5,6 +5,9 @@ from gym import spaces, Env
 
 
 class Reach2DEnv(Env):
+    """
+    Simple 2D environment with a three jointed arm. Useful for quick demonstrations.
+    """
     def render(self, mode='human'):
         # Check for mouse events
         for event in pygame.event.get():

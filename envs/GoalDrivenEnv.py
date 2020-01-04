@@ -7,6 +7,10 @@ from envs.VrepEnv import catch_errors, VrepEnv
 
 
 class GoalDrivenEnv(SawyerEnv):
+    """
+    Abstract parent class encapsulating behaviour common to environments where the aim is to get
+    the tip of a Sawyer arm to some goal state.
+    """
     # Cartesian control - orientation constraints don't matter
     action_space = spaces.Box(np.array([-0.03]*3 + [-1.]*3), np.array([0.03]*3 + [1.]*3),
                               dtype=np.float32)

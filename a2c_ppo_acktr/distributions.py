@@ -1,5 +1,3 @@
-import math
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -21,10 +19,10 @@ old_sample = FixedCategorical.sample
 FixedCategorical.sample = lambda self: old_sample(self).unsqueeze(-1)
 
 log_prob_cat = FixedCategorical.log_prob
-FixedCategorical.log_probs = lambda self, actions: log_prob_cat(self, actions.squeeze(-1)).view(actions.size(0), -1).sum(-1).unsqueeze(-1)
+FixedCategorical.log_probs = lambda self, actions: log_prob_cat(self, actions.squeeze(-1)).view(
+    actions.size(0), -1).sum(-1).unsqueeze(-1)
 
 FixedCategorical.mode = lambda self: self.probs.argmax(dim=-1, keepdim=True)
-
 
 # Normal
 FixedNormal = torch.distributions.Normal
@@ -37,17 +35,16 @@ FixedNormal.entropy = lambda self: normal_entropy(self).sum(-1)
 
 FixedNormal.mode = lambda self: self.mean
 
-
 # Bernoulli
 FixedBernoulli = torch.distributions.Bernoulli
 
 log_prob_bernoulli = FixedBernoulli.log_prob
-FixedBernoulli.log_probs = lambda self, actions: log_prob_bernoulli(self, actions).view(actions.size(0), -1).sum(-1).unsqueeze(-1)
+FixedBernoulli.log_probs = lambda self, actions: log_prob_bernoulli(self, actions).view(
+    actions.size(0), -1).sum(-1).unsqueeze(-1)
 
 bernoulli_entropy = FixedBernoulli.entropy
 FixedBernoulli.entropy = lambda self: bernoulli_entropy(self).sum(-1)
 FixedBernoulli.mode = lambda self: torch.gt(self.probs, 0.5).float()
-
 
 # Beta
 FixedBeta = torch.distributions.Beta
@@ -66,9 +63,9 @@ class Categorical(nn.Module):
         super(Categorical, self).__init__()
 
         init_ = lambda m: init(m,
-            nn.init.orthogonal_,
-            lambda x: nn.init.constant_(x, 0),
-            gain=0.01)
+                               nn.init.orthogonal_,
+                               lambda x: nn.init.constant_(x, 0),
+                               gain=0.01)
 
         self.linear = init_(nn.Linear(num_inputs, num_outputs))
 
@@ -82,8 +79,8 @@ class DiagGaussian(nn.Module):
         super(DiagGaussian, self).__init__()
 
         init_ = lambda m: init(m,
-            nn.init.orthogonal_,
-            lambda x: nn.init.constant_(x, 0))
+                               nn.init.orthogonal_,
+                               lambda x: nn.init.constant_(x, 0))
 
         init_zeros = lambda m: init(m, lambda x, **kwargs: nn.init.constant_(x, 0),
                                     lambda x: nn.init.constant_(x, 0))
@@ -110,8 +107,8 @@ class Bernoulli(nn.Module):
         super(Bernoulli, self).__init__()
 
         init_ = lambda m: init(m,
-            nn.init.orthogonal_,
-            lambda x: nn.init.constant_(x, 0))
+                               nn.init.orthogonal_,
+                               lambda x: nn.init.constant_(x, 0))
 
         self.linear = init_(nn.Linear(num_inputs, num_outputs))
 
@@ -121,6 +118,11 @@ class Bernoulli(nn.Module):
 
 
 class Beta(nn.Module):
+    """
+    Added beta distribution after reading
+    https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail/issues/109.
+    Not used in final environment architecture
+    """
     def __init__(self, num_inputs, num_outputs, zll=False):
         super(Beta, self).__init__()
 

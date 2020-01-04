@@ -66,6 +66,5 @@ with sns.axes_style("darkgrid"):
     plt.draw()
     plt.show()
 
-    # plt.savefig(f'imgs/{game}.png')
     # plt.close(fig)
 

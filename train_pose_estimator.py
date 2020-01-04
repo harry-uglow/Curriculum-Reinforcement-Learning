@@ -4,7 +4,7 @@ import os
 
 import numpy as np
 import torch
-from torch import optim, nn
+from torch import optim
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
@@ -12,7 +12,7 @@ from a2c_ppo_acktr.arguments import get_args
 from eval_pose_estimator import eval_pose_estimator
 from im2state.model import PoseEstimator
 
-from im2state.utils import normalise_coords, unnormalise_y, custom_loss
+from im2state.utils import unnormalise_y, custom_loss
 
 args = get_args()
 
@@ -24,6 +24,8 @@ if args.cuda and torch.cuda.is_available() and args.cuda_deterministic:
     torch.backends.cudnn.deterministic = True
 
 
+# Used to train pose estimators (image -> state) so that a (state -> action) could be used in a
+# real environment. Not used recently as found to be less effective than train_e2e.py
 def main():
     torch.set_num_threads(1)
     device = torch.device(f"cuda:{args.device_num}" if args.cuda else "cpu")

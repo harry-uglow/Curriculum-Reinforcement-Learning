@@ -6,6 +6,9 @@ from envs.VrepEnv import catch_errors, VrepEnv
 
 
 class SawyerEnv(VrepEnv):
+    """
+    Abstract parent class encapsulating behaviour common to environments with a Sawyer arm.
+    """
     num_joints = 7
     action_space = spaces.Box(np.array([-0.3] * num_joints), np.array([0.3] * num_joints),
                               dtype=np.float32)
@@ -52,6 +55,6 @@ class SawyerEnv(VrepEnv):
     def update_sim(self):
         for handle, velocity in zip(self.joint_handles, self.curr_action):
             catch_errors(vrep.simxSetJointTargetVelocity(self.cid,
-                int(handle), velocity, vrep.simx_opmode_oneshot))
+                                                         int(handle), velocity, vrep.simx_opmode_oneshot))
         vrep.simxSynchronousTrigger(self.cid)
         vrep.simxGetPingTime(self.cid)

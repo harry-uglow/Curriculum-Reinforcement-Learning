@@ -1,5 +1,3 @@
-import re
-
 import torch
 import matplotlib.pyplot as plt
 
@@ -29,8 +27,6 @@ plt.ylim((0, 100))
 plt.title("Success rate on Dish Rack over training time")
 plt.legend(loc=4)
 plt.show()
-# plt.draw()
-re.compile
+plt.draw()
 
-# plt.savefig(f'imgs/{game}.png')
-# plt.close(fig)
+plt.close(fig)

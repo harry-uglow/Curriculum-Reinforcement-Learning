@@ -29,6 +29,7 @@ except ImportError:
 
 exploration_factor = 1/3
 
+
 def make_env(env_name, scene_path, seed, rank, log_dir, allow_early_resets, vis, init_control):
     def _thunk():
         # Swap DRSparseEnv for required environment class.
@@ -145,7 +146,6 @@ class TransposeImage(TransposeObs):
 
 class VecPyTorch(VecEnvWrapper):
     def __init__(self, venv, device):
-        """Return only every `skip`-th frame"""
         super(VecPyTorch, self).__init__(venv)
         self.device = device
 

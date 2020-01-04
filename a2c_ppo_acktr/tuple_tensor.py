@@ -6,6 +6,9 @@ class TorchTuple:
 
 
 class TupleTensor(TorchTuple):
+    """
+    Hacks getattribute and getitem to allow tuples as observations eg (image, state vector)
+    """
 
     def __init__(self, tensor0, tensor1):
         assert type(tensor0) is torch.Tensor

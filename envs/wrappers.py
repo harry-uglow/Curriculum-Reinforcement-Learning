@@ -9,6 +9,11 @@ from im2state.utils import unnormalise_y
 
 
 class PoseEstimatorVecEnvWrapper(VecEnvWrapper):
+    """
+    Uses a pose estimator to estimate the state from the image. Wrapping this environment
+    around a ResidualVecEnvWrapper makes it possible to use a full state policy on an environment
+    with images as observations
+    """
     def __init__(self, venv, device, pose_estimator, state_to_estimate, low, high,
                  abs_to_rel=False):
         super().__init__(venv)
@@ -104,6 +109,9 @@ class ScaleActions(ActionWrapper):
 
 
 class E2EVecEnvWrapper(VecEnvWrapper):
+    """
+    Used to train an end-to-end policy. Not useful in this project, training unfeasibly long.
+    """
     def __init__(self, venv):
         res = venv.get_images(mode='activate')[0]
         image_obs_space = spaces.Box(0, 255, [3, *res], dtype=np.uint8)
@@ -128,6 +136,10 @@ class E2EVecEnvWrapper(VecEnvWrapper):
 
 
 class InitialController(ActionWrapper):
+    """
+    This environment wrapper moves the subject directly toward the target position/orientation at
+    every step. It can be used to initialise learning without the need for reward shaping.
+    """
     def __init__(self, env):
         super(InitialController, self).__init__(env)
         self.base_env = env.unwrapped

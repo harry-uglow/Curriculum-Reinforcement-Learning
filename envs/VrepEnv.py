@@ -49,31 +49,28 @@ base_port_num = 19998
 host = '127.0.0.1'
 
 scene_dir_path = os.path.join(os.getcwd(), 'scenes')
-vrep_path = '/Users/Harry/Applications/V-REP_PRO_EDU_V3_6_1_Mac/vrep.app' \
-            '/Contents/MacOS/vrep' \
+# Insert path here - perhaps abstract this away to a config file?
+vrep_path = os.path.expanduser('~/Applications/V-REP_PRO_EDU_V3_6_1_Mac/vrep.app'
+                               '/Contents/MacOS/vrep') \
     if platform.system() == 'Darwin' else \
     os.path.expanduser('~/Desktop/V-REP_PRO_EDU_V3_6_1_Ubuntu18_04/vrep.sh')
+# This allowed V-Rep to be run over SSH to an Ubuntu machine.
+# See forum.coppeliarobotics.com/viewtopic.php?p=29772
 xvfb_args = ['xvfb-run', '--auto-servernum', '--server-num=1'] \
     if not platform.system() == 'Darwin' else []
 
 
 class VrepEnv(Env):
     """
-    TODO: Document
-    A goal-based environment. It functions just as any regular OpenAI Gym environment but it
-    imposes a required structure on the observation_space. More concretely, the observation
-    space is required to contain at least three elements, namely `observation`, `desired_goal`, and
-    `achieved_goal`. Here, `desired_goal` specifies the goal that the agent should attempt to achieve.
-    `achieved_goal` is the goal that it currently achieved instead. `observation` contains the
-    actual observations of the environment as per usual.
+    An environment with behind-the-scenes handled by a scene in V-Rep. This abstract parent class
+    allows its children to function as any regular OpenAI Gym environment, handling the
+    set-up and tear-down of an associated V-Rep scene.
     """
 
     def __init__(self, scene_name, rank, headless):
         # Launch a V-Rep server
         # Read more here: http://www.coppeliarobotics.com/helpFiles/en/commandLine.htm
         port_num = base_port_num + rank
-        if not headless:  # DEBUG: Helps run enjoy while Train is running
-            port_num += 16
         remote_api_string = '-gREMOTEAPISERVERSERVICE_' + str(port_num) + '_FALSE_TRUE'
         args = [*xvfb_args, vrep_path, '-h' if headless else '', remote_api_string]
         self.cid = -1
@@ -116,10 +113,11 @@ class VrepEnv(Env):
         except ProcessLookupError:
             pass
 
+    # Rendering not implemented by default. See DishRackEnv for a more specific implementation.
     def render(self, mode='human'):
         pass
 
-    # Returns a vector in from one item to another under "from"s axes (not the world axes).
+    # Returns a vector from one item to another under "from"s axes (not the world axes).
     def get_vector(self, from_handle, to_handle):
         pose = catch_errors(vrep.simxGetObjectPosition(
             self.cid, to_handle, from_handle, vrep.simx_opmode_blocking))

@@ -26,6 +26,7 @@ if args.cuda and torch.cuda.is_available() and args.cuda_deterministic:
     torch.backends.cudnn.deterministic = True
 
 
+# From https://gist.github.com/Fuchai/12f2321e6c8fa53058f5eb23aeddb6ab
 class GenHelper(Dataset):
     def __init__(self, mother, length, mapping):
         # here is a mapping from this index to the mother ds index
@@ -41,11 +42,10 @@ class GenHelper(Dataset):
 
 
 def train_valid_split(ds, split_fold=10, random_seed=None):
-    '''
-    This is a pytorch generic function that takes a data.Dataset object and splits it to validation and training
-    efficiently.
-    :return:
-    '''
+    """
+    This is a pytorch generic function that takes a data.Dataset object and splits it to
+    validation and training efficiently.
+    """
     if random_seed != None:
         np.random.seed(random_seed)
 
@@ -61,6 +61,9 @@ def train_valid_split(ds, split_fold=10, random_seed=None):
     return train, valid
 
 
+# Train an end-to-end (image + partial state -> action) controller to approximate a trained
+# full-state policy. These end-to-end approximations were used on the real robot during the
+# project.
 def main():
     torch.set_num_threads(1)
     device = torch.device(f"cuda:{args.device_num}" if args.cuda else "cpu")
