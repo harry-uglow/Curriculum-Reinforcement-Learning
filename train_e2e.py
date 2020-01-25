@@ -14,7 +14,7 @@ from a2c_ppo_acktr.arguments import get_args
 from e2e.dataset import E2EDataset
 from e2e.model import E2ECNN
 
-from im2state.utils import normalise_target
+from pose_estimator.utils import normalise_target
 
 args = get_args()
 
@@ -77,7 +77,7 @@ def main():
 
     train, valid = train_valid_split(dataset, random_seed=1053831)
 
-    save_path = os.path.join('trained_models', 'im2state')
+    save_path = os.path.join('trained_models', 'pe')
     try:
         os.makedirs(save_path)
     except OSError:

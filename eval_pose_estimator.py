@@ -5,7 +5,7 @@ import numpy as np
 import torch
 from tqdm import tqdm
 
-from im2state.utils import unnormalise_y
+from pose_estimator.utils import unnormalise_y
 
 parser = argparse.ArgumentParser(description='RL')
 parser.add_argument('--model-name', default='rel_new_angle')
@@ -41,7 +41,7 @@ if __name__ == '__main__':
     images, positions, state_to_estimate, low, high = torch.load(
         os.path.join('./training_data', args.dataset + ".pt"))
     images = np.transpose([np.array(img) for img in images], (0, 3, 1, 2))
-    model_dir_path = os.path.join('trained_models', 'im2state')
+    model_dir_path = os.path.join('trained_models', 'pe')
     load_path = os.path.join(model_dir_path, args.model_name + ".pt")
 
     p = np.random.permutation(len(images))

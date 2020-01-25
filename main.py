@@ -58,7 +58,7 @@ def main(env, scene_path):
         residual = None
         ob_rms = None
 
-    pose_estimator = torch.load(os.path.join(args.load_dir, "im2state",
+    pose_estimator = torch.load(os.path.join(args.load_dir, "pe",
                                              args.pose_estimator + ".pt")) \
         if args.pose_estimator else None
 
