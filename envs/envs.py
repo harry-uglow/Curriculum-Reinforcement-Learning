@@ -32,7 +32,6 @@ exploration_factor = 1/3
 
 def make_env(env_name, scene_path, seed, rank, log_dir, allow_early_resets, vis, init_control):
     def _thunk():
-        # Swap DRSparseEnv for required environment class.
         env = env_name(scene_path, rank, not vis)
 
         env.seed(seed + rank)

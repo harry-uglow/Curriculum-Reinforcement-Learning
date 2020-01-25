@@ -137,7 +137,7 @@ class E2EVecEnvWrapper(VecEnvWrapper):
 
 class InitialController(ActionWrapper):
     """
-    This environment wrapper moves the subject directly toward the target position/orientation at
+    This environment wrapper moves the subject directly toward the target position at
     every step. It can be used to initialise learning without the need for reward shaping.
     """
     def __init__(self, env):

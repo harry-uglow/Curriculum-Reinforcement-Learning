@@ -49,7 +49,7 @@ def get_args():
     parser.add_argument('--eval-interval', type=int, default=None,
                         help='eval interval, one eval per n updates (default: None)')
     parser.add_argument('--trg-succ-rate', type=int, default=None,
-                        help='Require success rate before stopping, not fixed training cap.')
+                        help='Require % success before stopping, instead of fixed training length.')
     parser.add_argument('--vis-interval', type=int, default=20,
                         help='vis interval, one log per n updates (default: 100)')
     parser.add_argument('--num-env-steps', type=int, default=10e6,
