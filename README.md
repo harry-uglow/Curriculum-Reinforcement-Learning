@@ -19,10 +19,11 @@ using Reinforcement Learning from scratch will struggle to learn to get past
 the wall. This is explained in far greater detail in the project report. With
  curriculum reinforcement learning, we initially remove the wall and the 
  robot can learn to move along the red trajectory. By sequentially adding 
- "parts" of the wall (represented by the coloured circles), we can guide the 
+ "parts" of the wall (represented by the coloured concentric circles), we can 
+ guide the 
  policy so that the robot learns to follow the desired green trajectory.
 
-The final method presented here and the earlier versions of it required 
+The final method presented here and its earlier versions required 
 significant changes to baseline implementations of RL
 algorithms, in particular to support residual policy training. I hope making 
 the code available here can help others working on similar projects. 
@@ -36,7 +37,7 @@ During the project Curriculum Learning was used to tackle three main tasks:
 ![](imgs/dish_rack_sim.gif)
 - Reaching a point in space by moving over a wall
 ![](imgs/ROW_success.gif)
-- Moving a mug from one shelf to a higher one.
+- Moving a mug from one shelf to a higher one
 ![](imgs/shelf_stack.gif)
 
 # Method details
@@ -53,7 +54,9 @@ respondable as they would be in reality.
 Due to limitations of the simulation software used (V-REP) we do not 
 programmatically edit the obstacles in a scene. Instead the intermediary 
 variants of a task are created manually as separate scenes and given to the 
-program to load.
+program to load. There is a mathematical specification of how the obstacles 
+in a scene change and by how much from one variant to the next. I will not go
+ into detail here but it can be found in the report linked above.
 
 ### Algorithm
 Many versions of this algorithm were attempted and can be seen in full in the
@@ -95,9 +98,16 @@ each policy update, evaluating the policy every 4 updates, and moving to the
 next stage of the curriculum after evaluation finds the policy >= 70% 
 successful.
 
-###Transferring to reality
-Once that finishes you will have a trained policy that takes full state 
-information and outputs actions. To use this policy on a real robot it will 
+Some examples of trained policies can be found in the trained_models 
+directory. To watch the policy in action, follow the installation 
+instructions below and run:
+```
+python enjoy.py --load-dir trained_models/ppo --env-name "dish_rack_cartesian_control" --pipeline rack
+```
+
+### Transferring to reality
+Once the above training finishes you will have a policy that takes 
+full state information and outputs actions. To use this policy on a real robot it will 
 need to be able to produce these actions from only the joint angles (known in
  reality) and an image of the scene. [gather_training_images.py](gather_training_images.py) 
  can be used to rollout the trained policy 
@@ -142,18 +152,21 @@ cd baselines
 pip install -e .
 ```
 
-[Install V-REP](http://www.coppeliarobotics.com/previousVersions), move 
-remoteApi.so (or .dylib) to root folder.
+[Install V-REP](http://www.coppeliarobotics.com/previousVersions), depending 
+on your version you may need to replace [vrep.py](vrep.py), 
+[vrepConst.py](vrepConst.py) and [remoteApi.dylib](remoteApi.dylib) / 
+[remoteApi.so](remoteApi.so) with the ones found in your VREP installation.
 
 ## Branches
 - master - most recent code is here, commented, in Python 3.7
-- joint-velocity-control - marks the last point where policies directly output 
-joint 
-velocities, rather than target position. Changed as this was bias towards 
-base joints which have a greater effect on end position. Left here in case 
-you find it useful.
-- python2_ - branches with this prefix are written in Python 2.7 because \
-required packages for connecting to Sawyer robot are Python 2 ONLY.
+- reality - code used to run trained policies on a real Sawyer robot. 
+Branched and written in Python 2.7 because required packages for connecting 
+to robot are Python 2 ONLY.
+- joint-velocity-control - archived, marks the last point where policies 
+directly output joint velocities, rather than target position. Changed as this 
+was bias towards base joints which have a greater effect on end position. 
+Left here in case you find it useful.
+
 
 # Questions / Problems
 Though I'm no longer actively developing on this project (least of all I no 
