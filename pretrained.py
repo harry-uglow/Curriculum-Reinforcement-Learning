@@ -3,7 +3,7 @@ import os
 import torch
 import torchvision.models as models
 
-from im2state.model import PoseEstimator
+from pose_estimator.model import PoseEstimator
 
 vgg16 = models.vgg16(pretrained=True)
 relevant_vgg_layers = [feature for feature in vgg16.features]

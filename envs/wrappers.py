@@ -5,7 +5,7 @@ from gym import spaces, ActionWrapper
 
 from envs.ImageObsVecEnvWrapper import get_image_obs_wrapper
 from envs.ResidualVecEnvWrapper import get_residual_layers
-from im2state.utils import unnormalise_y
+from pose_estimator.utils import unnormalise_y
 
 
 class PoseEstimatorVecEnvWrapper(VecEnvWrapper):

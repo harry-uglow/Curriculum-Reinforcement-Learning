@@ -23,7 +23,7 @@ parser.add_argument('--pose-est', default=None,
                     help='network taking images as input and giving state as output')
 parser.add_argument('--load-dir', default='./trained_models/ppo/',
                     help='directory to save agent logs (default: ./trained_models/)')
-parser.add_argument('--pe-load-dir', default='./trained_models/im2state/',
+parser.add_argument('--pe-load-dir', default='./trained_models/pe/',
                     help='directory to save agent logs (default: ./trained_models/)')
 
 parser.add_argument('--abs-to-rel', action='store_true', default=False)
@@ -71,7 +71,7 @@ def main():
     policies = torch.load(os.path.join(args.load_dir, args.env_name + ".pt"),
                           map_location=torch.device('cpu'))
 
-    pose_estimator = torch.load(os.path.join(args.i2s_load_dir, args.image_layer + ".pt")) if \
+    pose_estimator = torch.load(os.path.join(args.pe_load_dir, args.image_layer + ".pt")) if \
         args.image_layer else None
 
     with CameraConnection((128, 128)) as camera:

@@ -10,9 +10,8 @@ from tqdm import tqdm
 
 from a2c_ppo_acktr.arguments import get_args
 from eval_pose_estimator import eval_pose_estimator
-from im2state.model import PoseEstimator
-
-from im2state.utils import unnormalise_y, custom_loss
+from pose_estimator.model import PoseEstimator
+from pose_estimator.utils import unnormalise_y, custom_loss
 
 args = get_args()
 
@@ -36,7 +35,7 @@ def main():
     low = torch.Tensor(low).to(device)
     high = torch.Tensor(high).to(device)
 
-    save_path = os.path.join('trained_models', 'im2state')
+    save_path = os.path.join('trained_models', 'pe')
     try:
         os.makedirs(save_path)
     except OSError:

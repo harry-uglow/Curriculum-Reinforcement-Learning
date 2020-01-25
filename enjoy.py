@@ -11,7 +11,7 @@ from envs.pipelines import pipelines
 
 import sys
 
-from im2state.utils import unnormalise_y
+from pose_estimator.utils import unnormalise_y
 
 sys.path.append('a2c_ppo_acktr')
 
@@ -28,7 +28,7 @@ parser.add_argument('--save-as', default='test',
                     help='where to save % success results')
 parser.add_argument('--load-dir', default='./trained_models/',
                     help='directory to save agent logs (default: ./trained_models/)')
-parser.add_argument('--i2s-load-dir', default='./trained_models/im2state/',
+parser.add_argument('--pe-load-dir', default='./trained_models/pe/',
                     help='directory to save agent logs (default: ./trained_models/)')
 parser.add_argument('--add-timestep', action='store_true', default=False,
                     help='add timestep to observations')
@@ -57,7 +57,7 @@ def main():
     else:
         e2e = None
 
-    estimator = torch.load(os.path.join(args.i2s_load_dir, args.image_layer + ".pt")) if \
+    estimator = torch.load(os.path.join(args.pe_load_dir, args.image_layer + ".pt")) if \
         args.image_layer else None
     if estimator:
         estimator.eval()

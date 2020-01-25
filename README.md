@@ -5,12 +5,13 @@ project, report [published here](https://www.imperial.ac.uk/computing/prospectiv
 \- [[PDF]](https://www.imperial.ac.uk/media/imperial-college/faculty-of-engineering/computing/public/1819-ug-projects/UglowH-CuRL-Curriculum-Reinforcement-Learning-for-Goal-Oriented-Robot-Control-v2.pdf).
 
 
-The main outcome of the project is CuRL - a method for training policies to 
+The main outcome of the project is CuRL - a method for training policies
+ to 
 complete goal-oriented robotics tasks that are difficult to solve with 
 state-of-the-art Deep Reinforcement Learning. Using a curriculum of simpler tasks, 
 we progressively guide a policy towards being able to complete the desired full task. 
 
-![](imgs/CuRL_ROW.png)
+![](imgs/CuRL_ROW.jpg)
 
 The above figure helps illustrate the method. We aim to train a robot to 
 reach the target sphere while avoiding the wall. State-of-the-art approaches 
@@ -89,6 +90,10 @@ The above could be run with a command such as:
 ```
 python main.py --pipeline rack --num-steps 256 --eval-interval 4 --trg-succ-rate 70 --save-as <out_path>
 ```
+This trains on the dish rack task, taking 256 simulation steps in between 
+each policy update, evaluating the policy every 4 updates, and moving to the 
+next stage of the curriculum after evaluation finds the policy >= 70% 
+successful.
 
 ###Transferring to reality
 Once that finishes you will have a trained policy that takes full state 
@@ -137,7 +142,8 @@ cd baselines
 pip install -e .
 ```
 
-Install V-REP, move remoteApi.so (or .dylib) to root folder.
+[Install V-REP](http://www.coppeliarobotics.com/previousVersions), move 
+remoteApi.so (or .dylib) to root folder.
 
 ## Branches
 - master - most recent code is here, commented, in Python 3.7
@@ -148,8 +154,6 @@ base joints which have a greater effect on end position. Left here in case
 you find it useful.
 - python2_ - branches with this prefix are written in Python 2.7 because \
 required packages for connecting to Sawyer robot are Python 2 ONLY.
-- gym-make - started working on properly registering the tasks used here as 
-OpenAI Gym environments. May return to this later.
 
 # Questions / Problems
 Though I'm no longer actively developing on this project (least of all I no 

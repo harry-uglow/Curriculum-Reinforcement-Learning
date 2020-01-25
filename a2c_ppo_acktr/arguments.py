@@ -67,7 +67,7 @@ def get_args():
     parser.add_argument('--dense-ip', action='store_true', default=False,
                         help='use an IP trained with RL on dense rewards')
     parser.add_argument('--pose-estimator', default=None,
-                        help='pose estimator to use, located in trained_models/im2state/{name}.pt')
+                        help='pose estimator to use, located in trained_models/pe/{name}.pt')
     parser.add_argument('--log-dir', default='/tmp/gym/',
                         help='directory to save agent logs (default: /tmp/gym)')
     parser.add_argument('--save-dir', default='./trained_models/',
